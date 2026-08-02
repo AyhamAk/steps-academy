@@ -1,0 +1,283 @@
+import { useState } from "react";
+import {
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
+
+import { Colors } from "../../constants/Colors";
+import { Fonts } from "../../constants/Fonts";
+import { useTranslation } from "../../i18n/useTranslation";
+import { createEvent, GalleryEvent } from "../../services/galleryApi";
+import { formatIsoDate } from "../../utils/date";
+import { StepsButton } from "../ui/StepsButton";
+import { NameChipInput } from "./NameChipInput";
+
+type EventPickerModalProps = {
+  visible: boolean;
+  onClose: () => void;
+  events: GalleryEvent[];
+  students: string[];
+  onSelectExisting: (event: GalleryEvent) => void;
+  onCreated: (event: GalleryEvent) => void;
+};
+
+function todayIso(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+export function EventPickerModal({
+  visible,
+  onClose,
+  events,
+  students,
+  onSelectExisting,
+  onCreated,
+}: EventPickerModalProps) {
+  const { t } = useTranslation();
+  const [mode, setMode] = useState<"list" | "create">("list");
+  const [name, setName] = useState("");
+  const [date, setDate] = useState(todayIso());
+  const [attendees, setAttendees] = useState<string[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const reset = () => {
+    setMode("list");
+    setName("");
+    setDate(todayIso());
+    setAttendees([]);
+    setError(null);
+  };
+
+  const handleClose = () => {
+    reset();
+    onClose();
+  };
+
+  const handleCreate = async () => {
+    if (!name.trim() || !date.trim()) {
+      setError(t.gallery.eventNameDateRequired);
+      return;
+    }
+    setIsSaving(true);
+    setError(null);
+    try {
+      const event = await createEvent({ name: name.trim(), date: date.trim(), attendees });
+      reset();
+      onCreated(event);
+    } catch {
+      setError(t.gallery.couldntCreateEvent);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <Modal visible={visible} animationType="slide" onRequestClose={handleClose} transparent>
+      <KeyboardAvoidingView
+        style={styles.backdrop}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+      >
+        <View style={styles.sheet}>
+          <View style={styles.header}>
+            <Text style={styles.title}>
+              {mode === "list" ? t.gallery.chooseEvent : t.gallery.newEvent}
+            </Text>
+            <Pressable onPress={handleClose}>
+              <Text style={styles.close}>✕</Text>
+            </Pressable>
+          </View>
+
+          {mode === "list" ? (
+            <ScrollView style={styles.list}>
+              <Pressable style={styles.createRow} onPress={() => setMode("create")}>
+                <Text style={styles.createRowText}>{t.gallery.createNewEvent}</Text>
+              </Pressable>
+              {events.map((event) => (
+                <Pressable
+                  key={event.id}
+                  style={styles.eventRow}
+                  onPress={() => {
+                    reset();
+                    onSelectExisting(event);
+                  }}
+                >
+                  <Text style={styles.eventName}>{event.name}</Text>
+                  <Text style={styles.eventMeta}>
+                    {t.gallery.eventMeta(
+                      formatIsoDate(event.date, t),
+                      event.photoCount,
+                      event.attendees.length
+                    )}
+                  </Text>
+                </Pressable>
+              ))}
+              {events.length === 0 ? (
+                <Text style={styles.emptyText}>{t.gallery.noEventsCreateFirst}</Text>
+              ) : null}
+            </ScrollView>
+          ) : (
+            <ScrollView style={styles.list} keyboardShouldPersistTaps="handled">
+              <Text style={styles.label}>{t.gallery.eventNameLabel}</Text>
+              <TextInput
+                value={name}
+                onChangeText={setName}
+                placeholder={t.gallery.eventNamePlaceholder}
+                placeholderTextColor={Colors.textLight}
+                style={styles.input}
+              />
+
+              <Text style={styles.label}>{t.gallery.dateLabel}</Text>
+              <TextInput
+                value={date}
+                onChangeText={setDate}
+                placeholder={t.gallery.datePlaceholder}
+                placeholderTextColor={Colors.textLight}
+                style={styles.input}
+              />
+
+              <Text style={styles.label}>{t.gallery.kidsWhoAttended}</Text>
+              <NameChipInput
+                names={attendees}
+                onChange={setAttendees}
+                suggestions={students}
+                placeholder={t.gallery.kidNamePlaceholder}
+              />
+
+              {error ? <Text style={styles.error}>{error}</Text> : null}
+
+              <View style={styles.actions}>
+                <StepsButton
+                  label={isSaving ? t.gallery.creating : t.gallery.createEvent}
+                  onPress={handleCreate}
+                />
+                <Pressable onPress={() => setMode("list")} style={styles.backLink}>
+                  {isSaving ? (
+                    <ActivityIndicator color={Colors.primary} />
+                  ) : (
+                    <Text style={styles.backLinkText}>{t.common.back}</Text>
+                  )}
+                </Pressable>
+              </View>
+            </ScrollView>
+          )}
+        </View>
+      </KeyboardAvoidingView>
+    </Modal>
+  );
+}
+
+const styles = StyleSheet.create({
+  backdrop: {
+    flex: 1,
+    backgroundColor: "rgba(44, 36, 22, 0.4)",
+    justifyContent: "flex-end",
+  },
+  sheet: {
+    backgroundColor: Colors.background,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 32,
+    maxHeight: "85%",
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  title: {
+    fontFamily: Fonts.extraBold,
+    fontSize: 20,
+    color: Colors.text,
+  },
+  close: {
+    fontSize: 20,
+    color: Colors.textLight,
+  },
+  list: {
+    marginBottom: 4,
+  },
+  createRow: {
+    backgroundColor: `${Colors.primary}15`,
+    borderRadius: 16,
+    paddingVertical: 14,
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  createRowText: {
+    fontFamily: Fonts.bold,
+    color: Colors.primary,
+    fontSize: 15,
+  },
+  eventRow: {
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 10,
+  },
+  eventName: {
+    fontFamily: Fonts.bold,
+    fontSize: 16,
+    color: Colors.text,
+  },
+  eventMeta: {
+    fontFamily: Fonts.regular,
+    fontSize: 13,
+    color: Colors.textLight,
+    marginTop: 2,
+  },
+  emptyText: {
+    fontFamily: Fonts.regular,
+    color: Colors.textLight,
+    textAlign: "center",
+    marginTop: 20,
+  },
+  label: {
+    fontFamily: Fonts.semiBold,
+    fontSize: 13,
+    color: Colors.textLight,
+    marginBottom: 6,
+    marginTop: 12,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.card,
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontFamily: Fonts.regular,
+    fontSize: 15,
+    color: Colors.text,
+  },
+  error: {
+    fontFamily: Fonts.semiBold,
+    color: Colors.clay,
+    marginTop: 12,
+    textAlign: "center",
+  },
+  actions: {
+    marginTop: 20,
+    gap: 12,
+  },
+  backLink: {
+    alignItems: "center",
+    paddingVertical: 6,
+  },
+  backLinkText: {
+    fontFamily: Fonts.semiBold,
+    color: Colors.textLight,
+  },
+});

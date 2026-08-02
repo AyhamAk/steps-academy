@@ -1,0 +1,48 @@
+# ── Dependencies ──
+node_modules/
+
+# ── Env / secrets (never commit) ──
+.env
+.env.*
+*.pem
+*.key
+*.p8
+*.p12
+*.jks
+*.mobileprovision
+
+# ── Expo / build output ──
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+*.tsbuildinfo
+.metro-health-check*
+
+# ── Expo dev artifacts ──
+expo-log.txt
+expo-tunnel-log.txt
+expo-qr.png
+
+# ── Native (generated) ──
+/steps-app/ios
+/steps-app/android
+.kotlin/
+
+# ── Server uploads (user-generated media) ──
+steps-server/uploads/
+
+# ── Logs ──
+*.log
+*-log.txt
+server-log.txt
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# ── Local agent / editor config ──
+.claude/
+
+# ── OS junk ──
+.DS_Store
+Thumbs.db
