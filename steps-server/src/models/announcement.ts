@@ -1,13 +1,8 @@
-import { randomUUID } from "crypto";
+import { Announcement as PrismaAnnouncement } from "@prisma/client";
 
-export type Announcement = {
-  id: string;
-  text: string;
-  createdBy: string;
-  createdAt: string;
-};
+import { prisma } from "../lib/prisma";
 
-const announcementsById = new Map<string, Announcement>();
+export type Announcement = PrismaAnnouncement;
 
 type CreateAnnouncementInput = {
   text: string;
@@ -15,20 +10,13 @@ type CreateAnnouncementInput = {
 };
 
 export const AnnouncementModel = {
-  create(input: CreateAnnouncementInput): Announcement {
-    const announcement: Announcement = {
-      id: randomUUID(),
-      text: input.text,
-      createdBy: input.createdBy,
-      createdAt: new Date().toISOString(),
-    };
-    announcementsById.set(announcement.id, announcement);
-    return announcement;
+  async create(input: CreateAnnouncementInput): Promise<Announcement> {
+    return prisma.announcement.create({
+      data: { text: input.text, createdBy: input.createdBy },
+    });
   },
 
-  findLatest(): Announcement | undefined {
-    return [...announcementsById.values()].sort((a, b) =>
-      a.createdAt < b.createdAt ? 1 : -1
-    )[0];
+  async findLatest(): Promise<Announcement | null> {
+    return prisma.announcement.findFirst({ orderBy: { createdAt: "desc" } });
   },
 };

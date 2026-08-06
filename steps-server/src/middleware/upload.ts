@@ -1,19 +1,4 @@
-import { randomUUID } from "crypto";
-import fs from "fs";
 import multer from "multer";
-import path from "path";
-
-export const UPLOADS_DIR = path.join(__dirname, "..", "..", "uploads");
-
-fs.mkdirSync(UPLOADS_DIR, { recursive: true });
-
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, UPLOADS_DIR),
-  filename: (_req, file, cb) => {
-    const ext = path.extname(file.originalname) || ".jpg";
-    cb(null, `${randomUUID()}${ext}`);
-  },
-});
 
 function imageFileFilter(
   _req: unknown,
@@ -26,8 +11,11 @@ function imageFileFilter(
   cb(null, true);
 }
 
+// Buffers stay in memory only long enough to be resized (sharp) and pushed to
+// R2 — nothing is ever written to local disk, since the process running this
+// isn't a durable place to keep photos.
 export const upload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   fileFilter: imageFileFilter,
   limits: { fileSize: 15 * 1024 * 1024 },
 });

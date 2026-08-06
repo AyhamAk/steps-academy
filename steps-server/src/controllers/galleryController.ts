@@ -1,7 +1,10 @@
 import { Request, Response } from "express";
 
-import { EventModel } from "../models/event";
-import { PhotoModel } from "../models/photo";
+import { getSignedGetUrl } from "../lib/r2";
+import { processAndUploadImage } from "../lib/imageUpload";
+import { DEFAULT_PAGE_SIZE, EventModel } from "../models/event";
+import { NotificationModel } from "../models/notification";
+import { Photo, PhotoModel } from "../models/photo";
 import { PhotoTagModel } from "../models/photoTag";
 import { UserModel } from "../models/user";
 
@@ -10,19 +13,31 @@ function param(req: Request, key: string): string {
   return Array.isArray(value) ? value[0] : value;
 }
 
-function serializePhoto(photoId: string) {
-  const photo = PhotoModel.findById(photoId)!;
-  const tags = PhotoTagModel.listByPhoto(photo.id);
+function pagination(req: Request): { limit: number; offset: number } {
+  const limit = Math.min(Number(req.query.limit) || DEFAULT_PAGE_SIZE, 100);
+  const offset = Math.max(Number(req.query.offset) || 0, 0);
+  return { limit, offset };
+}
+
+/** Every photo read goes through a signed URL — nothing in R2 is public. */
+async function resolvePhotoUrl(photo: Photo): Promise<string> {
+  if (photo.externalUrl) return photo.externalUrl;
+  return getSignedGetUrl(photo.mediumKey ?? photo.key!);
+}
+
+async function serializePhoto(photoId: string) {
+  const photo = (await PhotoModel.findById(photoId))!;
+  const tags = await PhotoTagModel.listByPhoto(photo.id);
   return {
     id: photo.id,
     eventId: photo.eventId,
-    url: photo.url,
+    url: await resolvePhotoUrl(photo),
     uploadedAt: photo.uploadedAt,
     tags: tags.map((tag) => ({ id: tag.id, studentName: tag.studentName })),
   };
 }
 
-export function createEvent(req: Request, res: Response) {
+export async function createEvent(req: Request, res: Response) {
   const { name, date, attendees } = req.body as {
     name?: string;
     date?: string;
@@ -41,37 +56,49 @@ export function createEvent(req: Request, res: Response) {
     .map((n) => n.trim())
     .filter(Boolean);
 
-  const event = EventModel.create({
+  const event = await EventModel.create({
     name,
     date,
     attendees: cleanAttendees,
     createdBy: req.userId!,
   });
 
+  // Notify every parent about the new event.
+  const parentIds = (await UserModel.listParents()).map((parent) => parent.id);
+  await NotificationModel.createForUsers(parentIds, {
+    type: "event",
+    eventName: event.name,
+    eventId: event.id,
+  });
+
   res.status(201).json({ event });
 }
 
-export function listEvents(_req: Request, res: Response) {
-  const events = EventModel.listAll().map((event) => ({
-    id: event.id,
-    name: event.name,
-    date: event.date,
-    attendees: event.attendees,
-    photoCount: PhotoModel.listByEvent(event.id).length,
-  }));
+export async function listEvents(req: Request, res: Response) {
+  const { limit, offset } = pagination(req);
+  const rawEvents = await EventModel.listAll(limit, offset);
+  const events = await Promise.all(
+    rawEvents.map(async (event) => ({
+      id: event.id,
+      name: event.name,
+      date: event.date,
+      attendees: event.attendees,
+      photoCount: (await PhotoModel.listByEvent(event.id, 1000)).length,
+    }))
+  );
   res.json({ events });
 }
 
-export function getNextEvent(_req: Request, res: Response) {
-  const event = EventModel.findNext();
+export async function getNextEvent(_req: Request, res: Response) {
+  const event = await EventModel.findNext();
   if (!event) {
     return res.json({ event: null });
   }
   res.json({ event: { id: event.id, name: event.name, date: event.date } });
 }
 
-export function uploadPhotos(req: Request, res: Response) {
-  const event = EventModel.findById(param(req, "eventId"));
+export async function uploadPhotos(req: Request, res: Response) {
+  const event = await EventModel.findById(param(req, "eventId"));
   if (!event) {
     return res.status(404).json({ message: "Event not found" });
   }
@@ -81,32 +108,44 @@ export function uploadPhotos(req: Request, res: Response) {
     return res.status(400).json({ message: "At least one photo file is required" });
   }
 
-  const photos = files.map((file) => {
-    const photo = PhotoModel.create({
+  // Sequential, not Promise.all — each file is resized (sharp) and pushed to
+  // R2 in memory; running 20 uploads concurrently could spike memory badly.
+  const photos = [];
+  for (const file of files) {
+    const { key, thumbKey, mediumKey } = await processAndUploadImage(
+      event.id,
+      file.buffer,
+      file.mimetype
+    );
+    const photo = await PhotoModel.create({
       eventId: event.id,
-      filename: file.filename,
-      url: `/uploads/${file.filename}`,
+      filename: file.originalname,
+      key,
+      thumbKey,
+      mediumKey,
       uploadedBy: req.userId!,
     });
-    event.attendees.forEach((name) => PhotoTagModel.create(photo.id, name));
-    return serializePhoto(photo.id);
-  });
+    await Promise.all(event.attendees.map((name) => PhotoTagModel.create(photo.id, name)));
+    photos.push(await serializePhoto(photo.id));
+  }
 
   res.status(201).json({ photos });
 }
 
-export function listEventPhotos(req: Request, res: Response) {
-  const event = EventModel.findById(param(req, "eventId"));
+export async function listEventPhotos(req: Request, res: Response) {
+  const event = await EventModel.findById(param(req, "eventId"));
   if (!event) {
     return res.status(404).json({ message: "Event not found" });
   }
 
-  const photos = PhotoModel.listByEvent(event.id).map((photo) => serializePhoto(photo.id));
+  const { limit, offset } = pagination(req);
+  const rawPhotos = await PhotoModel.listByEvent(event.id, limit, offset);
+  const photos = await Promise.all(rawPhotos.map((photo) => serializePhoto(photo.id)));
   res.json({ event: { id: event.id, name: event.name, date: event.date }, photos });
 }
 
-export function addTag(req: Request, res: Response) {
-  const photo = PhotoModel.findById(param(req, "photoId"));
+export async function addTag(req: Request, res: Response) {
+  const photo = await PhotoModel.findById(param(req, "photoId"));
   if (!photo) {
     return res.status(404).json({ message: "Photo not found" });
   }
@@ -116,35 +155,51 @@ export function addTag(req: Request, res: Response) {
     return res.status(400).json({ message: "studentName is required" });
   }
 
-  const tag = PhotoTagModel.create(photo.id, studentName);
-  res.status(201).json({ photo: serializePhoto(photo.id), tag });
+  const trimmed = studentName.trim();
+  const tag = await PhotoTagModel.create(photo.id, trimmed);
+
+  // Notify the parent(s) of the tagged child that a new photo is available.
+  const parents = await UserModel.listParents();
+  const parentIds = parents
+    .filter((parent) =>
+      parent.childNames.some((name) => name.toLowerCase() === trimmed.toLowerCase())
+    )
+    .map((parent) => parent.id);
+  await NotificationModel.createForUsers(parentIds, {
+    type: "photo",
+    childName: trimmed,
+    eventId: photo.eventId,
+  });
+
+  res.status(201).json({ photo: await serializePhoto(photo.id), tag });
 }
 
-export function removeTag(req: Request, res: Response) {
-  const photo = PhotoModel.findById(param(req, "photoId"));
+export async function removeTag(req: Request, res: Response) {
+  const photo = await PhotoModel.findById(param(req, "photoId"));
   if (!photo) {
     return res.status(404).json({ message: "Photo not found" });
   }
 
-  const tag = PhotoTagModel.findById(param(req, "tagId"));
+  const tag = await PhotoTagModel.findById(param(req, "tagId"));
   if (!tag || tag.photoId !== photo.id) {
     return res.status(404).json({ message: "Tag not found on this photo" });
   }
 
-  PhotoTagModel.remove(tag.id);
-  res.json({ photo: serializePhoto(photo.id) });
+  await PhotoTagModel.remove(tag.id);
+  res.json({ photo: await serializePhoto(photo.id) });
 }
 
-export function listStudents(_req: Request, res: Response) {
+export async function listStudents(_req: Request, res: Response) {
   const names = new Set<string>();
-  EventModel.listAll().forEach((event) => event.attendees.forEach((name) => names.add(name)));
-  PhotoTagModel.listAll().forEach((tag) => names.add(tag.studentName));
+  const events = await EventModel.listAll(1000);
+  events.forEach((event) => event.attendees.forEach((name) => names.add(name)));
+  (await PhotoTagModel.listAll()).forEach((tag) => names.add(tag.studentName));
 
   res.json({ students: [...names].sort((a, b) => a.localeCompare(b)) });
 }
 
-export function myGallery(req: Request, res: Response) {
-  const user = UserModel.findById(req.userId!);
+export async function myGallery(req: Request, res: Response) {
+  const user = await UserModel.findById(req.userId!);
   if (!user) {
     return res.status(404).json({ message: "User not found" });
   }
@@ -153,35 +208,47 @@ export function myGallery(req: Request, res: Response) {
     return res.json({ groups: [] });
   }
 
-  const groups = EventModel.listAll()
-    .map((event) => {
-      const photos = PhotoModel.listByEvent(event.id)
-        .filter((photo) => PhotoTagModel.matchesAnyChild(photo.id, user.childNames))
-        .map((photo) => serializePhoto(photo.id));
-      return {
-        event: { id: event.id, name: event.name, date: event.date },
-        photos,
-      };
-    })
-    .filter((group) => group.photos.length > 0);
+  const events = await EventModel.listAll();
+  const groups = (
+    await Promise.all(
+      events.map(async (event) => {
+        const eventPhotos = await PhotoModel.listByEvent(event.id, 1000);
+        const matched = [];
+        for (const photo of eventPhotos) {
+          if (await PhotoTagModel.matchesAnyChild(photo.id, user.childNames)) {
+            matched.push(await serializePhoto(photo.id));
+          }
+        }
+        return {
+          event: { id: event.id, name: event.name, date: event.date },
+          photos: matched,
+        };
+      })
+    )
+  ).filter((group) => group.photos.length > 0);
 
   res.json({ groups });
 }
 
-export function myEventGallery(req: Request, res: Response) {
-  const user = UserModel.findById(req.userId!);
+export async function myEventGallery(req: Request, res: Response) {
+  const user = await UserModel.findById(req.userId!);
   if (!user) {
     return res.status(404).json({ message: "User not found" });
   }
 
-  const event = EventModel.findById(param(req, "eventId"));
+  const event = await EventModel.findById(param(req, "eventId"));
   if (!event) {
     return res.status(404).json({ message: "Event not found" });
   }
 
-  const photos = PhotoModel.listByEvent(event.id)
-    .filter((photo) => PhotoTagModel.matchesAnyChild(photo.id, user.childNames))
-    .map((photo) => serializePhoto(photo.id));
+  const { limit, offset } = pagination(req);
+  const eventPhotos = await PhotoModel.listByEvent(event.id, limit, offset);
+  const photos = [];
+  for (const photo of eventPhotos) {
+    if (await PhotoTagModel.matchesAnyChild(photo.id, user.childNames)) {
+      photos.push(await serializePhoto(photo.id));
+    }
+  }
 
   res.json({ event: { id: event.id, name: event.name, date: event.date }, photos });
 }

@@ -1,0 +1,103 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  admin
+  parent
+}
+
+enum NotificationType {
+  photo
+  announcement
+  event
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  name         String
+  passwordHash String?
+  googleId     String?
+  role         Role     @default(parent)
+  childNames   String[]
+  createdAt    DateTime @default(now())
+
+  events        Event[]
+  photos        Photo[]
+  announcements Announcement[]
+  notifications Notification[]
+}
+
+model Event {
+  id        String   @id @default(uuid())
+  name      String
+  date      String
+  attendees String[]
+  createdBy String
+  creator   User     @relation(fields: [createdBy], references: [id])
+  createdAt DateTime @default(now())
+
+  photos Photo[]
+}
+
+model Photo {
+  id     String @id @default(uuid())
+  eventId String
+  event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  filename String
+
+  // R2 object keys — null for real uploads only if externalUrl is used instead (dev-seed placeholders)
+  key       String?
+  thumbKey  String?
+  mediumKey String?
+  // Set only for dev-seed placeholder photos (e.g. picsum.photos) that bypass R2 entirely
+  externalUrl String?
+
+  uploadedBy String
+  uploader   User     @relation(fields: [uploadedBy], references: [id])
+  uploadedAt DateTime @default(now())
+
+  tags PhotoTag[]
+
+  @@index([eventId])
+}
+
+model PhotoTag {
+  id          String   @id @default(uuid())
+  photoId     String
+  photo       Photo    @relation(fields: [photoId], references: [id], onDelete: Cascade)
+  studentName String
+  createdAt   DateTime @default(now())
+
+  @@index([photoId])
+}
+
+model Announcement {
+  id        String   @id @default(uuid())
+  text      String
+  createdBy String
+  creator   User     @relation(fields: [createdBy], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  childName String?
+  eventName String?
+  eventId   String?
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  @@index([userId])
+}

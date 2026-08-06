@@ -1,15 +1,8 @@
-import { randomUUID } from "crypto";
+import { Event as PrismaEvent } from "@prisma/client";
 
-export type Event = {
-  id: string;
-  name: string;
-  date: string;
-  attendees: string[];
-  createdBy: string;
-  createdAt: string;
-};
+import { prisma } from "../lib/prisma";
 
-const eventsById = new Map<string, Event>();
+export type Event = PrismaEvent;
 
 type CreateEventInput = {
   name: string;
@@ -18,33 +11,38 @@ type CreateEventInput = {
   createdBy: string;
 };
 
+export const DEFAULT_PAGE_SIZE = 50;
+
 export const EventModel = {
-  create(input: CreateEventInput): Event {
-    const event: Event = {
-      id: randomUUID(),
-      name: input.name,
-      date: input.date,
-      attendees: input.attendees,
-      createdBy: input.createdBy,
-      createdAt: new Date().toISOString(),
-    };
-    eventsById.set(event.id, event);
-    return event;
+  async create(input: CreateEventInput): Promise<Event> {
+    return prisma.event.create({
+      data: {
+        name: input.name,
+        date: input.date,
+        attendees: input.attendees,
+        createdBy: input.createdBy,
+      },
+    });
   },
 
-  findById(id: string): Event | undefined {
-    return eventsById.get(id);
+  async findById(id: string): Promise<Event | null> {
+    return prisma.event.findUnique({ where: { id } });
   },
 
-  listAll(): Event[] {
-    return [...eventsById.values()].sort((a, b) => (a.date < b.date ? 1 : -1));
+  async listAll(limit = DEFAULT_PAGE_SIZE, offset = 0): Promise<Event[]> {
+    return prisma.event.findMany({
+      orderBy: { date: "desc" },
+      take: limit,
+      skip: offset,
+    });
   },
 
   /** The soonest event whose date hasn't passed yet, if any. */
-  findNext(): Event | undefined {
+  async findNext(): Promise<Event | null> {
     const todayIso = new Date().toISOString().slice(0, 10);
-    return [...eventsById.values()]
-      .filter((event) => event.date >= todayIso)
-      .sort((a, b) => (a.date < b.date ? -1 : 1))[0];
+    return prisma.event.findFirst({
+      where: { date: { gte: todayIso } },
+      orderBy: { date: "asc" },
+    });
   },
 };

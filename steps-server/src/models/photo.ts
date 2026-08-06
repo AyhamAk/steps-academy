@@ -1,48 +1,51 @@
-import { randomUUID } from "crypto";
+import { Photo as PrismaPhoto } from "@prisma/client";
 
-export type Photo = {
-  id: string;
-  eventId: string;
-  filename: string;
-  url: string;
-  uploadedBy: string;
-  uploadedAt: string;
-};
+import { prisma } from "../lib/prisma";
+import { DEFAULT_PAGE_SIZE } from "./event";
 
-const photosById = new Map<string, Photo>();
+export type Photo = PrismaPhoto;
 
 type CreatePhotoInput = {
   eventId: string;
   filename: string;
-  url: string;
   uploadedBy: string;
+  // Real uploads set these three (R2 object keys)...
+  key?: string;
+  thumbKey?: string;
+  mediumKey?: string;
+  // ...dev-seed placeholder photos set this instead, bypassing R2 entirely.
+  externalUrl?: string;
 };
 
 export const PhotoModel = {
-  create(input: CreatePhotoInput): Photo {
-    const photo: Photo = {
-      id: randomUUID(),
-      eventId: input.eventId,
-      filename: input.filename,
-      url: input.url,
-      uploadedBy: input.uploadedBy,
-      uploadedAt: new Date().toISOString(),
-    };
-    photosById.set(photo.id, photo);
-    return photo;
+  async create(input: CreatePhotoInput): Promise<Photo> {
+    return prisma.photo.create({
+      data: {
+        eventId: input.eventId,
+        filename: input.filename,
+        key: input.key ?? null,
+        thumbKey: input.thumbKey ?? null,
+        mediumKey: input.mediumKey ?? null,
+        externalUrl: input.externalUrl ?? null,
+        uploadedBy: input.uploadedBy,
+      },
+    });
   },
 
-  findById(id: string): Photo | undefined {
-    return photosById.get(id);
+  async findById(id: string): Promise<Photo | null> {
+    return prisma.photo.findUnique({ where: { id } });
   },
 
-  listByEvent(eventId: string): Photo[] {
-    return [...photosById.values()]
-      .filter((photo) => photo.eventId === eventId)
-      .sort((a, b) => (a.uploadedAt < b.uploadedAt ? -1 : 1));
+  async listByEvent(eventId: string, limit = DEFAULT_PAGE_SIZE, offset = 0): Promise<Photo[]> {
+    return prisma.photo.findMany({
+      where: { eventId },
+      orderBy: { uploadedAt: "asc" },
+      take: limit,
+      skip: offset,
+    });
   },
 
-  listAll(): Photo[] {
-    return [...photosById.values()];
+  async listAll(): Promise<Photo[]> {
+    return prisma.photo.findMany();
   },
 };

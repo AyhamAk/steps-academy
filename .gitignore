@@ -4,6 +4,9 @@ node_modules/
 # ── Env / secrets (never commit) ──
 .env
 .env.*
+# ...except the template files — no real secrets, meant to be committed
+!.env.example
+!**/.env.example
 *.pem
 *.key
 *.p8

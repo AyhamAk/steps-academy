@@ -17,7 +17,7 @@ function extractToken(req: Request): string | null {
   return header.slice("Bearer ".length);
 }
 
-export function requireAuth(req: Request, res: Response, next: NextFunction) {
+export async function requireAuth(req: Request, res: Response, next: NextFunction) {
   const token = extractToken(req);
   if (!token) {
     return res.status(401).json({ message: "Authentication required" });
@@ -25,10 +25,10 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
   try {
     const { userId } = verifyToken(token);
     // The token can be validly signed yet reference a user who no longer exists —
-    // e.g. the in-memory store was wiped by a server restart. Treat that as an
-    // expired session (401) so the client's 401 interceptor logs out and returns
-    // to the auth screen, instead of routes returning a confusing 404.
-    if (!UserModel.findById(userId)) {
+    // e.g. the account was deleted. Treat that as an expired session (401) so the
+    // client's 401 interceptor logs out and returns to the auth screen, instead
+    // of routes returning a confusing 404.
+    if (!(await UserModel.findById(userId))) {
       return res.status(401).json({ message: "Session expired. Please sign in again." });
     }
     req.userId = userId;
@@ -38,8 +38,8 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
   }
 }
 
-export function adminOnly(req: Request, res: Response, next: NextFunction) {
-  const user = req.userId ? UserModel.findById(req.userId) : undefined;
+export async function adminOnly(req: Request, res: Response, next: NextFunction) {
+  const user = req.userId ? await UserModel.findById(req.userId) : undefined;
   if (!user || user.role !== "admin") {
     return res.status(403).json({ message: "Admin access required" });
   }

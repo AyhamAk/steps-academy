@@ -1,13 +1,8 @@
-import { randomUUID } from "crypto";
+import { PhotoTag as PrismaPhotoTag } from "@prisma/client";
 
-export type PhotoTag = {
-  id: string;
-  photoId: string;
-  studentName: string;
-  createdAt: string;
-};
+import { prisma } from "../lib/prisma";
 
-const tagsById = new Map<string, PhotoTag>();
+export type PhotoTag = PrismaPhotoTag;
 
 function normalize(name: string): string {
   return name.trim().toLowerCase();
@@ -15,50 +10,46 @@ function normalize(name: string): string {
 
 export const PhotoTagModel = {
   /** No-op if this photo already has a tag with the same (case-insensitive) name. */
-  create(photoId: string, studentName: string): PhotoTag | undefined {
+  async create(photoId: string, studentName: string): Promise<PhotoTag | undefined> {
     const trimmed = studentName.trim();
     if (!trimmed) return undefined;
 
-    const existing = this.listByPhoto(photoId).find(
+    const existing = (await this.listByPhoto(photoId)).find(
       (tag) => normalize(tag.studentName) === normalize(trimmed)
     );
     if (existing) return existing;
 
-    const tag: PhotoTag = {
-      id: randomUUID(),
-      photoId,
-      studentName: trimmed,
-      createdAt: new Date().toISOString(),
-    };
-    tagsById.set(tag.id, tag);
-    return tag;
+    return prisma.photoTag.create({ data: { photoId, studentName: trimmed } });
   },
 
-  remove(tagId: string): boolean {
-    return tagsById.delete(tagId);
+  async remove(tagId: string): Promise<boolean> {
+    try {
+      await prisma.photoTag.delete({ where: { id: tagId } });
+      return true;
+    } catch {
+      return false;
+    }
   },
 
-  findById(id: string): PhotoTag | undefined {
-    return tagsById.get(id);
+  async findById(id: string): Promise<PhotoTag | null> {
+    return prisma.photoTag.findUnique({ where: { id } });
   },
 
-  listByPhoto(photoId: string): PhotoTag[] {
-    return [...tagsById.values()].filter((tag) => tag.photoId === photoId);
+  async listByPhoto(photoId: string): Promise<PhotoTag[]> {
+    return prisma.photoTag.findMany({ where: { photoId } });
   },
 
-  listByPhotoIds(photoIds: string[]): PhotoTag[] {
-    const idSet = new Set(photoIds);
-    return [...tagsById.values()].filter((tag) => idSet.has(tag.photoId));
+  async listByPhotoIds(photoIds: string[]): Promise<PhotoTag[]> {
+    return prisma.photoTag.findMany({ where: { photoId: { in: photoIds } } });
   },
 
-  listAll(): PhotoTag[] {
-    return [...tagsById.values()];
+  async listAll(): Promise<PhotoTag[]> {
+    return prisma.photoTag.findMany();
   },
 
-  matchesAnyChild(photoId: string, childNames: string[]): boolean {
+  async matchesAnyChild(photoId: string, childNames: string[]): Promise<boolean> {
     const normalizedChildren = childNames.map(normalize);
-    return this.listByPhoto(photoId).some((tag) =>
-      normalizedChildren.includes(normalize(tag.studentName))
-    );
+    const tags = await this.listByPhoto(photoId);
+    return tags.some((tag) => normalizedChildren.includes(normalize(tag.studentName)));
   },
 };

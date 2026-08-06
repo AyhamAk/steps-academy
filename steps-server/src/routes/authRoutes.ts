@@ -1,15 +1,25 @@
 import { Router } from "express";
 
-import { googleAuth, login, logout, me, register, updateMe } from "../controllers/authController";
+import {
+  changePassword,
+  googleAuth,
+  login,
+  logout,
+  me,
+  register,
+  updateMe,
+} from "../controllers/authController";
 import { requireAuth } from "../middleware/auth";
+import { authRateLimit } from "../middleware/rateLimit";
 
 const router = Router();
 
-router.post("/register", register);
-router.post("/login", login);
-router.post("/google", googleAuth);
+router.post("/register", authRateLimit, register);
+router.post("/login", authRateLimit, login);
+router.post("/google", authRateLimit, googleAuth);
 router.get("/me", requireAuth, me);
 router.patch("/me", requireAuth, updateMe);
+router.patch("/password", requireAuth, changePassword);
 router.post("/logout", requireAuth, logout);
 
 export default router;
