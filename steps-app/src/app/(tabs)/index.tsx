@@ -42,6 +42,7 @@ import { StepsLogo } from "../../components/ui/StepsLogo";
 import { ToastBanner, useToast } from "../../components/ui/Toast";
 import { Colors } from "../../constants/Colors";
 import { Fonts } from "../../constants/Fonts";
+import { ActivityCategory, MOCK_ACTIVITIES } from "../../constants/mockData";
 import { Type } from "../../constants/Typography";
 import { useReduceMotionSetting } from "../../hooks/useReduceMotionSetting";
 import { Translations } from "../../i18n/translations";
@@ -101,6 +102,13 @@ const FEATURE_CARDS: {
     delay: 300,
   },
 ];
+
+const ACTIVITY_ACCENT: Record<ActivityCategory, string> = {
+  art: Colors.honey,
+  cognitive: Colors.sky,
+  music: Colors.clay,
+  outdoor: Colors.forest,
+};
 
 type SalutationKey = "goodMorning" | "goodAfternoon" | "goodEvening" | "goodNight";
 
@@ -243,12 +251,7 @@ function HeroCarousel({
           </Pressable>
         </LinearGradient>
 
-        <LinearGradient
-          colors={[Colors.forest, Colors.forest]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={[styles.carouselSlide, { width: slideWidth }]}
-        >
+        <View style={[styles.carouselSlide, { width: slideWidth, backgroundColor: Colors.forest }]}>
           <Text style={[styles.carouselEmoji, { textAlign, alignSelf: startAlign }]}>🎪</Text>
           <Text style={[styles.carouselHeadline, { textAlign, alignSelf: startAlign }]}>
             {nextEvent && daysAwayLabel
@@ -265,7 +268,7 @@ function HeroCarousel({
           >
             <Text style={styles.carouselCtaText}>{t.home.addToCalendar}</Text>
           </Pressable>
-        </LinearGradient>
+        </View>
 
         <LinearGradient
           colors={[Colors.sky, Colors.forest]}
@@ -580,7 +583,8 @@ export default function HomeScreen() {
   const firstName = getFirstName(user?.name);
   const subtitle = t.home.timeOfDaySubtitle[salutationKey](primaryChildName);
   const daysAway = nextEvent ? getDaysAway(parseIsoDate(nextEvent.date), t) : null;
-  const compactGreeting = firstName ? `${salutation}, ${firstName}` : t.home.welcomeBack;
+  const greetingComma = isRTL ? "،" : ",";
+  const compactGreeting = firstName ? `${salutation}${greetingComma} ${firstName}` : t.home.welcomeBack;
 
   const scrollY = useSharedValue(0);
   const scrollHandler = useAnimatedScrollHandler((event) => {
@@ -591,7 +595,6 @@ export default function HomeScreen() {
   const greetingTranslateY = useSharedValue(reducedMotion ? 0 : 12);
   const emojiScale = useSharedValue(reducedMotion ? 1 : 0.5);
   const subtitleOpacity = useSharedValue(reducedMotion ? 1 : 0);
-  const footerOpacity = useSharedValue(0);
   const footerBreath = useSharedValue(1);
 
   const eventOpacity = useSharedValue(reducedMotion ? 1 : 0);
@@ -623,7 +626,6 @@ export default function HomeScreen() {
         withRepeat(withTiming(1.12, { duration: 2200, easing: Easing.inOut(Easing.ease) }), -1, true)
       );
     }
-    footerOpacity.value = withDelay(600, withTiming(1, { duration: 400 }));
   }, []);
 
   const greetingStyle = useAnimatedStyle(() => ({
@@ -637,10 +639,6 @@ export default function HomeScreen() {
 
   const subtitleStyle = useAnimatedStyle(() => ({
     opacity: subtitleOpacity.value,
-  }));
-
-  const footerStyle = useAnimatedStyle(() => ({
-    opacity: footerOpacity.value,
   }));
 
   const footerDotsStyle = useAnimatedStyle(() => ({
@@ -677,8 +675,10 @@ export default function HomeScreen() {
 
   return (
     <Screen>
-      <View style={styles.decorTopRight} />
-      <View style={styles.decorBottomLeft} />
+      <View style={[styles.decorTopRight, isRTL ? styles.decorTopRightRTL : styles.decorTopRightLTR]} />
+      <View
+        style={[styles.decorBottomLeft, isRTL ? styles.decorBottomLeftRTL : styles.decorBottomLeftLTR]}
+      />
 
       <Animated.View
         style={[
@@ -712,7 +712,8 @@ export default function HomeScreen() {
               <Text style={styles.greetingText} numberOfLines={1} adjustsFontSizeToFit>
                 {firstName ? (
                   <>
-                    {salutation}, <Text style={styles.greetingName}>{firstName}</Text>
+                    {salutation}
+                    {greetingComma} <Text style={styles.greetingName}>{firstName}</Text>
                   </>
                 ) : (
                   t.home.welcomeBack
@@ -735,6 +736,38 @@ export default function HomeScreen() {
           heroPhotoUrl={heroPhotoUrl}
           onToast={showToast}
         />
+
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, rtlText, styles.activitiesSectionTitle]}>
+            {t.home.todayTitle}
+          </Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.activitiesScroll}
+          >
+            {MOCK_ACTIVITIES.map((activity) => (
+              <View
+                key={activity.id}
+                style={[
+                  styles.activityCard,
+                  isRTL
+                    ? { borderRightWidth: 4, borderRightColor: ACTIVITY_ACCENT[activity.category] }
+                    : { borderLeftWidth: 4, borderLeftColor: ACTIVITY_ACCENT[activity.category] },
+                ]}
+              >
+                <Text style={styles.activityEmoji}>{activity.emoji}</Text>
+                <Text style={styles.activityName}>{activity.name}</Text>
+                <Text style={styles.activityTime}>{activity.time}</Text>
+                {activity.childJoined && primaryChildName ? (
+                  <View style={styles.joinedBadge}>
+                    <Text style={styles.joinedText}>{t.home.childJoined(primaryChildName)}</Text>
+                  </View>
+                ) : null}
+              </View>
+            ))}
+          </ScrollView>
+        </View>
 
         <Animated.View style={[styles.section, eventSectionStyle]}>
           <View style={[styles.sectionHeaderRow, isRTL && styles.rowReverse]}>
@@ -843,10 +876,10 @@ export default function HomeScreen() {
           ))}
         </View>
 
-        <Animated.View style={[styles.footer, footerStyle]}>
+        <View style={styles.footer}>
           <Animated.Text style={[styles.footerMascot, footerDotsStyle]}>🐘</Animated.Text>
           <Text style={styles.footerText}>{t.home.footerTagline}</Text>
-        </Animated.View>
+        </View>
       </Animated.ScrollView>
 
       <ToastBanner message={toastMessage} opacity={toastOpacity} />
@@ -883,23 +916,33 @@ const styles = StyleSheet.create({
   },
   decorTopRight: {
     position: "absolute",
-    top: -60,
-    end: -60,
-    width: 200,
-    height: 200,
-    borderRadius: 100,
+    top: -50,
+    width: 160,
+    height: 160,
+    borderRadius: 80,
     backgroundColor: Colors.primary,
-    opacity: 0.06,
+    opacity: 0.05,
+  },
+  decorTopRightLTR: {
+    right: -50,
+  },
+  decorTopRightRTL: {
+    left: -50,
   },
   decorBottomLeft: {
     position: "absolute",
-    bottom: -60,
-    start: -60,
-    width: 200,
-    height: 200,
-    borderRadius: 100,
+    bottom: -50,
+    width: 150,
+    height: 150,
+    borderRadius: 75,
     backgroundColor: Colors.secondary,
-    opacity: 0.06,
+    opacity: 0.05,
+  },
+  decorBottomLeftLTR: {
+    left: -50,
+  },
+  decorBottomLeftRTL: {
+    right: -50,
   },
   stickyHeader: {
     position: "absolute",
@@ -1033,6 +1076,7 @@ const styles = StyleSheet.create({
   childStrip: {
     gap: 10,
     paddingTop: 4,
+    paddingBottom: 16,
   },
   childChip: {
     flexDirection: "row",
@@ -1063,6 +1107,52 @@ const styles = StyleSheet.create({
     ...Type.body,
     fontFamily: Fonts.bold,
     color: Colors.bark,
+  },
+  activitiesSectionTitle: {
+    marginBottom: 12,
+  },
+  activitiesScroll: {
+    gap: 12,
+    paddingEnd: 8,
+  },
+  activityCard: {
+    width: 130,
+    backgroundColor: Colors.linen,
+    borderRadius: 16,
+    padding: 14,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  activityEmoji: {
+    fontSize: 28,
+  },
+  activityName: {
+    fontSize: 14,
+    fontFamily: Fonts.bold,
+    color: Colors.bark,
+    marginTop: 8,
+  },
+  activityTime: {
+    fontSize: 12,
+    fontFamily: Fonts.regular,
+    color: Colors.textLight,
+    marginTop: 2,
+  },
+  joinedBadge: {
+    marginTop: 8,
+    backgroundColor: Colors.terracotta,
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    alignSelf: "flex-start",
+  },
+  joinedText: {
+    fontSize: 10,
+    fontFamily: Fonts.bold,
+    color: "#FFFFFF",
   },
   section: {
     marginBottom: 24,

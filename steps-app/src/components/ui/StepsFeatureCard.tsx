@@ -30,7 +30,6 @@ export function StepsFeatureCard({
   onPress,
 }: StepsFeatureCardProps) {
   const reduceMotion = useReduceMotionSetting();
-  const entranceOpacity = useSharedValue(reduceMotion ? 1 : 0);
   const entranceScale = useSharedValue(reduceMotion ? 1 : 0.85);
   const pressScale = useSharedValue(1);
   const shimmerX = useSharedValue(-80);
@@ -39,7 +38,6 @@ export function StepsFeatureCard({
   useEffect(() => {
     if (reduceMotion) return;
 
-    entranceOpacity.value = withDelay(delay, withTiming(1, { duration: 400 }));
     entranceScale.value = withDelay(delay, withSpring(1, { damping: 12 }));
 
     shimmerOpacity.value = withDelay(delay + 300, withTiming(1, { duration: 100 }));
@@ -52,7 +50,6 @@ export function StepsFeatureCard({
   }, []);
 
   const containerStyle = useAnimatedStyle(() => ({
-    opacity: entranceOpacity.value,
     transform: [{ scale: entranceScale.value * pressScale.value }],
   }));
 

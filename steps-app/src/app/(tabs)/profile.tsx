@@ -1,7 +1,11 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
+import { router } from "expo-router";
 import { useMemo, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
+import { ChangePasswordModal } from "../../components/profile/ChangePasswordModal";
+import { ContactAcademyModal } from "../../components/profile/ContactAcademyModal";
 import { Screen } from "../../components/Screen";
 import { ScreenFadeIn } from "../../components/ui/ScreenFadeIn";
 import { StepsButton } from "../../components/ui/StepsButton";
@@ -14,6 +18,7 @@ import { useAuth } from "../../hooks/useAuth";
 import { applyLocaleDirection } from "../../i18n/applyLocaleDirection";
 import { useTranslation } from "../../i18n/useTranslation";
 import { matchedTagNames, myGallery } from "../../services/galleryApi";
+import { getNotifications } from "../../services/notificationsApi";
 import { Locale, useLocaleStore } from "../../store/localeStore";
 
 const LANGUAGES: { code: Locale; label: string }[] = [
@@ -30,6 +35,7 @@ export default function ProfileScreen() {
   const { message: toastMessage, opacity: toastOpacity, showToast } = useToast();
   const childNames = user?.childNames ?? [];
   const [selectedChild, setSelectedChild] = useState<string | null>(childNames[0] ?? null);
+  const [activeSheet, setActiveSheet] = useState<"password" | "contact" | null>(null);
 
   // Shares its cache key with Home/ParentGalleryScreen — visiting any of the
   // three warms the others, so this rarely triggers its own fetch.
@@ -63,12 +69,51 @@ export default function ProfileScreen() {
     applyLocaleDirection(next);
   };
 
+  const confirmLogout = () => {
+    Alert.alert(t.profile.logoutConfirmTitle, t.profile.logoutConfirmMessage, [
+      { text: t.common.cancel, style: "cancel" },
+      { text: t.profile.logOut, style: "destructive", onPress: logout },
+    ]);
+  };
+
   const roleLabel = user?.role === "admin" ? t.profile.roleAdmin : t.profile.roleParent;
 
-  const settingsRows = [
-    t.profile.notifications,
-    t.profile.changePassword,
-    t.profile.contactAcademy,
+  const { data: notifications } = useQuery({
+    queryKey: ["notifications"],
+    queryFn: getNotifications,
+  });
+  const unreadCount = notifications?.unreadCount ?? 0;
+
+  const settingsRows: {
+    key: string;
+    label: string;
+    icon: keyof typeof Ionicons.glyphMap;
+    tint: string;
+    onPress: () => void;
+    badge?: number;
+  }[] = [
+    {
+      key: "notifications",
+      label: t.profile.notifications,
+      icon: "notifications-outline",
+      tint: Colors.terracotta,
+      onPress: () => router.push("/notifications"),
+      badge: unreadCount,
+    },
+    {
+      key: "password",
+      label: t.profile.changePassword,
+      icon: "lock-closed-outline",
+      tint: Colors.forest,
+      onPress: () => setActiveSheet("password"),
+    },
+    {
+      key: "contact",
+      label: t.profile.contactAcademy,
+      icon: "mail-outline",
+      tint: Colors.sky,
+      onPress: () => setActiveSheet("contact"),
+    },
   ];
 
   return (
@@ -79,8 +124,12 @@ export default function ProfileScreen() {
       >
         <ScreenFadeIn>
         <StepsCard style={styles.identityCard} elevation="featured">
+          <View
+            style={[styles.identityDecor, isRTL ? styles.identityDecorRTL : styles.identityDecorLTR]}
+            pointerEvents="none"
+          />
           <View style={styles.identityAvatar}>
-            <Text style={styles.identityAvatarEmoji}>👤</Text>
+            <Text style={styles.identityAvatarEmoji}>👩</Text>
           </View>
           <Text style={styles.identityName}>{user?.name}</Text>
           <Text style={styles.identityEmail}>{user?.email}</Text>
@@ -126,21 +175,28 @@ export default function ProfileScreen() {
             </ScrollView>
 
             {selectedChild ? (
-              <StepsCard style={styles.dashboardCard} elevation="featured">
-                <View
-                  style={[styles.dashboardAccentBar, isRTL ? styles.accentBarRTL : styles.accentBarLTR]}
-                />
-                <Text style={[styles.dashboardRow, rtlText]}>
-                  {t.profile.photosThisMonth(photosThisMonthByChild.get(selectedChild) ?? 0)}
-                </Text>
-                <Text style={[styles.dashboardLink, rtlText]}>{t.profile.viewInGallery}</Text>
-              </StepsCard>
+              <View style={[styles.dashCard, isRTL ? styles.dashCardAccentRTL : styles.dashCardAccentLTR]}>
+                <View style={[styles.dashRow, isRTL && styles.dashRowRTL]}>
+                  <Text style={styles.dashEmoji}>📸</Text>
+                  <Text style={[styles.dashText, rtlText]}>
+                    {t.profile.photosThisMonth(photosThisMonthByChild.get(selectedChild) ?? 0)}
+                  </Text>
+                </View>
+                <View style={[styles.dashRow, styles.dashRowLast, isRTL && styles.dashRowRTL]}>
+                  <Text style={styles.dashEmoji}>🖼️</Text>
+                  <Text style={[styles.dashText, styles.dashTextAccent, rtlText]}>
+                    {t.profile.viewInGallery}
+                  </Text>
+                </View>
+              </View>
             ) : null}
           </View>
         ) : null}
 
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, rtlText]}>{t.profile.language}</Text>
+        <View style={styles.prefsGroup}>
+          <Text style={[styles.prefsGroupTitle, rtlText]}>{t.profile.preferencesTitle}</Text>
+
+          <Text style={[styles.prefsSubLabel, rtlText]}>{t.profile.language}</Text>
           <View style={styles.languageRow}>
             {LANGUAGES.map(({ code, label }) => {
               const active = locale === code;
@@ -157,22 +213,34 @@ export default function ProfileScreen() {
               );
             })}
           </View>
-        </View>
 
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, rtlText]}>{t.profile.settingsTitle}</Text>
-          {settingsRows.map((label) => (
+          <Text style={[styles.prefsSubLabel, styles.prefsSubLabelSpaced, rtlText]}>
+            🔧 {t.profile.settingsTitle}
+          </Text>
+          {settingsRows.map((row) => (
             <Pressable
-              key={label}
-              style={({ pressed }) => [
-                styles.settingsRow,
-                isRTL && styles.rowReverse,
-                pressed && styles.pressedFeedback,
-              ]}
-              onPress={() => showToast(t.common.comingSoon)}
+              key={row.key}
+              style={({ pressed }) => [styles.settingsRow, pressed && styles.settingsRowPressed]}
+              onPress={row.onPress}
             >
-              <Text style={[styles.settingsRowText, rtlText]}>{label}</Text>
-              <Text style={styles.settingsChevron}>{isRTL ? "‹" : "›"}</Text>
+              <View style={[styles.settingsRowInner, isRTL && styles.settingsRowInnerRTL]}>
+                <View style={[styles.settingsIconWrap, { backgroundColor: `${row.tint}20` }]}>
+                  <Ionicons name={row.icon} size={18} color={row.tint} />
+                </View>
+                <Text
+                  style={[styles.settingsLabel, rtlText]}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                >
+                  {row.label}
+                </Text>
+                {row.badge ? (
+                  <View style={styles.badge}>
+                    <Text style={styles.badgeText}>{row.badge > 99 ? "99+" : row.badge}</Text>
+                  </View>
+                ) : null}
+                <Text style={styles.settingsChevron}>{isRTL ? "‹" : "›"}</Text>
+              </View>
             </Pressable>
           ))}
         </View>
@@ -180,7 +248,7 @@ export default function ProfileScreen() {
         <StepsButton
           label={isLoading ? t.profile.loggingOut : t.profile.logOut}
           variant="outline"
-          onPress={logout}
+          onPress={confirmLogout}
           style={styles.logoutButton}
         />
 
@@ -192,6 +260,17 @@ export default function ProfileScreen() {
       </ScrollView>
 
       <ToastBanner message={toastMessage} opacity={toastOpacity} />
+
+      <ChangePasswordModal
+        visible={activeSheet === "password"}
+        onClose={() => setActiveSheet(null)}
+        onSuccess={showToast}
+      />
+      <ContactAcademyModal
+        visible={activeSheet === "contact"}
+        onClose={() => setActiveSheet(null)}
+        onError={showToast}
+      />
     </Screen>
   );
 }
@@ -203,23 +282,42 @@ const styles = StyleSheet.create({
   },
   identityCard: {
     alignItems: "center",
-    paddingVertical: 24,
+    paddingVertical: 28,
+    overflow: "hidden",
+    shadowColor: Colors.terracotta,
+  },
+  identityDecor: {
+    position: "absolute",
+    top: -40,
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    backgroundColor: `${Colors.terracotta}14`,
+  },
+  identityDecorLTR: {
+    right: -40,
+  },
+  identityDecorRTL: {
+    left: -40,
   },
   identityAvatar: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: Colors.card,
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    backgroundColor: `${Colors.terracotta}26`,
+    borderWidth: 3,
+    borderColor: `${Colors.terracotta}40`,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 12,
+    marginBottom: 14,
   },
   identityAvatarEmoji: {
-    fontSize: 36,
+    fontSize: 40,
   },
   identityName: {
     ...Type.heading,
     color: Colors.bark,
+    letterSpacing: -0.3,
   },
   identityEmail: {
     ...Type.caption,
@@ -238,10 +336,7 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
   },
   section: {
-    marginTop: 24,
-  },
-  rowReverse: {
-    flexDirection: "row-reverse",
+    marginTop: 28,
   },
   sectionTitle: {
     ...Type.heading,
@@ -255,6 +350,7 @@ const styles = StyleSheet.create({
   kidCard: {
     flexDirection: "row",
     alignItems: "center",
+    alignSelf: "flex-start",
     backgroundColor: Colors.linen,
     borderRadius: 40,
     height: 60,
@@ -262,10 +358,10 @@ const styles = StyleSheet.create({
     gap: 10,
     borderWidth: 1,
     borderColor: Colors.border,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
+    shadowColor: Colors.terracotta,
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
     elevation: 2,
   },
   kidCardSelected: {
@@ -291,46 +387,91 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.bold,
     color: Colors.bark,
   },
-  dashboardCard: {
+  dashCard: {
     marginTop: 12,
     backgroundColor: Colors.linen,
-    gap: 6,
+    borderRadius: 20,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
   },
-  dashboardLink: {
+  dashCardAccentLTR: {
+    borderLeftWidth: 4,
+    borderLeftColor: Colors.honey,
+  },
+  dashCardAccentRTL: {
+    borderRightWidth: 4,
+    borderRightColor: Colors.honey,
+  },
+  dashRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingVertical: 13,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  dashRowRTL: {
+    flexDirection: "row-reverse",
+  },
+  dashRowLast: {
+    borderBottomWidth: 0,
+  },
+  dashEmoji: {
+    fontSize: 17,
+    width: 28,
+    textAlign: "center",
+  },
+  dashText: {
     ...Type.caption,
-    fontFamily: Fonts.semiBold,
-    color: Colors.terracotta,
-  },
-  dashboardAccentBar: {
-    position: "absolute",
-    top: 0,
-    bottom: 0,
-    width: 6,
-    backgroundColor: Colors.honey,
-  },
-  accentBarLTR: {
-    left: 0,
-    borderTopLeftRadius: 16,
-    borderBottomLeftRadius: 16,
-  },
-  accentBarRTL: {
-    right: 0,
-    borderTopRightRadius: 16,
-    borderBottomRightRadius: 16,
-  },
-  dashboardRow: {
-    ...Type.body,
     color: Colors.bark,
+    flex: 1,
+  },
+  dashTextAccent: {
+    color: Colors.terracotta,
+    fontFamily: Fonts.semiBold,
+  },
+  prefsGroup: {
+    marginTop: 28,
+    backgroundColor: Colors.linen,
+    borderRadius: 20,
+    padding: 20,
+    shadowColor: "#000",
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  prefsGroupTitle: {
+    fontFamily: Fonts.bold,
+    fontSize: 16,
+    color: Colors.bark,
+    marginBottom: 16,
+  },
+  prefsSubLabel: {
+    fontFamily: Fonts.semiBold,
+    fontSize: 12,
+    color: Colors.textLight,
+    letterSpacing: 0.5,
+    textTransform: "uppercase",
+    marginBottom: 10,
+  },
+  prefsSubLabelSpaced: {
+    marginTop: 20,
   },
   languageRow: {
     flexDirection: "row",
-    gap: 12,
+    gap: 8,
   },
   languagePill: {
     flex: 1,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: Colors.border,
-    borderRadius: 14,
+    borderRadius: 12,
     paddingVertical: 12,
     alignItems: "center",
   },
@@ -341,45 +482,78 @@ const styles = StyleSheet.create({
   languagePillText: {
     fontFamily: Fonts.semiBold,
     fontSize: 14,
-    color: Colors.text,
+    color: Colors.textLight,
   },
   languagePillTextActive: {
     color: "#FFFFFF",
   },
   settingsRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    backgroundColor: Colors.card,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    marginBottom: 10,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
   },
-  settingsRowText: {
+  settingsRowPressed: {
+    backgroundColor: Colors.cream,
+  },
+  settingsRowInner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingVertical: 14,
+  },
+  settingsRowInnerRTL: {
+    flexDirection: "row-reverse",
+  },
+  settingsIconWrap: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  settingsLabel: {
     ...Type.body,
-    fontFamily: Fonts.semiBold,
+    fontSize: 15,
     color: Colors.bark,
+    flexGrow: 1,
+    flexShrink: 1,
   },
   settingsChevron: {
-    fontSize: 18,
+    fontSize: 20,
     color: Colors.textLight,
   },
+  badge: {
+    minWidth: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: Colors.terracotta,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 6,
+  },
+  badgeText: {
+    fontFamily: Fonts.bold,
+    fontSize: 11,
+    color: "#FFFFFF",
+  },
   logoutButton: {
-    marginTop: 12,
+    marginTop: 24,
+    borderRadius: 16,
+    borderWidth: 2,
+    backgroundColor: `${Colors.terracotta}0D`,
+    height: 54,
+    justifyContent: "center",
   },
   mascotFooter: {
     alignItems: "center",
     marginTop: 28,
   },
   mascotEmoji: {
-    fontSize: 22,
-    marginBottom: 4,
+    fontSize: 30,
+    marginBottom: 6,
   },
   mascotText: {
     ...Type.caption,
     color: Colors.textLight,
+    letterSpacing: 0.3,
   },
 });

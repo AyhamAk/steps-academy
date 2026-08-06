@@ -26,6 +26,14 @@ export async function googleAuthRequest(idToken: string) {
   return data;
 }
 
+export async function changePasswordRequest(input: {
+  currentPassword: string;
+  newPassword: string;
+}) {
+  const { data } = await api.patch<{ message: string }>("/api/auth/password", input);
+  return data;
+}
+
 export async function meRequest() {
   const { data } = await api.get<{ user: AuthUser }>("/api/auth/me");
   return data.user;

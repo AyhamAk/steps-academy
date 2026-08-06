@@ -49,9 +49,10 @@ function TabIcon({
   const dotStyle = useAnimatedStyle(() => ({ opacity: dotOpacity.value }));
 
   return (
-    <View style={focused ? styles.focusedPill : undefined}>
+    <View style={styles.iconSlot}>
+      {focused ? <View style={styles.focusedPill} /> : null}
       <Animated.View style={iconStyle}>
-        <Ionicons name={focused ? icon.on : icon.off} size={22} color={color} />
+        <Ionicons name={focused ? icon.on : icon.off} size={20} color={color} />
       </Animated.View>
       <Animated.View style={[styles.dot, { backgroundColor: color }, dotStyle]} />
     </View>
@@ -146,20 +147,24 @@ const styles = StyleSheet.create({
     right: 0,
     height: 2,
   },
-  focusedPill: {
-    backgroundColor: `${Colors.primary}20`,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
+  iconSlot: {
+    width: "100%",
+    height: "100%",
     alignItems: "center",
+    justifyContent: "center",
   },
-  icon: {
-    fontSize: 20,
+  focusedPill: {
+    position: "absolute",
+    width: 34,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: `${Colors.primary}20`,
   },
   dot: {
+    position: "absolute",
+    bottom: 0,
     width: 4,
     height: 4,
     borderRadius: 2,
-    marginTop: 3,
   },
 });
