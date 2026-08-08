@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { Linking, Modal, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { ACADEMY_CONTACT } from "../../constants/academy";
@@ -12,7 +13,7 @@ type ContactAcademyModalProps = {
 };
 
 export function ContactAcademyModal({ visible, onClose, onError }: ContactAcademyModalProps) {
-  const { t } = useTranslation();
+  const { t, isRTL, rtlText } = useTranslation();
 
   const open = async (url: string) => {
     try {
@@ -28,17 +29,31 @@ export function ContactAcademyModal({ visible, onClose, onError }: ContactAcadem
     }
   };
 
-  const options = [
-    { key: "call", emoji: "📞", label: t.profile.contactCall, url: `tel:${ACADEMY_CONTACT.phone}` },
+  const options: {
+    key: string;
+    icon: keyof typeof Ionicons.glyphMap;
+    tint: string;
+    label: string;
+    url: string;
+  }[] = [
+    {
+      key: "call",
+      icon: "call-outline",
+      tint: Colors.forest,
+      label: t.profile.contactCall,
+      url: `tel:${ACADEMY_CONTACT.phone}`,
+    },
     {
       key: "whatsapp",
-      emoji: "💬",
+      icon: "logo-whatsapp",
+      tint: Colors.forest,
       label: t.profile.contactWhatsApp,
       url: `https://wa.me/${ACADEMY_CONTACT.whatsapp}`,
     },
     {
       key: "email",
-      emoji: "✉️",
+      icon: "mail-outline",
+      tint: Colors.sky,
       label: t.profile.contactEmail,
       url: `mailto:${ACADEMY_CONTACT.email}`,
     },
@@ -64,9 +79,15 @@ export function ContactAcademyModal({ visible, onClose, onError }: ContactAcadem
               style={({ pressed }) => [styles.option, pressed && styles.optionPressed]}
               onPress={() => open(option.url)}
             >
-              <Text style={styles.optionEmoji}>{option.emoji}</Text>
-              <Text style={styles.optionLabel}>{option.label}</Text>
-              <Text style={styles.optionChevron}>›</Text>
+              <View style={[styles.optionInner, isRTL && styles.optionInnerRTL]}>
+                <View style={[styles.optionIconWrap, { backgroundColor: `${option.tint}20` }]}>
+                  <Ionicons name={option.icon} size={18} color={option.tint} />
+                </View>
+                <Text style={[styles.optionLabel, rtlText]} numberOfLines={1} ellipsizeMode="tail">
+                  {option.label}
+                </Text>
+                <Text style={styles.optionChevron}>{isRTL ? "‹" : "›"}</Text>
+              </View>
             </Pressable>
           ))}
         </Pressable>
@@ -111,22 +132,31 @@ const styles = StyleSheet.create({
     color: Colors.textLight,
   },
   option: {
-    flexDirection: "row",
-    alignItems: "center",
     backgroundColor: Colors.linen,
     borderRadius: 14,
     borderWidth: 1,
     borderColor: Colors.border,
-    paddingVertical: 16,
+    paddingVertical: 14,
     paddingHorizontal: 16,
-    marginBottom: 10,
+    marginBottom: 14,
   },
   optionPressed: {
     opacity: 0.75,
   },
-  optionEmoji: {
-    fontSize: 20,
-    marginEnd: 12,
+  optionInner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  optionInnerRTL: {
+    flexDirection: "row-reverse",
+  },
+  optionIconWrap: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
   },
   optionLabel: {
     flex: 1,
