@@ -10,8 +10,8 @@ import { useTranslation } from "../../i18n/useTranslation";
 import { isPhotoTaggedWithAny, myGallery, Photo, resolvePhotoUrl } from "../../services/galleryApi";
 import { useAuthStore } from "../../store/authStore";
 import { formatIsoDate } from "../../utils/date";
+import { BalloonLoader } from "../ui/BalloonLoader";
 import { ScreenFadeIn } from "../ui/ScreenFadeIn";
-import { SkeletonEventList } from "../ui/Skeleton";
 import { StepsButton } from "../ui/StepsButton";
 import { StepsCard } from "../ui/StepsCard";
 import { StepsHeader } from "../ui/StepsHeader";
@@ -82,7 +82,7 @@ export function ParentGalleryScreen() {
               />
             </>
           ) : !groups ? (
-            <SkeletonEventList />
+            <BalloonLoader label={t.gallery.loadingPhotos} />
           ) : (
             <>
               {groups.length === 0 ? (

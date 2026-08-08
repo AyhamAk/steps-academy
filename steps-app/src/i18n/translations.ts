@@ -232,6 +232,7 @@ export const en = {
     uploadDone: "Done",
 
     parentSubtitle: "Moments from the academy",
+    loadingPhotos: "Fetching your photos...",
     couldntLoadPhotos: "Couldn't load photos",
     checkConnection: "Check your connection and try again.",
     noPhotosYetParent: "No photos yet",
@@ -495,6 +496,7 @@ export const ar: Translations = {
     uploadDone: "تم",
 
     parentSubtitle: "لحظات من الأكاديمية",
+    loadingPhotos: "جارٍ إحضار صورك...",
     couldntLoadPhotos: "تعذّر تحميل الصور",
     checkConnection: "تحقق من اتصالك وحاول مرة أخرى.",
     noPhotosYetParent: "لا توجد صور بعد",
@@ -759,6 +761,7 @@ export const he: Translations = {
     uploadDone: "הושלם",
 
     parentSubtitle: "רגעים מהאקדמיה",
+    loadingPhotos: "טוען את התמונות שלך...",
     couldntLoadPhotos: "לא ניתן לטעון תמונות",
     checkConnection: "בדוק את החיבור שלך ונסה שוב.",
     noPhotosYetParent: "אין עדיין תמונות",

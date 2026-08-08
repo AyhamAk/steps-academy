@@ -1,22 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import {
-  Animated,
-  FlatList,
-  Image,
-  Pressable,
-  StyleSheet,
-  Text,
-  useWindowDimensions,
-  View,
-} from "react-native";
+import { Animated, FlatList, Image, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { EmptyState } from "../../../components/gallery/EmptyState";
 import { FullscreenPhotoViewer } from "../../../components/gallery/FullscreenPhotoViewer";
 import { Screen } from "../../../components/Screen";
+import { BalloonLoader } from "../../../components/ui/BalloonLoader";
 import { ScreenFadeIn } from "../../../components/ui/ScreenFadeIn";
-import { SkeletonPhotoGrid } from "../../../components/ui/Skeleton";
 import { StepsHeader } from "../../../components/ui/StepsHeader";
 import { Colors } from "../../../constants/Colors";
 import { useReduceMotionSetting } from "../../../hooks/useReduceMotionSetting";
@@ -72,8 +63,6 @@ function PhotoTile({
 
 export default function EventGalleryScreen() {
   const { t } = useTranslation();
-  const { width } = useWindowDimensions();
-  const tileSize = (width - 48 - 24) / 3;
   const { eventId } = useLocalSearchParams<{ eventId: string }>();
   const childNames = useAuthStore((state) => state.user?.childNames ?? []);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
@@ -101,7 +90,7 @@ export default function EventGalleryScreen() {
             subtitle={t.gallery.pleaseTryAgain}
           />
         ) : photos === null ? (
-          <SkeletonPhotoGrid tileSize={tileSize} />
+          <BalloonLoader label={t.gallery.loadingPhotos} />
         ) : photos.length === 0 ? (
           <EmptyState title={t.gallery.noPhotosInEvent} />
         ) : (
