@@ -42,3 +42,7 @@ export async function meRequest() {
 export async function logoutRequest() {
   await api.post("/api/auth/logout");
 }
+
+export async function updatePushTokenRequest(pushToken: string) {
+  await api.patch("/api/auth/push-token", { pushToken });
+}

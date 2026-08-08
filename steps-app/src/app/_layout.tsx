@@ -9,12 +9,15 @@ import {
 } from "@expo-google-fonts/nunito";
 import { useFonts } from "expo-font";
 import { Stack, useRouter, useSegments } from "expo-router";
+import * as Notifications from "expo-notifications";
 import { useEffect } from "react";
 import { I18nManager } from "react-native";
 
 import { Colors } from "../constants/Colors";
 import { AUTH_ENABLED } from "../constants/flags";
 import { applyLocaleDirection } from "../i18n/applyLocaleDirection";
+import { registerForPushNotificationsAsync } from "../services/pushNotifications";
+import { updatePushTokenRequest } from "../services/authApi";
 import { useAuthStore } from "../store/authStore";
 import { isRTLLocale, useLocaleStore } from "../store/localeStore";
 
@@ -61,6 +64,30 @@ function useRTLReconciliation(ready: boolean) {
   }, [ready]);
 }
 
+// Registers this device for push notifications once the user is signed in,
+// and sends the token to the backend so it can target this device.
+function usePushRegistration(token: string | null) {
+  useEffect(() => {
+    if (!token) return;
+    registerForPushNotificationsAsync().then((pushToken) => {
+      if (pushToken) updatePushTokenRequest(pushToken).catch(() => {});
+    });
+  }, [token]);
+}
+
+// A tap on a push notification (app backgrounded or killed) should land on
+// the same screen as tapping its in-app equivalent in the notifications list.
+function useNotificationTapNavigation() {
+  const router = useRouter();
+  useEffect(() => {
+    const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
+      const eventId = response.notification.request.content.data?.eventId;
+      if (typeof eventId === "string") router.push(`/gallery/${eventId}`);
+    });
+    return () => subscription.remove();
+  }, [router]);
+}
+
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
     Nunito_400Regular,
@@ -71,9 +98,12 @@ export default function RootLayout() {
   const hasHydrated = useAuthStore((state) => state.hasHydrated);
   const localeHasHydrated = useLocaleStore((state) => state.hasHydrated);
   const ready = fontsLoaded && hasHydrated && localeHasHydrated;
+  const token = useAuthStore((state) => state.token);
 
   useAuthGate(ready);
   useRTLReconciliation(ready);
+  usePushRegistration(token);
+  useNotificationTapNavigation();
 
   if (!ready) {
     return null;
