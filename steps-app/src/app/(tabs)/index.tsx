@@ -69,10 +69,10 @@ type SalutationKey = "goodMorning" | "goodAfternoon" | "goodEvening" | "goodNigh
 
 function getTimeOfDayGreeting(): { salutationKey: SalutationKey; emoji: string } {
   const hour = new Date().getHours();
-  if (hour >= 5 && hour < 12) return { salutationKey: "goodMorning", emoji: "🌤️" };
-  if (hour >= 12 && hour < 17) return { salutationKey: "goodAfternoon", emoji: "☀️" };
-  if (hour >= 17 && hour < 21) return { salutationKey: "goodEvening", emoji: "🌅" };
-  return { salutationKey: "goodNight", emoji: "🌙" };
+  if (hour >= 5 && hour < 12) return { salutationKey: "goodMorning", emoji: "☀️" };
+  if (hour >= 12 && hour < 17) return { salutationKey: "goodAfternoon", emoji: "🌻" };
+  if (hour >= 17 && hour < 21) return { salutationKey: "goodEvening", emoji: "🌙" };
+  return { salutationKey: "goodNight", emoji: "⭐" };
 }
 
 function getFirstName(fullName: string | undefined): string | null {
@@ -659,6 +659,7 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
+        <View>
         <Animated.View style={fullHeaderStyle}>
           <StepsLogo />
 
@@ -816,6 +817,7 @@ export default function HomeScreen() {
             <SkeletonEventCard thumbCount={0} />
           )}
         </Animated.View>
+        </View>
 
         <View style={styles.footer}>
           <Animated.Text style={[styles.footerMascot, footerDotsStyle]}>🐘</Animated.Text>
@@ -853,7 +855,8 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   scrollContent: {
-    paddingBottom: 100,
+    flexGrow: 1,
+    justifyContent: "space-between",
   },
   decorTopRight: {
     position: "absolute",

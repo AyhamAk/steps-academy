@@ -6,8 +6,8 @@ import { ErrorBoundary } from "./ErrorBoundary";
 
 export function Screen({ children }: PropsWithChildren) {
   return (
-    <SafeAreaView className="flex-1 bg-cream">
-      <View className="flex-1 px-6 py-4">
+    <SafeAreaView className="flex-1 bg-cream" edges={["top", "left", "right"]}>
+      <View className="flex-1 px-6 pt-4">
         <ErrorBoundary>{children}</ErrorBoundary>
       </View>
     </SafeAreaView>
