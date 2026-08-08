@@ -18,7 +18,11 @@ const TAB_ICONS: Record<string, { on: IoniconName; off: IoniconName }> = {
   profile: { on: "person", off: "person-outline" },
 };
 
-const TAB_ORDER = ["index", "games", "shop", "gallery", "profile"];
+const TAB_ORDER = ["index", "gallery", "profile"];
+
+// Hidden for now (not deleted) — kept out of the tab bar via href: null, which
+// leaves the route intact for later without making it tab-navigable.
+const HIDDEN_TABS = ["games", "shop"];
 
 const TAB_GRADIENTS: Record<string, [string, string, string]> = {
   index: [Colors.terracotta, Colors.clay, Colors.forest],
@@ -130,6 +134,9 @@ export default function TabsLayout() {
     >
       {TAB_ORDER.map((name) => (
         <Tabs.Screen key={name} name={name} options={{ title: t.tabs[tabTitleKey(name)] }} />
+      ))}
+      {HIDDEN_TABS.map((name) => (
+        <Tabs.Screen key={name} name={name} options={{ href: null }} />
       ))}
     </Tabs>
   );
