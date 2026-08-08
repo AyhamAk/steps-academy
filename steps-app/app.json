@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "steps-app",
+    "name": "Steps Academy",
     "slug": "steps-app",
     "version": "1.0.0",
     "scheme": "stepsapp",
@@ -9,12 +9,18 @@
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.stepsacademy.steps"
+      "bundleIdentifier": "com.stepsacademy.steps",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "Steps Academy needs access to your photo library so admins can upload event photos and parents can save photos of their child.",
+        "NSPhotoLibraryAddUsageDescription": "Steps Academy needs permission to save photos to your library when you download them from the gallery."
+      }
     },
     "android": {
       "package": "com.stepsacademy.steps",
+      "versionCode": 1,
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#FFFDF8",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -27,7 +33,29 @@
     "plugins": [
       "expo-router",
       "expo-font",
-      "expo-web-browser"
-    ]
+      "expo-web-browser",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#FFFDF8"
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/android-icon-foreground.png",
+          "color": "#D4A843"
+        }
+      ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "c42cd810-d649-4eff-abac-815a7cce61e0"
+      }
+    }
   }
 }
