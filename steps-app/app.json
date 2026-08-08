@@ -13,7 +13,8 @@
       "buildNumber": "1",
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "Steps Academy needs access to your photo library so admins can upload event photos and parents can save photos of their child.",
-        "NSPhotoLibraryAddUsageDescription": "Steps Academy needs permission to save photos to your library when you download them from the gallery."
+        "NSPhotoLibraryAddUsageDescription": "Steps Academy needs permission to save photos to your library when you download them from the gallery.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
