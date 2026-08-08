@@ -4,7 +4,7 @@ import { prisma } from "../lib/prisma";
 
 export type { Role };
 export type User = PrismaUser;
-export type PublicUser = Omit<User, "passwordHash" | "googleId">;
+export type PublicUser = Omit<User, "passwordHash" | "googleId" | "pushToken">;
 
 type CreateUserInput = {
   email: string;
@@ -53,12 +53,26 @@ export const UserModel = {
     }
   },
 
+  /** `token: null` clears it — used on logout so a stale device stops receiving pushes. */
+  async updatePushToken(id: string, pushToken: string | null): Promise<User | null> {
+    try {
+      return await prisma.user.update({ where: { id }, data: { pushToken } });
+    } catch {
+      return null;
+    }
+  },
+
   async listParents(): Promise<User[]> {
     return prisma.user.findMany({ where: { role: "parent" } });
   },
 
   toPublic(user: User): PublicUser {
-    const { passwordHash: _passwordHash, googleId: _googleId, ...publicUser } = user;
+    const {
+      passwordHash: _passwordHash,
+      googleId: _googleId,
+      pushToken: _pushToken,
+      ...publicUser
+    } = user;
     return publicUser;
   },
 };

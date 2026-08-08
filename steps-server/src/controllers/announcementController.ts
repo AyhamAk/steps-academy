@@ -3,6 +3,7 @@ import { Request, Response } from "express";
 import { AnnouncementModel } from "../models/announcement";
 import { NotificationModel } from "../models/notification";
 import { UserModel } from "../models/user";
+import { sendPushToUsers } from "../lib/push";
 
 export async function createAnnouncement(req: Request, res: Response) {
   const { text } = req.body as { text?: string };
@@ -20,8 +21,15 @@ export async function createAnnouncement(req: Request, res: Response) {
   });
 
   // Notify every parent about the new announcement.
-  const parentIds = (await UserModel.listParents()).map((parent) => parent.id);
-  await NotificationModel.createForUsers(parentIds, { type: "announcement" });
+  const parents = await UserModel.listParents();
+  await NotificationModel.createForUsers(parents.map((parent) => parent.id), {
+    type: "announcement",
+  });
+  await sendPushToUsers(parents, {
+    title: "New announcement",
+    body: announcement.text.length > 150 ? `${announcement.text.slice(0, 150)}...` : announcement.text,
+    data: { type: "announcement" },
+  });
 
   res.status(201).json({ announcement });
 }

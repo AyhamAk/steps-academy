@@ -52,4 +52,10 @@ export const PhotoTagModel = {
     const tags = await this.listByPhoto(photoId);
     return tags.some((tag) => normalizedChildren.includes(normalize(tag.studentName)));
   },
+
+  /** Same match rule as matchesAnyChild, but against already-fetched tags — for batched lookups. */
+  tagsMatchAnyChild(tags: PhotoTag[], childNames: string[]): boolean {
+    const normalizedChildren = childNames.map(normalize);
+    return tags.some((tag) => normalizedChildren.includes(normalize(tag.studentName)));
+  },
 };

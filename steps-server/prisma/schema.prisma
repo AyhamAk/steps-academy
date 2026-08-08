@@ -27,6 +27,7 @@ model User {
   googleId     String?
   role         Role     @default(parent)
   childNames   String[]
+  pushToken    String?
   createdAt    DateTime @default(now())
 
   events        Event[]

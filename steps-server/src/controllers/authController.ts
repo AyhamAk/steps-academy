@@ -124,8 +124,19 @@ export async function me(req: Request, res: Response) {
   res.json({ user: UserModel.toPublic(user) });
 }
 
-export function logout(_req: Request, res: Response) {
+export async function logout(req: Request, res: Response) {
+  // Best-effort — a stale token left behind just means one missed push, not a crash.
+  await UserModel.updatePushToken(req.userId!, null).catch(() => {});
   res.json({ message: "Logged out" });
+}
+
+export async function updatePushToken(req: Request, res: Response) {
+  const { pushToken } = req.body as { pushToken?: string };
+  if (!pushToken || typeof pushToken !== "string") {
+    return res.status(400).json({ message: "pushToken is required" });
+  }
+  await UserModel.updatePushToken(req.userId!, pushToken);
+  res.json({ message: "Push token saved" });
 }
 
 export async function changePassword(req: Request, res: Response) {
