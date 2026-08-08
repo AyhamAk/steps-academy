@@ -37,7 +37,6 @@ import { Screen } from "../../components/Screen";
 import { StepsButton } from "../../components/ui/StepsButton";
 import { StepsCard } from "../../components/ui/StepsCard";
 import { SkeletonEventCard } from "../../components/ui/Skeleton";
-import { StepsFeatureCard } from "../../components/ui/StepsFeatureCard";
 import { StepsLogo } from "../../components/ui/StepsLogo";
 import { ToastBanner, useToast } from "../../components/ui/Toast";
 import { Colors } from "../../constants/Colors";
@@ -58,50 +57,6 @@ import {
 } from "../../services/galleryApi";
 import { useAuthStore } from "../../store/authStore";
 import { formatIsoDate, parseIsoDate } from "../../utils/date";
-
-type FeatureLabelKey = "cardGames" | "cardShop" | "cardGallery" | "cardMoments";
-
-const FEATURE_CARDS: {
-  emoji: string;
-  labelKey: FeatureLabelKey;
-  route: "/games" | "/shop" | "/gallery";
-  gradientColors: [string, string];
-  shadowColor: string;
-  delay: number;
-}[] = [
-  {
-    emoji: "🎮",
-    labelKey: "cardGames",
-    route: "/games",
-    gradientColors: [Colors.terracotta, Colors.clay],
-    shadowColor: Colors.terracotta,
-    delay: 0,
-  },
-  {
-    emoji: "🛍️",
-    labelKey: "cardShop",
-    route: "/shop",
-    gradientColors: [Colors.clay, Colors.honey],
-    shadowColor: Colors.clay,
-    delay: 100,
-  },
-  {
-    emoji: "🖼️",
-    labelKey: "cardGallery",
-    route: "/gallery",
-    gradientColors: [Colors.forest, Colors.sky],
-    shadowColor: Colors.forest,
-    delay: 200,
-  },
-  {
-    emoji: "📸",
-    labelKey: "cardMoments",
-    route: "/gallery",
-    gradientColors: [Colors.honey, Colors.terracotta],
-    shadowColor: Colors.honey,
-    delay: 300,
-  },
-];
 
 const ACTIVITY_ACCENT: Record<ActivityCategory, string> = {
   art: Colors.honey,
@@ -862,20 +817,6 @@ export default function HomeScreen() {
           )}
         </Animated.View>
 
-        <View style={styles.grid}>
-          {FEATURE_CARDS.map((card) => (
-            <StepsFeatureCard
-              key={card.labelKey}
-              emoji={card.emoji}
-              label={t.home[card.labelKey]}
-              gradientColors={card.gradientColors}
-              shadowColor={card.shadowColor}
-              delay={card.delay}
-              onPress={() => router.push(card.route)}
-            />
-          ))}
-        </View>
-
         <View style={styles.footer}>
           <Animated.Text style={[styles.footerMascot, footerDotsStyle]}>🐘</Animated.Text>
           <Text style={styles.footerText}>{t.home.footerTagline}</Text>
@@ -1029,7 +970,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   carouselCtaPressed: {
-    opacity: 0.7,
+    opacity: 0.75,
   },
   carouselCtaText: {
     fontFamily: Fonts.bold,
@@ -1182,9 +1123,9 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 20,
     shadowColor: "#000",
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
     elevation: 2,
   },
   emptyCardText: {
@@ -1317,12 +1258,6 @@ const styles = StyleSheet.create({
     ...Type.caption,
     color: Colors.textLight,
     marginTop: 10,
-  },
-  grid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-    gap: 16,
   },
   footer: {
     marginTop: 28,
