@@ -46,8 +46,13 @@ export function AdminGalleryScreen() {
   } = useQuery({
     queryKey: ["gallery", "admin"],
     queryFn: async () => {
-      const [eventList, studentList] = await Promise.all([listEvents(), listStudents()]);
-      return { events: eventList, students: studentList };
+      // limit 100 is the API cap — the tag/attendee pickers filter client-side
+      // from this set, and both have their own search fields.
+      const [eventList, studentPage] = await Promise.all([
+        listEvents(),
+        listStudents({ limit: 100 }),
+      ]);
+      return { events: eventList, students: studentPage.students };
     },
   });
   const events = data?.events ?? [];

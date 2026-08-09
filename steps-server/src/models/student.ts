@@ -53,6 +53,49 @@ export const StudentModel = {
     return prisma.student.findMany({ orderBy: { name: "asc" } });
   },
 
+  /**
+   * Students with their guardians in a single query. The admin list used to
+   * run one guardian lookup per student, which is fine for eight children and
+   * ruinous for several hundred.
+   */
+  async listWithGuardians({
+    search,
+    limit = 50,
+    offset = 0,
+  }: { search?: string; limit?: number; offset?: number } = {}) {
+    const where = search?.trim()
+      ? { name: { contains: search.trim(), mode: "insensitive" as const } }
+      : {};
+
+    const [students, total] = await Promise.all([
+      prisma.student.findMany({
+        where,
+        orderBy: { name: "asc" },
+        take: limit,
+        skip: offset,
+        include: {
+          guardians: {
+            include: { parent: { select: { id: true, name: true, email: true } } },
+          },
+          _count: { select: { tags: true } },
+        },
+      }),
+      prisma.student.count({ where }),
+    ]);
+
+    return {
+      total,
+      students: students.map((student) => ({
+        id: student.id,
+        name: student.name,
+        birthDate: student.birthDate,
+        notes: student.notes,
+        photoCount: student._count.tags,
+        guardians: student.guardians.map((link) => link.parent),
+      })),
+    };
+  },
+
   async listByIds(ids: string[]): Promise<Student[]> {
     if (ids.length === 0) return [];
     return prisma.student.findMany({ where: { id: { in: ids } } });
@@ -89,6 +132,21 @@ export const StudentModel = {
     await prisma.parentStudent
       .delete({ where: { parentId_studentId: { parentId, studentId } } })
       .catch(() => undefined);
+  },
+
+  /** Dashboard counters. All COUNT queries — nothing is loaded into memory. */
+  async adminCounts() {
+    const [students, parents, unlinkedStudents, events, photos, pendingRequests, courses] =
+      await Promise.all([
+        prisma.student.count(),
+        prisma.user.count({ where: { role: "parent" } }),
+        prisma.student.count({ where: { guardians: { none: {} } } }),
+        prisma.event.count(),
+        prisma.photo.count(),
+        prisma.courseEnrollment.count({ where: { status: "pending" } }),
+        prisma.course.count({ where: { isActive: true } }),
+      ]);
+    return { students, parents, unlinkedStudents, events, photos, pendingRequests, courses };
   },
 
   /** Student ids this parent may see photos of — the core visibility rule. */

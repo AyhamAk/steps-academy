@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -31,6 +31,16 @@ import {
   unlinkGuardian,
 } from "../services/studentsApi";
 
+/** Keeps typing responsive by only querying once the user pauses. */
+function useDebounced(value: string, delay: number) {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const timer = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(timer);
+  }, [value, delay]);
+  return debounced;
+}
+
 function GuardianPicker({
   student,
   onDone,
@@ -40,7 +50,13 @@ function GuardianPicker({
 }) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  const { data: parents } = useQuery({ queryKey: ["parents"], queryFn: listParents });
+  const [parentSearch, setParentSearch] = useState("");
+  const debouncedParentSearch = useDebounced(parentSearch, 300);
+  const { data: parentPage } = useQuery({
+    queryKey: ["parents", debouncedParentSearch],
+    queryFn: () => listParents({ search: debouncedParentSearch || undefined, limit: 25 }),
+    placeholderData: (previous) => previous,
+  });
 
   const link = useMutation({
     mutationFn: (parentId: string) => linkGuardian(student.id, parentId),
@@ -51,11 +67,21 @@ function GuardianPicker({
   });
 
   const linkedIds = student.guardians.map((guardian) => guardian.id);
-  const available = (parents ?? []).filter((parent) => !linkedIds.includes(parent.id));
+  const available = (parentPage?.parents ?? []).filter((parent) => !linkedIds.includes(parent.id));
 
   return (
     <View style={styles.picker}>
       <Text style={styles.pickerTitle}>{t.students.linkGuardianTitle(student.name)}</Text>
+      {/* Searchable, because scrolling a few hundred parents to find one is not usable. */}
+      <TextInput
+        value={parentSearch}
+        onChangeText={setParentSearch}
+        placeholder={t.students.searchParentPlaceholder}
+        placeholderTextColor={Colors.textLight}
+        style={styles.pickerSearch}
+        autoCorrect={false}
+        autoCapitalize="none"
+      />
       {available.length === 0 ? (
         <Text style={styles.muted}>{t.students.noParentsAvailable}</Text>
       ) : (
@@ -119,6 +145,8 @@ function StudentCard({ student }: { student: Student }) {
             {student.guardians.length === 0
               ? t.students.noGuardians
               : t.students.guardianCount(student.guardians.length)}
+            {" · "}
+            {t.students.photoCount(student.photoCount)}
           </Text>
         </View>
         <Touchable onPress={confirmRemove} hitSlop={8} disabled={remove.isPending}>
@@ -169,8 +197,15 @@ export default function StudentsScreen() {
   const { t, rtlText } = useTranslation();
   const queryClient = useQueryClient();
   const [newName, setNewName] = useState("");
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounced(search, 300);
 
-  const { data: students, isError } = useQuery({ queryKey: ["students"], queryFn: listStudents });
+  const { data, isError, isFetching } = useQuery({
+    queryKey: ["students", debouncedSearch],
+    queryFn: () => listStudents({ search: debouncedSearch || undefined }),
+    placeholderData: (previous) => previous,
+  });
+  const students = data?.students;
 
   const create = useMutation({
     mutationFn: () => createStudent({ name: newName.trim() }),
@@ -209,12 +244,36 @@ export default function StudentsScreen() {
           </Touchable>
         </View>
 
+        <View style={styles.searchRow}>
+          <TextInput
+            value={search}
+            onChangeText={setSearch}
+            placeholder={t.students.searchPlaceholder}
+            placeholderTextColor={Colors.textLight}
+            style={[styles.input, rtlText]}
+            autoCorrect={false}
+          />
+          {isFetching ? <ActivityIndicator color={Colors.textLight} /> : null}
+        </View>
+
+        {data ? (
+          <Text style={[styles.count, rtlText]}>
+            {debouncedSearch
+              ? t.students.searchResults(students?.length ?? 0, data.total)
+              : t.students.totalCount(data.total)}
+          </Text>
+        ) : null}
+
         {isError ? (
           <EmptyState emoji="⚠️" title={t.students.couldntLoad} subtitle={t.common.tryAgain} />
         ) : !students ? (
           <BalloonLoader label={t.students.loading} />
         ) : students.length === 0 ? (
-          <EmptyState emoji="👶" title={t.students.empty} subtitle={t.students.emptySubtitle} />
+          <EmptyState
+            emoji={debouncedSearch ? "🔍" : "👶"}
+            title={debouncedSearch ? t.students.noMatches : t.students.empty}
+            subtitle={debouncedSearch ? t.students.noMatchesSubtitle : t.students.emptySubtitle}
+          />
         ) : (
           <FlatList
             data={students}
@@ -222,6 +281,11 @@ export default function StudentsScreen() {
             renderItem={({ item }) => <StudentCard student={item} />}
             contentContainerStyle={styles.list}
             keyboardShouldPersistTaps="handled"
+            // Long lists stay smooth: offscreen rows are dropped rather than
+            // kept mounted, which matters once this is hundreds of children.
+            removeClippedSubviews
+            initialNumToRender={12}
+            windowSize={11}
           />
         )}
       </ScreenFadeIn>
@@ -237,6 +301,17 @@ const styles = StyleSheet.create({
     gap: 10,
     marginTop: 16,
     marginBottom: 8,
+  },
+  searchRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginBottom: 6,
+  },
+  count: {
+    ...Type.caption,
+    color: Colors.textLight,
+    marginBottom: 4,
   },
   input: {
     flex: 1,
@@ -302,6 +377,18 @@ const styles = StyleSheet.create({
     padding: 12,
   },
   pickerTitle: { fontFamily: Fonts.bold, fontSize: 13, color: Colors.bark, marginBottom: 8 },
+  pickerSearch: {
+    backgroundColor: Colors.linen,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    fontFamily: Fonts.regular,
+    fontSize: 13,
+    color: Colors.bark,
+    marginBottom: 8,
+  },
   pickerRow: {
     flexDirection: "row",
     alignItems: "center",

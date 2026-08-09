@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { ActivityIndicator, Alert, FlatList, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Alert, SectionList, StyleSheet, Text, View } from "react-native";
 
 import { EmptyState } from "../components/gallery/EmptyState";
 import { Screen } from "../components/Screen";
@@ -20,6 +20,23 @@ import {
 } from "../services/coursesApi";
 
 type Filter = EnrollmentStatus | "all";
+
+/**
+ * One section per course, courses with the most requests first — an admin
+ * reviewing a full class wants them together, not interleaved by date.
+ */
+function groupByCourse(requests: EnrollmentRequest[]) {
+  const byCourse = new Map<string, { title: string; data: EnrollmentRequest[] }>();
+  for (const request of requests) {
+    const section = byCourse.get(request.courseId);
+    if (section) {
+      section.data.push(request);
+    } else {
+      byCourse.set(request.courseId, { title: request.courseName, data: [request] });
+    }
+  }
+  return [...byCourse.values()].sort((a, b) => b.data.length - a.data.length);
+}
 
 const STATUS_COLORS: Record<EnrollmentStatus, string> = {
   pending: Colors.honey,
@@ -166,11 +183,24 @@ export default function CourseRequestsScreen() {
             subtitle={t.courses.requestsEmptySubtitle}
           />
         ) : (
-          <FlatList
-            data={data.enrollments}
+          <SectionList
+            sections={groupByCourse(data.enrollments)}
             keyExtractor={(request) => request.id}
             renderItem={({ item }) => <RequestCard request={item} />}
+            renderSectionHeader={({ section }) => (
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle} numberOfLines={1}>
+                  {section.title}
+                </Text>
+                <View style={styles.sectionCount}>
+                  <Text style={styles.sectionCountText}>{section.data.length}</Text>
+                </View>
+              </View>
+            )}
+            stickySectionHeadersEnabled
             contentContainerStyle={styles.list}
+            removeClippedSubviews
+            initialNumToRender={10}
           />
         )}
       </ScreenFadeIn>
@@ -194,13 +224,39 @@ const styles = StyleSheet.create({
   filterChipActive: { backgroundColor: Colors.terracotta, borderColor: Colors.terracotta },
   filterText: { fontFamily: Fonts.semiBold, fontSize: 12, color: Colors.textLight },
   filterTextActive: { color: "#FFFFFF" },
-  list: { paddingTop: 12, paddingBottom: 32, gap: 12 },
+  list: { paddingTop: 12, paddingBottom: 32 },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 10,
+    backgroundColor: Colors.cream,
+    paddingVertical: 10,
+    marginTop: 8,
+  },
+  sectionTitle: {
+    flex: 1,
+    fontFamily: Fonts.bold,
+    fontSize: 15,
+    color: Colors.bark,
+  },
+  sectionCount: {
+    minWidth: 24,
+    height: 24,
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    backgroundColor: Colors.linen,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  sectionCountText: { fontFamily: Fonts.bold, fontSize: 12, color: Colors.textLight },
   card: {
     backgroundColor: Colors.linen,
     borderRadius: 18,
     borderWidth: 1,
     borderColor: Colors.border,
     padding: 16,
+    marginBottom: 10,
   },
   cardHeader: { flexDirection: "row", alignItems: "flex-start", gap: 10 },
   child: { ...Type.body, fontFamily: Fonts.bold, color: Colors.bark },

@@ -1,6 +1,7 @@
 import { Router } from "express";
 
 import {
+  adminOverview,
   createStudent,
   deleteStudent,
   linkGuardian,
@@ -24,5 +25,6 @@ router.post("/:studentId/guardians", requireAuth, adminOnly, linkGuardian);
 router.delete("/:studentId/guardians/:parentId", requireAuth, adminOnly, unlinkGuardian);
 
 router.get("/parents/all", requireAuth, adminOnly, listParents);
+router.get("/overview", requireAuth, adminOnly, adminOverview);
 
 export default router;

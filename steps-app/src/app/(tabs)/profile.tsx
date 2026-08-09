@@ -104,23 +104,16 @@ export default function ProfileScreen() {
     onPress: () => void;
     badge?: number;
   }[] = [
-    // Admin-only: students decide who can see which photos, so this is the
-    // most important screen an admin has.
+    // One door into the admin app rather than scattering management entries
+    // through the parent-facing settings list.
     ...(user?.role === "admin"
       ? [
           {
-            key: "students",
-            label: t.students.title,
-            icon: "people-outline" as keyof typeof Ionicons.glyphMap,
+            key: "admin",
+            label: t.admin.title,
+            icon: "settings-outline" as keyof typeof Ionicons.glyphMap,
             tint: Colors.honey,
-            onPress: () => router.push("/students"),
-          },
-          {
-            key: "course-requests",
-            label: t.courses.requestsTitle,
-            icon: "clipboard-outline" as keyof typeof Ionicons.glyphMap,
-            tint: Colors.clay,
-            onPress: () => router.push("/course-requests"),
+            onPress: () => router.push("/admin"),
             badge: pendingRequests,
           },
         ]

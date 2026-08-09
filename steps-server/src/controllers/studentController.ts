@@ -22,20 +22,17 @@ function serializeStudent(student: {
   };
 }
 
-/** Admin: every student, each with their linked guardians. */
-export async function listStudents(_req: Request, res: Response) {
-  const students = await StudentModel.listAll();
-  const withGuardians = await Promise.all(
-    students.map(async (student) => ({
-      ...serializeStudent(student),
-      guardians: (await StudentModel.listGuardians(student.id)).map((guardian) => ({
-        id: guardian.id,
-        name: guardian.name,
-        email: guardian.email,
-      })),
-    }))
-  );
-  res.json({ students: withGuardians });
+function paging(req: Request) {
+  return {
+    search: typeof req.query.search === "string" ? req.query.search : undefined,
+    limit: Math.min(Number(req.query.limit) || 50, 100),
+    offset: Math.max(Number(req.query.offset) || 0, 0),
+  };
+}
+
+/** Admin: students with their guardians, searchable by name and paged. */
+export async function listStudents(req: Request, res: Response) {
+  res.json(await StudentModel.listWithGuardians(paging(req)));
 }
 
 export async function createStudent(req: Request, res: Response) {
@@ -122,19 +119,12 @@ export async function unlinkGuardian(req: Request, res: Response) {
   });
 }
 
-/** Admin: parent accounts, for picking a guardian to link. */
-export async function listParents(_req: Request, res: Response) {
-  const parents = await UserModel.listParents();
-  const withChildren = await Promise.all(
-    parents.map(async (parent) => ({
-      id: parent.id,
-      name: parent.name,
-      email: parent.email,
-      children: (await StudentModel.listByParent(parent.id)).map((child) => ({
-        id: child.id,
-        name: child.name,
-      })),
-    }))
-  );
-  res.json({ parents: withChildren });
+/** Admin: parent accounts with their children, searchable by name or email. */
+export async function listParents(req: Request, res: Response) {
+  res.json(await UserModel.listParentsWithChildren(paging(req)));
+}
+
+/** Counts for the admin dashboard — all aggregates, nothing loaded into memory. */
+export async function adminOverview(_req: Request, res: Response) {
+  res.json(await StudentModel.adminCounts());
 }

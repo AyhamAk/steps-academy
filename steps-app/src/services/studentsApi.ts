@@ -7,6 +7,7 @@ export type Student = {
   name: string;
   birthDate: string | null;
   notes: string | null;
+  photoCount: number;
   guardians: Guardian[];
 };
 
@@ -14,12 +15,33 @@ export type ParentAccount = {
   id: string;
   name: string;
   email: string;
+  createdAt: string;
   children: { id: string; name: string }[];
 };
 
-export async function listStudents() {
-  const { data } = await api.get<{ students: Student[] }>("/api/students");
-  return data.students;
+export type AdminOverview = {
+  students: number;
+  parents: number;
+  /** Children with no parent linked — they can't see their own photos yet. */
+  unlinkedStudents: number;
+  events: number;
+  photos: number;
+  pendingRequests: number;
+  courses: number;
+};
+
+type PageQuery = { search?: string; limit?: number; offset?: number };
+
+export async function listStudents(query: PageQuery = {}) {
+  const { data } = await api.get<{ students: Student[]; total: number }>("/api/students", {
+    params: query,
+  });
+  return data;
+}
+
+export async function adminOverview() {
+  const { data } = await api.get<AdminOverview>("/api/students/overview");
+  return data;
 }
 
 export async function createStudent(input: {
@@ -61,7 +83,10 @@ export async function unlinkGuardian(studentId: string, parentId: string) {
   return data.guardians;
 }
 
-export async function listParents() {
-  const { data } = await api.get<{ parents: ParentAccount[] }>("/api/students/parents/all");
-  return data.parents;
+export async function listParents(query: PageQuery = {}) {
+  const { data } = await api.get<{ parents: ParentAccount[]; total: number }>(
+    "/api/students/parents/all",
+    { params: query }
+  );
+  return data;
 }

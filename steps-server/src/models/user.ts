@@ -68,6 +68,50 @@ export const UserModel = {
     return prisma.user.findMany({ where: { role: "parent" } });
   },
 
+  /** Parents with their linked children in one query, searchable and paged. */
+  async listParentsWithChildren({
+    search,
+    limit = 50,
+    offset = 0,
+  }: { search?: string; limit?: number; offset?: number } = {}) {
+    const term = search?.trim();
+    const where = {
+      role: "parent" as const,
+      ...(term
+        ? {
+            OR: [
+              { name: { contains: term, mode: "insensitive" as const } },
+              { email: { contains: term, mode: "insensitive" as const } },
+            ],
+          }
+        : {}),
+    };
+
+    const [parents, total] = await Promise.all([
+      prisma.user.findMany({
+        where,
+        orderBy: { name: "asc" },
+        take: limit,
+        skip: offset,
+        include: {
+          children: { include: { student: { select: { id: true, name: true } } } },
+        },
+      }),
+      prisma.user.count({ where }),
+    ]);
+
+    return {
+      total,
+      parents: parents.map((parent) => ({
+        id: parent.id,
+        name: parent.name,
+        email: parent.email,
+        createdAt: parent.createdAt,
+        children: parent.children.map((link) => link.student),
+      })),
+    };
+  },
+
   /** Always goes through the DB for children, so a client can never be told
    *  about a child this account isn't actually linked to. */
   async toPublic(user: User): Promise<PublicUser> {
