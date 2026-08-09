@@ -63,6 +63,14 @@ export default function AdminScreen() {
       route: "/course-requests",
     },
     {
+      key: "schedule",
+      label: t.scheduleAdmin.title,
+      hint: t.admin.scheduleHint,
+      icon: "calendar-outline",
+      tint: Colors.honey,
+      route: "/schedule",
+    },
+    {
       key: "gallery",
       label: t.admin.galleryLabel,
       hint: t.admin.galleryHint,

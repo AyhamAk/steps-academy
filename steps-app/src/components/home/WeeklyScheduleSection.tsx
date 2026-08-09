@@ -1,18 +1,17 @@
+import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { Colors } from "../../constants/Colors";
 import { Fonts } from "../../constants/Fonts";
-import { MOCK_WEEK_SCHEDULE, pickLocalized, WeekDay } from "../../constants/mockData";
 import { Type } from "../../constants/Typography";
 import { useTranslation } from "../../i18n/useTranslation";
+import { formatTime, getWeekSchedule, WEEK_DAYS, WeekDay } from "../../services/scheduleApi";
 import { Touchable } from "../ui/Touchable";
-
-const ACADEMY_DAYS: WeekDay[] = ["sun", "mon", "tue", "wed", "thu"];
 
 /** The academy runs Sunday–Thursday; Fri/Sat fall back to Sunday. */
 function todayAcademyDay(): WeekDay {
-  return ACADEMY_DAYS[new Date().getDay()] ?? "sun";
+  return WEEK_DAYS[new Date().getDay()] ?? "sun";
 }
 
 /** Calendar date for each academy day in the week containing today. */
@@ -22,7 +21,7 @@ function datesForThisWeek(): Record<WeekDay, number> {
   sunday.setDate(now.getDate() - now.getDay());
 
   const dates = {} as Record<WeekDay, number>;
-  ACADEMY_DAYS.forEach((day, index) => {
+  WEEK_DAYS.forEach((day, index) => {
     const date = new Date(sunday);
     date.setDate(sunday.getDate() + index);
     dates[day] = date.getDate();
@@ -31,34 +30,35 @@ function datesForThisWeek(): Record<WeekDay, number> {
 }
 
 export function WeeklyScheduleSection() {
-  const { t, locale, isRTL, rtlText } = useTranslation();
+  const { t, isRTL, rtlText } = useTranslation();
   const today = todayAcademyDay();
   const weekDates = datesForThisWeek();
   const [selectedDay, setSelectedDay] = useState<WeekDay>(today);
 
-  const dayData = MOCK_WEEK_SCHEDULE.find((day) => day.day === selectedDay);
+  const { data: days } = useQuery({ queryKey: ["schedule"], queryFn: getWeekSchedule });
+
+  // Hide the whole section until the academy has set a timetable.
+  if (days && days.every((day) => day.activities.length === 0)) return null;
+
+  const dayData = days?.find((day) => day.day === selectedDay);
 
   return (
     <View style={styles.section}>
       <Text style={[styles.sectionTitle, rtlText]}>{t.home.weeklyScheduleTitle}</Text>
 
       <View style={[styles.dayTabs, isRTL && styles.rowReverse]}>
-        {MOCK_WEEK_SCHEDULE.map((day) => {
-          const isSelected = day.day === selectedDay;
-          const isToday = day.day === today;
+        {WEEK_DAYS.map((day) => {
+          const isSelected = day === selectedDay;
+          const isToday = day === today;
           // Resolved once here rather than layered through conditional style
           // objects, so the label can never end up the same tone as its pill.
           const labelColor = isSelected ? "#FFFFFF" : Colors.textLight;
           const dateColor = isSelected ? "#FFFFFF" : Colors.bark;
 
           return (
-            // Array style, never a style function: on this build a Pressable
-            // with `style={({pressed}) => ...}` renders its children but drops
-            // the resolved background/layout, which is what made these pills
-            // look like bare text. Matches the Profile language pills.
             <Touchable
-              key={day.day}
-              onPress={() => setSelectedDay(day.day)}
+              key={day}
+              onPress={() => setSelectedDay(day)}
               hitSlop={6}
               style={[
                 styles.dayTab,
@@ -72,34 +72,50 @@ export function WeeklyScheduleSection() {
                 adjustsFontSizeToFit
                 minimumFontScale={0.7}
               >
-                {t.home.weekDays[day.day]}
+                {t.home.weekDays[day]}
               </Text>
-              <Text style={[styles.dayDate, { color: dateColor }]}>{weekDates[day.day]}</Text>
+              <Text style={[styles.dayDate, { color: dateColor }]}>{weekDates[day]}</Text>
             </Touchable>
           );
         })}
       </View>
 
       <View style={styles.scheduleCard}>
-        {dayData?.activities.map((activity, index) => (
-          <View
-            key={activity.id}
-            style={[
-              styles.row,
-              isRTL && styles.rowReverse,
-              index < dayData.activities.length - 1 && styles.rowDivider,
-            ]}
-          >
-            <View style={[styles.accentBar, { backgroundColor: activity.accentColor }]} />
-            <Text style={styles.emoji}>{activity.emoji}</Text>
-            <View style={styles.info}>
-              <Text style={[styles.name, rtlText]}>{pickLocalized(activity.name, locale)}</Text>
-              <Text style={[styles.meta, rtlText]}>
-                {activity.time} · {t.home.scheduleDuration(activity.durationMinutes)}
-              </Text>
-            </View>
+        {!days ? (
+          <View style={styles.placeholder}>
+            <Text style={styles.placeholderText}>{t.home.scheduleLoading}</Text>
           </View>
-        ))}
+        ) : !dayData || dayData.activities.length === 0 ? (
+          <View style={styles.placeholder}>
+            <Text style={styles.placeholderText}>{t.home.scheduleEmptyDay}</Text>
+          </View>
+        ) : (
+          dayData.activities.map((activity, index) => (
+            <View
+              key={activity.id}
+              style={[
+                styles.row,
+                isRTL && styles.rowReverse,
+                index < dayData.activities.length - 1 && styles.rowDivider,
+              ]}
+            >
+              <View
+                style={[
+                  styles.accentBar,
+                  { backgroundColor: activity.accentColor ?? Colors.honey },
+                ]}
+              />
+              <Text style={styles.emoji}>{activity.emoji}</Text>
+              <View style={styles.info}>
+                <Text style={[styles.name, rtlText]}>{activity.name}</Text>
+                <Text style={[styles.meta, rtlText]}>
+                  {formatTime(activity.startTime)} ·{" "}
+                  {t.home.scheduleDuration(activity.durationMinutes)}
+                </Text>
+              </View>
+            </View>
+          ))
+        )}
       </View>
     </View>
   );
@@ -144,8 +160,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.terracotta,
     borderColor: Colors.terracotta,
   },
-  pressed: {
-    opacity: 0.75,
+  rowReverse: {
+    flexDirection: "row-reverse",
   },
   dayName: {
     fontFamily: Fonts.semiBold,
@@ -165,15 +181,14 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     elevation: 2,
   },
+  placeholder: { paddingVertical: 26, alignItems: "center" },
+  placeholderText: { ...Type.caption, color: Colors.textLight },
   row: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
     paddingVertical: 14,
     paddingHorizontal: 16,
-  },
-  rowReverse: {
-    flexDirection: "row-reverse",
   },
   rowDivider: {
     borderBottomWidth: 1,

@@ -1,10 +1,12 @@
 import { ComingSoonScreen } from "../../components/ComingSoonScreen";
-import { MOCK_CHILDREN } from "../../constants/mockData";
 import { useTranslation } from "../../i18n/useTranslation";
+import { useChildren } from "../../store/authStore";
 
 export default function GamesScreen() {
   const { t } = useTranslation();
-  const childName = MOCK_CHILDREN[0]?.name ?? null;
+  // The real linked child, so the teaser greets them by name rather than a
+  // placeholder from a mock file.
+  const childName = useChildren()[0]?.name ?? null;
 
   return (
     <ComingSoonScreen

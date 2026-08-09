@@ -27,6 +27,30 @@ enum EnrollmentStatus {
   cancelled
 }
 
+/// The academy runs Sunday–Thursday.
+enum WeekDay {
+  sun
+  mon
+  tue
+  wed
+  thu
+}
+
+/// One activity in the recurring weekly timetable shown on Home.
+model ScheduleActivity {
+  id    String  @id @default(uuid())
+  day   WeekDay
+  name  String
+  emoji String  @default("🌟")
+  /// 24-hour "HH:MM" so the day sorts correctly; formatted for display client-side.
+  startTime       String
+  durationMinutes Int     @default(30)
+  accentColor     String?
+  createdAt       DateTime @default(now())
+
+  @@index([day])
+}
+
 model User {
   id           String   @id @default(uuid())
   email        String   @unique
