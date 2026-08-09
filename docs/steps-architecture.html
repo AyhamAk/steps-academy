@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Steps Academy — System Overview & Architecture</title>
+<style>
+  :root {
+    --cream: #FFFDF8;
+    --linen: #F5EFE4;
+    --terracotta: #E07A3A;
+    --clay: #C4756A;
+    --forest: #5B8A5E;
+    --honey: #D4A843;
+    --sky: #7B9EC4;
+    --bark: #2C2416;
+    --text-light: #8C7B65;
+    --border: #E5DCC8;
+    --card-shadow: 0 2px 14px rgba(44, 36, 22, 0.07);
+    --radius: 18px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: "Segoe UI", -apple-system, "Helvetica Neue", Arial, sans-serif;
+    background: var(--cream);
+    color: var(--bark);
+    line-height: 1.55;
+  }
+  ::selection { background: rgba(224,122,58,.25); }
+
+  /* ── Hero ─────────────────────────────────────────── */
+  header.hero {
+    position: relative;
+    padding: 72px 24px 56px;
+    text-align: center;
+    background:
+      radial-gradient(circle at 12% 18%, rgba(224,122,58,.10), transparent 42%),
+      radial-gradient(circle at 88% 30%, rgba(123,158,196,.12), transparent 45%),
+      radial-gradient(circle at 50% 95%, rgba(212,168,67,.10), transparent 50%),
+      var(--cream);
+    overflow: hidden;
+    border-bottom: 1px solid var(--border);
+  }
+  .hero .mascot { font-size: 56px; display: block; margin-bottom: 8px; }
+  .hero h1 {
+    font-size: clamp(30px, 5vw, 46px);
+    font-weight: 800;
+    letter-spacing: -0.5px;
+  }
+  .hero h1 .accent { color: var(--terracotta); }
+  .hero p.sub {
+    max-width: 640px; margin: 14px auto 0;
+    color: var(--text-light); font-size: 17px;
+  }
+  .hero .stats {
+    display: flex; flex-wrap: wrap; gap: 12px;
+    justify-content: center; margin-top: 30px;
+  }
+  .stat {
+    background: #fff; border: 1px solid var(--border);
+    border-radius: 999px; padding: 8px 18px;
+    font-size: 13.5px; font-weight: 600; color: var(--bark);
+    box-shadow: var(--card-shadow);
+  }
+  .stat b { color: var(--terracotta); }
+
+  /* ── Nav ──────────────────────────────────────────── */
+  nav {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(255,253,248,.92);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+    display: flex; justify-content: center; flex-wrap: wrap;
+    gap: 2px; padding: 8px 12px;
+  }
+  nav a {
+    text-decoration: none; color: var(--text-light);
+    font-size: 13.5px; font-weight: 600;
+    padding: 7px 13px; border-radius: 999px;
+    transition: all .18s;
+  }
+  nav a:hover { color: var(--bark); background: var(--linen); }
+  nav a.active { color: #fff; background: var(--terracotta); }
+
+  /* ── Layout ───────────────────────────────────────── */
+  main { max-width: 1160px; margin: 0 auto; padding: 24px 22px 90px; }
+  section { padding-top: 56px; scroll-margin-top: 64px; }
+  .kicker {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 12px; font-weight: 700; letter-spacing: 1.5px;
+    text-transform: uppercase; color: var(--terracotta);
+  }
+  .kicker::before { content: ""; width: 26px; height: 3px; border-radius: 2px; background: var(--terracotta); }
+  h2 { font-size: clamp(24px, 3.4vw, 32px); font-weight: 800; margin: 8px 0 6px; letter-spacing: -.4px; }
+  p.lead { color: var(--text-light); max-width: 760px; margin-bottom: 26px; font-size: 15.5px; }
+
+  .card {
+    background: #fff; border: 1px solid var(--border);
+    border-radius: var(--radius); box-shadow: var(--card-shadow);
+    padding: 22px;
+  }
+
+  /* ── Role cards ───────────────────────────────────── */
+  .roles { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+  .role { position: relative; overflow: hidden; }
+  .role::before {
+    content: ""; position: absolute; inset: 0 auto 0 0; width: 5px;
+  }
+  .role.parent::before { background: var(--forest); }
+  .role.admin::before  { background: var(--terracotta); }
+  .role.child::before  { background: var(--honey); }
+  .role .emoji { font-size: 30px; }
+  .role h3 { margin: 6px 0 2px; font-size: 18px; }
+  .role .tag {
+    display: inline-block; font-size: 11px; font-weight: 700;
+    padding: 3px 10px; border-radius: 999px; margin-bottom: 10px;
+  }
+  .role.parent .tag { background: rgba(91,138,94,.14); color: var(--forest); }
+  .role.admin .tag  { background: rgba(224,122,58,.14); color: var(--terracotta); }
+  .role.child .tag  { background: rgba(212,168,67,.18); color: #a2801f; }
+  .role ul { list-style: none; }
+  .role li { font-size: 13.8px; color: var(--bark); padding: 5px 0 5px 22px; position: relative; border-top: 1px dashed var(--border); }
+  .role li:first-child { border-top: 0; }
+  .role li::before { content: "✓"; position: absolute; left: 2px; font-weight: 700; }
+  .role.parent li::before { color: var(--forest); }
+  .role.admin  li::before { color: var(--terracotta); }
+  .role.child  li::before { content: "•"; color: var(--honey); font-size: 18px; line-height: 1; }
+
+  /* ── Stack ────────────────────────────────────────── */
+  .stack-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+  .stack-col h3 { display: flex; align-items: center; gap: 8px; font-size: 16px; margin-bottom: 14px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    font-size: 12.8px; font-weight: 600; padding: 6px 12px;
+    border-radius: 999px; background: var(--linen);
+    border: 1px solid var(--border); color: var(--bark);
+  }
+  .chip.hot { background: rgba(224,122,58,.13); border-color: rgba(224,122,58,.35); color: #b35a1f; }
+  .chip.cool { background: rgba(123,158,196,.13); border-color: rgba(123,158,196,.4); color: #4a6f97; }
+  .chip.green { background: rgba(91,138,94,.13); border-color: rgba(91,138,94,.4); color: #3f6b42; }
+
+  /* ── Diagrams ─────────────────────────────────────── */
+  .diagram-wrap { overflow-x: auto; border-radius: var(--radius); }
+  .diagram-wrap svg { display: block; min-width: 760px; width: 100%; height: auto; }
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 14px; font-size: 12.5px; color: var(--text-light); }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .dot { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
+
+  /* ── Flows (timeline) ─────────────────────────────── */
+  .flow-grid { display: grid; gap: 20px; }
+  .flow h3 { font-size: 18px; margin-bottom: 4px; }
+  .flow p.note { font-size: 13.5px; color: var(--text-light); margin-bottom: 16px; }
+  .steps { list-style: none; position: relative; }
+  .steps::before {
+    content: ""; position: absolute; left: 17px; top: 10px; bottom: 10px;
+    width: 2px; background: linear-gradient(var(--border), var(--border));
+  }
+  .steps li { position: relative; padding: 0 0 18px 52px; }
+  .steps li:last-child { padding-bottom: 0; }
+  .steps .n {
+    position: absolute; left: 0; top: 0;
+    width: 36px; height: 36px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 14px; color: #fff;
+    box-shadow: 0 2px 6px rgba(44,36,22,.18);
+  }
+  .steps .who {
+    display: inline-block; font-size: 10.5px; font-weight: 800; letter-spacing: .8px;
+    padding: 2px 8px; border-radius: 999px; margin-bottom: 2px; text-transform: uppercase;
+  }
+  .who.parent { background: rgba(91,138,94,.14); color: var(--forest); }
+  .who.admin  { background: rgba(224,122,58,.14); color: #b35a1f; }
+  .who.system { background: rgba(123,158,196,.15); color: #4a6f97; }
+  .n.parent { background: var(--forest); }
+  .n.admin  { background: var(--terracotta); }
+  .n.system { background: var(--sky); }
+  .steps b { font-size: 14.5px; display: block; }
+  .steps small { color: var(--text-light); font-size: 13px; }
+  .callout {
+    margin-top: 16px; padding: 14px 16px; border-radius: 14px;
+    font-size: 13.5px; display: flex; gap: 10px; align-items: flex-start;
+  }
+  .callout.warn { background: rgba(212,168,67,.13); border: 1px solid rgba(212,168,67,.5); }
+  .callout.lock { background: rgba(196,117,106,.10); border: 1px solid rgba(196,117,106,.4); }
+  .callout.ok   { background: rgba(91,138,94,.10);  border: 1px solid rgba(91,138,94,.35); }
+
+  /* ── Matrix table ─────────────────────────────────── */
+  .table-wrap { overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--card-shadow); }
+  table { width: 100%; border-collapse: collapse; background: #fff; min-width: 620px; }
+  th, td { padding: 12px 16px; text-align: left; font-size: 13.8px; border-bottom: 1px solid var(--border); }
+  thead th { background: var(--linen); font-size: 12px; text-transform: uppercase; letter-spacing: .8px; color: var(--text-light); }
+  tbody tr:last-child td { border-bottom: 0; }
+  td.yes  { color: var(--forest); font-weight: 700; }
+  td.no   { color: #c9b8a0; }
+  td.scope { color: var(--honey); font-weight: 700; }
+
+  /* ── Admin map ────────────────────────────────────── */
+  .admin-hub { text-align: center; margin-bottom: 0; }
+  .hub-card {
+    display: inline-block; text-align: left;
+    background: linear-gradient(135deg, #fff, var(--linen));
+    border: 2px solid var(--terracotta); border-radius: var(--radius);
+    padding: 20px 26px; box-shadow: 0 6px 22px rgba(224,122,58,.18);
+  }
+  .hub-card h3 { font-size: 19px; }
+  .hub-card .path { font-size: 12px; color: var(--text-light); }
+  .hub-tiles { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+  .hub-tile {
+    background: #fff; border: 1px solid var(--border); border-radius: 12px;
+    padding: 8px 14px; text-align: center;
+  }
+  .hub-tile b { display: block; font-size: 18px; }
+  .hub-tile span { font-size: 11px; color: var(--text-light); }
+  .hub-alert {
+    margin-top: 12px; font-size: 12.5px; font-weight: 600;
+    background: rgba(212,168,67,.15); border: 1.5px dashed var(--honey);
+    border-radius: 10px; padding: 8px 12px;
+  }
+  .branch-line { width: 2px; height: 34px; background: var(--border); margin: 0 auto; }
+  .branches { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 16px; }
+  .branch { border-top: 4px solid; }
+  .branch.b1 { border-top-color: var(--honey); }
+  .branch.b2 { border-top-color: var(--clay); }
+  .branch.b3 { border-top-color: var(--sky); }
+  .branch h4 { font-size: 15.5px; display: flex; gap: 8px; align-items: center; margin-bottom: 4px; }
+  .branch .api { font-size: 11px; color: var(--text-light); font-family: Consolas, monospace; display: block; margin-bottom: 10px; }
+  .branch ul { list-style: none; }
+  .branch li { font-size: 13.3px; padding: 6px 0 6px 20px; position: relative; border-top: 1px dashed var(--border); }
+  .branch li:first-child { border-top: 0; }
+  .branch li::before { content: "▸"; position: absolute; left: 2px; color: var(--text-light); }
+
+  /* ── Build / repo ─────────────────────────────────── */
+  .build-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+  pre {
+    background: #2e2619; color: #f4ead6; border-radius: 14px;
+    padding: 16px 18px; font-size: 12.8px; overflow-x: auto;
+    font-family: Consolas, "Courier New", monospace; line-height: 1.65;
+  }
+  pre .c { color: #9b8a6f; }
+  pre .g { color: #a9c98e; }
+  pre .o { color: #f0b26b; }
+
+  footer {
+    text-align: center; padding: 40px 20px 56px;
+    color: var(--text-light); font-size: 13px;
+    border-top: 1px solid var(--border); margin-top: 60px;
+  }
+  footer .mascot { font-size: 26px; display: block; margin-bottom: 6px; }
+
+  .reveal { opacity: 0; transform: translateY(16px); transition: opacity .5s ease, transform .5s ease; }
+  .reveal.visible { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) { .reveal { opacity: 1; transform: none; transition: none; } html { scroll-behavior: auto; } }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <span class="mascot">🐘🎈</span>
+  <h1>Steps <span class="accent">Academy</span></h1>
+  <p class="sub">A private preschool companion app — photos, events, courses and announcements, shared safely between the academy and each family. This page is the full picture: every role, every flow, every connection.</p>
+  <div class="stats">
+    <span class="stat"><b>2</b> account roles + child records</span>
+    <span class="stat"><b>3</b> languages · full RTL (EN · AR · HE)</span>
+    <span class="stat"><b>11</b> database models</span>
+    <span class="stat"><b>35+</b> API endpoints</span>
+    <span class="stat"><b>1</b> codebase · iOS & Android</span>
+  </div>
+</header>
+
+<nav id="nav">
+  <a href="#overview">Overview</a>
+  <a href="#stack">Tech Stack</a>
+  <a href="#architecture">Architecture</a>
+  <a href="#data">Data Model</a>
+  <a href="#flows">Flows</a>
+  <a href="#permissions">Permissions</a>
+  <a href="#admin">Admin App</a>
+  <a href="#security">Security</a>
+  <a href="#build">How It's Built</a>
+</nav>
+
+<main>
+
+<!-- ═══════════════ OVERVIEW ═══════════════ -->
+<section id="overview" class="reveal">
+  <span class="kicker">Section 01</span>
+  <h2>Three actors, one safe triangle</h2>
+  <p class="lead">Everything in Steps revolves around the relationship between a <b>child</b>, their <b>parents</b>, and the <b>academy admin</b>. The child never logs in — they are a protected record. The admin controls who is connected to whom, and every photo, notification and course decision flows along those connections and nowhere else.</p>
+
+  <div class="roles">
+    <div class="card role child">
+      <span class="emoji">🧒</span>
+      <h3>Child (Student)</h3>
+      <span class="tag">DATA RECORD — NO LOGIN</span>
+      <ul>
+        <li>Created only by the admin, never by a parent</li>
+        <li>Owns photo tags, event attendance & course enrollments</li>
+        <li>Can have up to two linked guardians (mum + dad)</li>
+        <li>Identified by ID — two children named “Sara” never collide</li>
+      </ul>
+    </div>
+    <div class="card role parent">
+      <span class="emoji">👩‍👧</span>
+      <h3>Parent</h3>
+      <span class="tag">SCOPED ACCOUNT</span>
+      <ul>
+        <li>Sees only photos where <i>their</i> child is tagged</li>
+        <li>Requests course places for their own children only</li>
+        <li>Receives push + in-app notifications about their child</li>
+        <li>Home feed: schedule, next event, courses, announcements</li>
+      </ul>
+    </div>
+    <div class="card role admin">
+      <span class="emoji">🏫</span>
+      <h3>Admin (Academy)</h3>
+      <span class="tag">FULL MANAGEMENT</span>
+      <ul>
+        <li>Creates children & links parents — the source of all access</li>
+        <li>Creates events, uploads & tags photos, writes captions</li>
+        <li>Approves / declines course requests (full audit trail)</li>
+        <li>Posts announcements → notifies every family</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ TECH STACK ═══════════════ -->
+<section id="stack" class="reveal">
+  <span class="kicker">Section 02</span>
+  <h2>Tech stack</h2>
+  <p class="lead">One TypeScript language end to end. The mobile app and the API live in a single repository (<code>steps-app</code> / <code>steps-server</code>) and share the same conventions.</p>
+
+  <div class="stack-grid">
+    <div class="card stack-col">
+      <h3>📱 Frontend — the app</h3>
+      <div class="chips">
+        <span class="chip hot">React Native 0.81</span>
+        <span class="chip hot">Expo SDK 54</span>
+        <span class="chip hot">TypeScript</span>
+        <span class="chip">expo-router (file-based navigation)</span>
+        <span class="chip">Zustand (auth & locale state)</span>
+        <span class="chip">TanStack React Query (server cache)</span>
+        <span class="chip">Reanimated (animations)</span>
+        <span class="chip">expo-notifications (push)</span>
+        <span class="chip cool">i18n: English · العربية · עברית</span>
+        <span class="chip cool">JS-driven RTL mirroring</span>
+        <span class="chip green">Montessori earth-tone design system</span>
+      </div>
+    </div>
+    <div class="card stack-col">
+      <h3>🖥 Backend — the API</h3>
+      <div class="chips">
+        <span class="chip hot">Node.js + Express</span>
+        <span class="chip hot">TypeScript</span>
+        <span class="chip hot">Prisma ORM</span>
+        <span class="chip cool">PostgreSQL — Supabase (Frankfurt, eu-central-1)</span>
+        <span class="chip cool">Cloudflare R2 — private photo storage</span>
+        <span class="chip">sharp — thumb / medium / original resize</span>
+        <span class="chip">JWT (30d) + bcrypt</span>
+        <span class="chip">helmet · CORS · rate limiting</span>
+        <span class="chip green">Expo Push API → APNs / FCM</span>
+      </div>
+    </div>
+    <div class="card stack-col">
+      <h3>🛠 Tooling & delivery</h3>
+      <div class="chips">
+        <span class="chip">EAS Build (cloud iOS/Android builds)</span>
+        <span class="chip">Custom dev client on device</span>
+        <span class="chip">Metro bundler — live JS reload</span>
+        <span class="chip">Prisma Migrate — versioned schema</span>
+        <span class="chip">Git · conventional commits</span>
+        <span class="chip green">Apple Developer + push credentials configured</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ ARCHITECTURE ═══════════════ -->
+<section id="architecture" class="reveal">
+  <span class="kicker">Section 03</span>
+  <h2>System architecture</h2>
+  <p class="lead">The phone talks to one Express API. The API is the only thing that touches the database, the photo bucket, or the push service — nothing is ever public.</p>
+
+  <div class="card diagram-wrap">
+    <svg viewBox="0 0 1160 640" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="System architecture diagram">
+      <defs>
+        <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#8C7B65"/>
+        </marker>
+        <marker id="arrT" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#E07A3A"/>
+        </marker>
+      </defs>
+
+      <!-- Phone -->
+      <rect x="30" y="150" width="240" height="240" rx="16" fill="#fff" stroke="#E5DCC8" stroke-width="1.5"/>
+      <rect x="30" y="150" width="240" height="44" rx="16" fill="#E07A3A"/>
+      <rect x="30" y="178" width="240" height="16" fill="#E07A3A"/>
+      <text x="150" y="178" text-anchor="middle" font-size="15" font-weight="700" fill="#fff">📱 Steps App (iOS / Android)</text>
+      <text x="46" y="222" font-size="12.5" fill="#2C2416">Expo SDK 54 · React Native 0.81</text>
+      <text x="46" y="246" font-size="12.5" fill="#2C2416">expo-router screens (parent + admin)</text>
+      <text x="46" y="270" font-size="12.5" fill="#2C2416">Zustand session · React Query cache</text>
+      <text x="46" y="294" font-size="12.5" fill="#2C2416">EN / AR / HE with JS-driven RTL</text>
+      <text x="46" y="318" font-size="12.5" fill="#2C2416">Reanimated · branded loaders</text>
+      <text x="46" y="342" font-size="12.5" fill="#8C7B65">Built once via EAS; JS hot-loads</text>
+      <text x="46" y="362" font-size="12.5" fill="#8C7B65">from Metro during development</text>
+
+      <!-- Metro dev -->
+      <rect x="30" y="470" width="240" height="100" rx="14" fill="none" stroke="#8C7B65" stroke-width="1.5" stroke-dasharray="6 5"/>
+      <text x="150" y="500" text-anchor="middle" font-size="13.5" font-weight="700" fill="#8C7B65">🛠 Metro bundler (dev only)</text>
+      <text x="150" y="522" text-anchor="middle" font-size="12" fill="#8C7B65">PC serves the JS bundle over LAN</text>
+      <text x="150" y="542" text-anchor="middle" font-size="12" fill="#8C7B65">npx expo start --dev-client</text>
+      <line x1="150" y1="470" x2="150" y2="394" stroke="#8C7B65" stroke-width="1.5" stroke-dasharray="6 5" marker-end="url(#arr)"/>
+
+      <!-- API -->
+      <rect x="430" y="120" width="300" height="300" rx="16" fill="#fff" stroke="#E5DCC8" stroke-width="1.5"/>
+      <rect x="430" y="120" width="300" height="44" rx="16" fill="#2C2416"/>
+      <rect x="430" y="148" width="300" height="16" fill="#2C2416"/>
+      <text x="580" y="148" text-anchor="middle" font-size="15" font-weight="700" fill="#fff">🖥 Express API · TypeScript</text>
+      <text x="446" y="192" font-size="12.5" fill="#2C2416">helmet · CORS · request logging</text>
+      <text x="446" y="216" font-size="12.5" fill="#2C2416">JWT auth → role on every request</text>
+      <text x="446" y="240" font-size="12.5" fill="#2C2416">Rate limiting on register / login</text>
+      <line x1="446" y1="256" x2="714" y2="256" stroke="#E5DCC8" stroke-width="1"/>
+      <text x="446" y="280" font-size="12.5" font-weight="700" fill="#E07A3A">Controllers</text>
+      <text x="446" y="304" font-size="12.5" fill="#2C2416">auth · students · gallery · courses</text>
+      <text x="446" y="328" font-size="12.5" fill="#2C2416">notifications · announcements</text>
+      <text x="446" y="356" font-size="12.5" fill="#8C7B65">Visibility rule: parent ⇄ child links</text>
+      <text x="446" y="376" font-size="12.5" fill="#8C7B65">decide every photo & course response</text>
+
+      <!-- Postgres -->
+      <rect x="860" y="50" width="270" height="140" rx="16" fill="#fff" stroke="#7B9EC4" stroke-width="2"/>
+      <text x="995" y="82" text-anchor="middle" font-size="14.5" font-weight="700" fill="#4a6f97">🐘 PostgreSQL</text>
+      <text x="995" y="106" text-anchor="middle" font-size="12" fill="#2C2416">Supabase · Frankfurt (eu-central-1)</text>
+      <text x="995" y="128" text-anchor="middle" font-size="12" fill="#2C2416">Prisma ORM · versioned migrations</text>
+      <text x="995" y="150" text-anchor="middle" font-size="12" fill="#2C2416">11 models · FK-backed relations</text>
+      <text x="995" y="172" text-anchor="middle" font-size="12" fill="#8C7B65">users · students · photos · courses…</text>
+
+      <!-- R2 -->
+      <rect x="860" y="230" width="270" height="140" rx="16" fill="#fff" stroke="#D4A843" stroke-width="2"/>
+      <text x="995" y="262" text-anchor="middle" font-size="14.5" font-weight="700" fill="#a2801f">☁️ Cloudflare R2</text>
+      <text x="995" y="286" text-anchor="middle" font-size="12" fill="#2C2416">Private bucket — zero public access</text>
+      <text x="995" y="308" text-anchor="middle" font-size="12" fill="#2C2416">3 sizes per photo via sharp</text>
+      <text x="995" y="330" text-anchor="middle" font-size="12" fill="#2C2416">Reads via signed URLs (1 hour)</text>
+      <text x="995" y="352" text-anchor="middle" font-size="12" fill="#8C7B65">zero egress fees</text>
+
+      <!-- Push -->
+      <rect x="860" y="410" width="270" height="140" rx="16" fill="#fff" stroke="#5B8A5E" stroke-width="2"/>
+      <text x="995" y="442" text-anchor="middle" font-size="14.5" font-weight="700" fill="#3f6b42">🔔 Expo Push Service</text>
+      <text x="995" y="466" text-anchor="middle" font-size="12" fill="#2C2416">Delivers via APNs (iOS) / FCM</text>
+      <text x="995" y="488" text-anchor="middle" font-size="12" fill="#2C2416">New photos of your child · events</text>
+      <text x="995" y="510" text-anchor="middle" font-size="12" fill="#2C2416">announcements · course decisions</text>
+      <text x="995" y="532" text-anchor="middle" font-size="12" fill="#8C7B65">tokens stored per device, cleared on logout</text>
+
+      <!-- Arrows -->
+      <line x1="270" y1="262" x2="424" y2="262" stroke="#E07A3A" stroke-width="2.5" marker-end="url(#arrT)"/>
+      <text x="347" y="248" text-anchor="middle" font-size="12" font-weight="700" fill="#E07A3A">HTTPS · JSON</text>
+      <text x="347" y="284" text-anchor="middle" font-size="11.5" fill="#8C7B65">Bearer JWT</text>
+
+      <line x1="730" y1="180" x2="854" y2="130" stroke="#8C7B65" stroke-width="2" marker-end="url(#arr)"/>
+      <text x="800" y="136" text-anchor="middle" font-size="11.5" fill="#8C7B65">Prisma</text>
+
+      <line x1="730" y1="290" x2="854" y2="300" stroke="#8C7B65" stroke-width="2" marker-end="url(#arr)"/>
+      <text x="795" y="282" text-anchor="middle" font-size="11.5" fill="#8C7B65">upload / sign</text>
+
+      <line x1="730" y1="390" x2="854" y2="470" stroke="#8C7B65" stroke-width="2" marker-end="url(#arr)"/>
+      <text x="775" y="452" text-anchor="middle" font-size="11.5" fill="#8C7B65">fan-out</text>
+
+      <polyline points="860,540 340,596 340,340 276,340" fill="none" stroke="#5B8A5E" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arr)"/>
+      <text x="600" y="612" text-anchor="middle" font-size="12" font-weight="600" fill="#3f6b42">push notification → parent's device</text>
+    </svg>
+  </div>
+  <div class="legend">
+    <span><span class="dot" style="background:var(--terracotta)"></span> app ⇄ API traffic</span>
+    <span><span class="dot" style="background:#8C7B65"></span> internal service calls</span>
+    <span><span class="dot" style="background:var(--forest)"></span> push delivery (dashed = async)</span>
+  </div>
+</section>
+
+<!-- ═══════════════ DATA MODEL ═══════════════ -->
+<section id="data" class="reveal">
+  <span class="kicker">Section 04</span>
+  <h2>Data model — the relationship map</h2>
+  <p class="lead">The heart of the system. A parent's access to <i>anything</i> flows through the <b>ParentStudent</b> link, and only an admin can create it. Photos and courses attach to a <b>Student ID</b>, never to a typed name — so families can never collide.</p>
+
+  <div class="card diagram-wrap">
+    <svg viewBox="0 0 1240 740" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Entity relationship diagram">
+      <defs>
+        <marker id="er" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#8C7B65"/>
+        </marker>
+      </defs>
+
+      <!-- ═ edges first (under cards) ═ -->
+      <line x1="260" y1="112" x2="336" y2="112" stroke="#8C7B65" stroke-width="1.8" marker-end="url(#er)"/>
+      <line x1="540" y1="112" x2="646" y2="112" stroke="#8C7B65" stroke-width="1.8" marker-end="url(#er)"/>
+      <line x1="880" y1="100" x2="976" y2="100" stroke="#8C7B65" stroke-width="1.8" marker-end="url(#er)"/>
+      <polyline points="1200,112 1228,112 1228,635 886,635" fill="none" stroke="#8C7B65" stroke-width="1.8" marker-end="url(#er)"/>
+      <line x1="765" y1="190" x2="765" y2="312" stroke="#8C7B65" stroke-width="1.8" marker-end="url(#er)"/>
+      <line x1="850" y1="366" x2="974" y2="366" stroke="#8C7B65" stroke-width="1.8" marker-end="url(#er)"/>
+      <polyline points="980,420 820,420 820,554" fill="none" stroke="#8C7B65" stroke-width="1.8" marker-end="url(#er)"/>
+      <line x1="260" y1="372" x2="334" y2="372" stroke="#8C7B65" stroke-width="1.8" marker-end="url(#er)"/>
+      <polyline points="490,288 490,230 700,230 700,196" fill="none" stroke="#8C7B65" stroke-width="1.8" marker-end="url(#er)"/>
+      <polyline points="30,150 12,150 12,635 24,635" fill="none" stroke="#8C7B65" stroke-width="1.8" marker-end="url(#er)"/>
+
+      <!-- edge labels -->
+      <text x="296" y="102" text-anchor="middle" font-size="11" fill="#8C7B65">1 ⟶ ∞</text>
+      <text x="592" y="102" text-anchor="middle" font-size="11" fill="#8C7B65">∞ ⟶ 1</text>
+      <text x="928" y="90"  text-anchor="middle" font-size="11" fill="#8C7B65">1 ⟶ ∞</text>
+      <text x="1210" y="380" text-anchor="middle" font-size="11" fill="#8C7B65" transform="rotate(90 1214 380)">tag belongs to photo</text>
+      <text x="748" y="256" text-anchor="middle" font-size="11" fill="#8C7B65" transform="rotate(90 752 256)">attends</text>
+      <text x="912" y="356" text-anchor="middle" font-size="11" fill="#8C7B65">∞ ⟶ 1</text>
+      <text x="900" y="410" text-anchor="middle" font-size="11" fill="#8C7B65">event has ∞ photos</text>
+      <text x="297" y="362" text-anchor="middle" font-size="11" fill="#8C7B65">1 ⟶ ∞</text>
+      <text x="600" y="222" text-anchor="middle" font-size="11" fill="#8C7B65">enrollment is for one child</text>
+      <text x="21" y="390" text-anchor="middle" font-size="11" fill="#8C7B65" transform="rotate(90 16 390)">user gets notified</text>
+
+      <!-- ═ entity cards ═ -->
+      <!-- User -->
+      <g>
+        <rect x="30" y="40" width="230" height="150" rx="12" fill="#fff" stroke="#E07A3A" stroke-width="2"/>
+        <rect x="30" y="40" width="230" height="34" rx="12" fill="#E07A3A"/><rect x="30" y="62" width="230" height="12" fill="#E07A3A"/>
+        <text x="145" y="63" text-anchor="middle" font-size="13.5" font-weight="700" fill="#fff">👤 User</text>
+        <text x="44" y="97"  font-size="11.5" fill="#2C2416">email · name · passwordHash</text>
+        <text x="44" y="118" font-size="11.5" fill="#2C2416">role: admin | parent</text>
+        <text x="44" y="139" font-size="11.5" fill="#2C2416">pushToken (per device)</text>
+        <text x="44" y="160" font-size="11.5" fill="#8C7B65">googleId (OAuth-ready)</text>
+      </g>
+      <!-- ParentStudent -->
+      <g>
+        <rect x="340" y="64" width="200" height="96" rx="12" fill="#FFF9EC" stroke="#D4A843" stroke-width="2" stroke-dasharray="5 4"/>
+        <text x="440" y="92" text-anchor="middle" font-size="12.5" font-weight="700" fill="#a2801f">🔗 ParentStudent</text>
+        <text x="440" y="114" text-anchor="middle" font-size="11" fill="#2C2416">parentId + studentId (PK)</text>
+        <text x="440" y="134" text-anchor="middle" font-size="10.5" fill="#8C7B65">THE access key — admin-only</text>
+      </g>
+      <!-- Student -->
+      <g>
+        <rect x="650" y="40" width="230" height="150" rx="12" fill="#fff" stroke="#D4A843" stroke-width="2"/>
+        <rect x="650" y="40" width="230" height="34" rx="12" fill="#D4A843"/><rect x="650" y="62" width="230" height="12" fill="#D4A843"/>
+        <text x="765" y="63" text-anchor="middle" font-size="13.5" font-weight="700" fill="#fff">🧒 Student</text>
+        <text x="664" y="97"  font-size="11.5" fill="#2C2416">name · birthDate · notes</text>
+        <text x="664" y="118" font-size="11.5" fill="#2C2416">≤ 2 guardians via links</text>
+        <text x="664" y="139" font-size="11.5" fill="#2C2416">identified by ID, not name</text>
+        <text x="664" y="160" font-size="11.5" fill="#8C7B65">no login — a protected record</text>
+      </g>
+      <!-- PhotoTag -->
+      <g>
+        <rect x="980" y="64" width="220" height="96" rx="12" fill="#FFF9EC" stroke="#D4A843" stroke-width="2" stroke-dasharray="5 4"/>
+        <text x="1090" y="92" text-anchor="middle" font-size="12.5" font-weight="700" fill="#a2801f">🔗 PhotoTag</text>
+        <text x="1090" y="114" text-anchor="middle" font-size="11" fill="#2C2416">photoId + studentId (unique)</text>
+        <text x="1090" y="134" text-anchor="middle" font-size="10.5" fill="#8C7B65">“this child is in this photo”</text>
+      </g>
+      <!-- Course -->
+      <g>
+        <rect x="30" y="300" width="230" height="150" rx="12" fill="#fff" stroke="#5B8A5E" stroke-width="2"/>
+        <rect x="30" y="300" width="230" height="34" rx="12" fill="#5B8A5E"/><rect x="30" y="322" width="230" height="12" fill="#5B8A5E"/>
+        <text x="145" y="323" text-anchor="middle" font-size="13.5" font-weight="700" fill="#fff">🎓 Course</text>
+        <text x="44" y="357" font-size="11.5" fill="#2C2416">name · schedule · instructor</text>
+        <text x="44" y="378" font-size="11.5" fill="#2C2416">capacity (0 = unlimited)</text>
+        <text x="44" y="399" font-size="11.5" fill="#2C2416">isActive · accentColor</text>
+        <text x="44" y="420" font-size="11.5" fill="#8C7B65">spots = capacity − approved</text>
+      </g>
+      <!-- CourseEnrollment -->
+      <g>
+        <rect x="340" y="288" width="230" height="174" rx="12" fill="#fff" stroke="#C4756A" stroke-width="2"/>
+        <rect x="340" y="288" width="230" height="34" rx="12" fill="#C4756A"/><rect x="340" y="310" width="230" height="12" fill="#C4756A"/>
+        <text x="455" y="311" text-anchor="middle" font-size="13.5" font-weight="700" fill="#fff">📋 CourseEnrollment</text>
+        <text x="354" y="345" font-size="11.5" fill="#2C2416">status: pending → approved /</text>
+        <text x="354" y="363" font-size="11.5" fill="#2C2416">rejected / cancelled</text>
+        <text x="354" y="386" font-size="11.5" fill="#2C2416">requestedBy + requestedAt</text>
+        <text x="354" y="407" font-size="11.5" fill="#2C2416">decidedBy + decidedAt + note</text>
+        <text x="354" y="430" font-size="11.5" fill="#8C7B65">full audit trail, one row per</text>
+        <text x="354" y="448" font-size="11.5" fill="#8C7B65">child + course — no duplicates</text>
+      </g>
+      <!-- EventAttendee -->
+      <g>
+        <rect x="650" y="318" width="200" height="96" rx="12" fill="#FFF9EC" stroke="#D4A843" stroke-width="2" stroke-dasharray="5 4"/>
+        <text x="750" y="346" text-anchor="middle" font-size="12.5" font-weight="700" fill="#a2801f">🔗 EventAttendee</text>
+        <text x="750" y="368" text-anchor="middle" font-size="11" fill="#2C2416">eventId + studentId (PK)</text>
+        <text x="750" y="388" text-anchor="middle" font-size="10.5" fill="#8C7B65">drives auto-tagging on upload</text>
+      </g>
+      <!-- Event -->
+      <g>
+        <rect x="980" y="300" width="230" height="150" rx="12" fill="#fff" stroke="#7B9EC4" stroke-width="2"/>
+        <rect x="980" y="300" width="230" height="34" rx="12" fill="#7B9EC4"/><rect x="980" y="322" width="230" height="12" fill="#7B9EC4"/>
+        <text x="1095" y="323" text-anchor="middle" font-size="13.5" font-weight="700" fill="#fff">🎪 Event</text>
+        <text x="994" y="357" font-size="11.5" fill="#2C2416">name · date · createdBy</text>
+        <text x="994" y="378" font-size="11.5" fill="#2C2416">caption — admin's note</text>
+        <text x="994" y="399" font-size="11.5" fill="#2C2416">shown to parents in gallery</text>
+        <text x="994" y="420" font-size="11.5" fill="#8C7B65">“Next Event” card on Home</text>
+      </g>
+      <!-- Notification -->
+      <g>
+        <rect x="30" y="560" width="230" height="150" rx="12" fill="#fff" stroke="#C4756A" stroke-width="2"/>
+        <rect x="30" y="560" width="230" height="34" rx="12" fill="#C4756A"/><rect x="30" y="582" width="230" height="12" fill="#C4756A"/>
+        <text x="145" y="583" text-anchor="middle" font-size="13.5" font-weight="700" fill="#fff">🔔 Notification</text>
+        <text x="44" y="617" font-size="11.5" fill="#2C2416">type: photo | event |</text>
+        <text x="44" y="635" font-size="11.5" fill="#2C2416">announcement | course</text>
+        <text x="44" y="657" font-size="11.5" fill="#2C2416">childName · eventId · read</text>
+        <text x="44" y="680" font-size="11.5" fill="#8C7B65">in-app bell + push mirror</text>
+      </g>
+      <!-- Announcement -->
+      <g>
+        <rect x="340" y="560" width="230" height="126" rx="12" fill="#fff" stroke="#D4A843" stroke-width="2"/>
+        <rect x="340" y="560" width="230" height="34" rx="12" fill="#D4A843"/><rect x="340" y="582" width="230" height="12" fill="#D4A843"/>
+        <text x="455" y="583" text-anchor="middle" font-size="13.5" font-weight="700" fill="#fff">📢 Announcement</text>
+        <text x="354" y="617" font-size="11.5" fill="#2C2416">text · createdBy → User</text>
+        <text x="354" y="638" font-size="11.5" fill="#2C2416">latest shown on Home</text>
+        <text x="354" y="660" font-size="11.5" fill="#8C7B65">fan-out notifies every parent</text>
+      </g>
+      <!-- Photo -->
+      <g>
+        <rect x="650" y="560" width="230" height="150" rx="12" fill="#fff" stroke="#7B9EC4" stroke-width="2"/>
+        <rect x="650" y="560" width="230" height="34" rx="12" fill="#7B9EC4"/><rect x="650" y="582" width="230" height="12" fill="#7B9EC4"/>
+        <text x="765" y="583" text-anchor="middle" font-size="13.5" font-weight="700" fill="#fff">📸 Photo</text>
+        <text x="664" y="617" font-size="11.5" fill="#2C2416">key · thumbKey · mediumKey</text>
+        <text x="664" y="638" font-size="11.5" fill="#2C2416">(R2 object paths — private)</text>
+        <text x="664" y="659" font-size="11.5" fill="#2C2416">uploadedBy · uploadedAt</text>
+        <text x="664" y="681" font-size="11.5" fill="#8C7B65">served only as signed URLs</text>
+      </g>
+    </svg>
+  </div>
+  <div class="legend">
+    <span><span class="dot" style="background:#FFF9EC;border:1.5px dashed var(--honey)"></span> link tables — pure relationships</span>
+    <span><span class="dot" style="background:var(--terracotta)"></span> accounts</span>
+    <span><span class="dot" style="background:var(--honey)"></span> children & content</span>
+    <span><span class="dot" style="background:var(--forest)"></span> courses</span>
+    <span><span class="dot" style="background:var(--sky)"></span> events & photos</span>
+  </div>
+</section>
+
+<!-- ═══════════════ FLOWS ═══════════════ -->
+<section id="flows" class="reveal">
+  <span class="kicker">Section 05</span>
+  <h2>The three core journeys</h2>
+  <p class="lead">Every feature in the app is one of these three stories. Each step is labeled with who performs it — <b style="color:var(--forest)">parent</b>, <b style="color:var(--terracotta)">admin</b>, or the <b style="color:#4a6f97">system</b> acting automatically.</p>
+
+  <div class="flow-grid">
+
+    <div class="card flow">
+      <h3>🚪 Journey 1 — From new account to seeing your child</h3>
+      <p class="note">Creating an account is deliberately empty of power. Access is granted by the academy, never claimed by the parent.</p>
+      <ol class="steps">
+        <li><span class="n parent">1</span><span class="who parent">Parent</span><b>Creates an account — name, email, password only</b><small>No child names asked. The form explains: “The academy will link your children to this account.”</small></li>
+        <li><span class="n system">2</span><span class="who system">System</span><b>Issues a JWT session (30 days)</b><small>bcrypt-hashed password · rate-limited endpoint · session persisted on device, so the app opens straight to Home next time.</small></li>
+        <li><span class="n admin">3</span><span class="who admin">Admin</span><b>Opens Management → Students, links the parent to their child</b><small>Searches the parent by name/email, taps “Link”. Both mum and dad can be linked to the same child.</small></li>
+        <li><span class="n system">4</span><span class="who system">System</span><b>The ParentStudent link now exists — everything unlocks</b><small>Child chip appears on Home & Profile, the gallery fills with their child's photos, notifications begin flowing.</small></li>
+        <li><span class="n parent">5</span><span class="who parent">Parent</span><b>Sees exactly one thing: their own child's world</b><small>Photos, courses and notifications are all filtered through the link — nothing else is reachable.</small></li>
+      </ol>
+      <div class="callout lock">🔒 <span><b>Why it works this way:</b> if parents could type their child's name, any parent typing “Sara” would see every Sara's photos. Access must be granted by the academy, by ID.</span></div>
+    </div>
+
+    <div class="card flow">
+      <h3>📸 Journey 2 — The photo pipeline</h3>
+      <p class="note">From the admin's camera roll to a parent's push notification, without a single public URL.</p>
+      <ol class="steps">
+        <li><span class="n admin">1</span><span class="who admin">Admin</span><b>Creates an event and picks which children attended</b><small>Attendees are chosen from enrolled students — chips, not typing. An optional caption (“What an amazing day! 💦”) is shown to parents.</small></li>
+        <li><span class="n admin">2</span><span class="who admin">Admin</span><b>Uploads photos to the event</b><small>Multi-select from the photo library with per-file progress bars.</small></li>
+        <li><span class="n system">3</span><span class="who system">System</span><b>sharp resizes every photo into 3 sizes → Cloudflare R2</b><small>thumbnail ~200px · medium ~800px · original. The bucket is fully private.</small></li>
+        <li><span class="n system">4</span><span class="who system">System</span><b>Auto-tags every attendee in every photo</b><small>PhotoTag rows by student ID. The admin can fine-tune tags per photo afterwards.</small></li>
+        <li><span class="n system">5</span><span class="who system">System</span><b>Notifies each child's guardians — once per child, not per photo</b><small>In-app notification + push: “New photos of Layla — 12 new photos from Art Show”.</small></li>
+        <li><span class="n parent">6</span><span class="who parent">Parent</span><b>Opens the gallery, sees only photos their child is tagged in</b><small>Every image loads through a 1-hour signed URL. Fullscreen viewer with save & share.</small></li>
+      </ol>
+      <div class="callout ok">✅ <span><b>Privacy guarantee:</b> two families each with a child named “Sara” were tested head-to-head — each parent sees only their own child's photo. Matching is by ID, never by name.</span></div>
+    </div>
+
+    <div class="card flow">
+      <h3>🎓 Journey 3 — Course enrollment with approval</h3>
+      <p class="note">A request → review → decision workflow. Nothing is first-come-first-served; the academy stays in control, and everything is logged.</p>
+      <ol class="steps">
+        <li><span class="n parent">1</span><span class="who parent">Parent</span><b>Taps “Request a place” on a course card</b><small>If they have several children, they pick which child. The server verifies guardianship — you can only request for your own child.</small></li>
+        <li><span class="n system">2</span><span class="who system">System</span><b>Creates a pending enrollment — card flips to “⏳ Awaiting approval”</b><small>Recorded: who asked and when. A pending request can be withdrawn by the parent.</small></li>
+        <li><span class="n admin">3</span><span class="who admin">Admin</span><b>Reviews the board — requests grouped by course</b><small>Sticky course headers with counts, filters (pending / approved / declined / all), pending badge on the dashboard.</small></li>
+        <li><span class="n admin">4</span><span class="who admin">Admin</span><b>Approves or declines</b><small>Capacity is enforced at approval — requests may exceed spots, and the admin chooses who gets in. Decision + decider + timestamp + optional note are stored forever.</small></li>
+        <li><span class="n system">5</span><span class="who system">System</span><b>Notifies the child's guardians of the decision</b><small>Push + in-app: “Course request approved 🎉 — Layla is enrolled in Swimming Lessons.”</small></li>
+        <li><span class="n parent">6</span><span class="who parent">Parent</span><b>Card shows the truth: “✓ Layla is enrolled” / “Request again”</b><small>A declined family can re-request — it reopens the same record, keeping one continuous history per child + course.</small></li>
+      </ol>
+      <div class="callout warn">📒 <span><b>Everything is logged:</b> every enrollment permanently records <i>requested by / at</i> and <i>decided by / at</i> — a complete audit trail the academy can always answer questions from.</span></div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══════════════ PERMISSIONS ═══════════════ -->
+<section id="permissions" class="reveal">
+  <span class="kicker">Section 06</span>
+  <h2>Who can do what</h2>
+  <p class="lead">Enforced server-side on every request — the JWT carries identity, the role and the parent-child links decide the rest. The UI merely reflects it.</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Capability</th><th>👩‍👧 Parent</th><th>🏫 Admin</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>View photos</td><td class="scope">Only their child's tags</td><td class="yes">All photos</td></tr>
+        <tr><td>Upload, tag & delete photos</td><td class="no">—</td><td class="yes">✓</td></tr>
+        <tr><td>Create events, captions & attendees</td><td class="no">—</td><td class="yes">✓</td></tr>
+        <tr><td>Create children (students)</td><td class="no">— (by design)</td><td class="yes">✓</td></tr>
+        <tr><td>Link / unlink parents to a child</td><td class="no">—</td><td class="yes">✓</td></tr>
+        <tr><td>Request a course place</td><td class="scope">Own children only</td><td class="no">—</td></tr>
+        <tr><td>Approve / decline course requests</td><td class="no">—</td><td class="yes">✓ (with audit)</td></tr>
+        <tr><td>Post announcements</td><td class="no">read only</td><td class="yes">✓ → notifies all</td></tr>
+        <tr><td>Receive push notifications</td><td class="yes">✓ (about their child)</td><td class="no">n/a</td></tr>
+        <tr><td>Change own password / language</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+        <tr><td>Management dashboard</td><td class="no">—</td><td class="yes">✓</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ═══════════════ ADMIN APP ═══════════════ -->
+<section id="admin" class="reveal">
+  <span class="kicker">Section 07</span>
+  <h2>The admin management app</h2>
+  <p class="lead">One door in — <b>Profile → Management</b> — and everything the academy runs day-to-day sits behind it. Built for hundreds of families: every list is server-searched and paginated, nothing scrolls forever.</p>
+
+  <div class="admin-hub">
+    <div class="hub-card">
+      <h3>⚙️ Management Dashboard</h3>
+      <span class="path">Profile → Management · admin accounts only</span>
+      <div class="hub-tiles">
+        <div class="hub-tile"><b style="color:var(--terracotta)">👶</b><span>Children</span></div>
+        <div class="hub-tile"><b style="color:var(--forest)">👪</b><span>Parents</span></div>
+        <div class="hub-tile"><b style="color:var(--sky)">📸</b><span>Photos</span></div>
+        <div class="hub-tile"><b style="color:var(--honey)">🎪</b><span>Events</span></div>
+      </div>
+      <div class="hub-alert">⚠️ Leads with the number that matters: <b>children with no parent linked</b> — their families can't see photos yet. One tap jumps to fixing it.</div>
+    </div>
+    <div class="branch-line"></div>
+  </div>
+
+  <div class="branches">
+    <div class="card branch b1">
+      <h4>👶 Students</h4>
+      <span class="api">/api/students · admin-only</span>
+      <ul>
+        <li>Add a child in two taps — name, done</li>
+        <li>Server-side search by name (debounced), paginated</li>
+        <li>Link / unlink guardians — parent picker is searchable too</li>
+        <li>Per-child photo count & guardian count at a glance</li>
+        <li>Delete cascades tags, attendance & links safely</li>
+      </ul>
+    </div>
+    <div class="card branch b2">
+      <h4>📋 Course Requests</h4>
+      <span class="api">/api/courses/enrollments · admin-only</span>
+      <ul>
+        <li>Grouped by course with sticky headers & counts</li>
+        <li>Filters: pending · approved · declined · all</li>
+        <li>Approve / decline with per-row spinners</li>
+        <li>Capacity enforced at approval, clear “course full” error</li>
+        <li>History shows who decided, when, and any note</li>
+      </ul>
+    </div>
+    <div class="card branch b3">
+      <h4>🖼 Gallery & Events</h4>
+      <span class="api">/api/gallery · admin-only writes</span>
+      <ul>
+        <li>Create events · pick attendees from enrolled students</li>
+        <li>Write the event caption parents see</li>
+        <li>Multi-photo upload with progress, auto-tag attendees</li>
+        <li>Per-photo tag editor (add / remove children)</li>
+        <li>Quick-add event & announcement straight from Home</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ SECURITY ═══════════════ -->
+<section id="security" class="reveal">
+  <span class="kicker">Section 08</span>
+  <h2>Security model</h2>
+  <p class="lead">This is an app that holds photos of other people's children. The design treats that as the primary constraint, not a feature.</p>
+
+  <div class="roles">
+    <div class="card role admin">
+      <span class="emoji">🔑</span>
+      <h3>Access = a database link</h3>
+      <span class="tag">THE CORE RULE</span>
+      <ul>
+        <li>Photo visibility is a foreign-key match on Student ID</li>
+        <li>Never name matching — same-named children can't collide</li>
+        <li>Only admins create the parent ⇄ child link</li>
+        <li>Registration grants zero access by itself</li>
+      </ul>
+    </div>
+    <div class="card role child">
+      <span class="emoji">🗄️</span>
+      <h3>Nothing is public</h3>
+      <span class="tag">STORAGE</span>
+      <ul>
+        <li>R2 bucket is fully private — no public objects</li>
+        <li>Every image read is a 1-hour signed URL, minted per request</li>
+        <li>The old public /uploads route was removed entirely</li>
+        <li>Photos of children never touch a public CDN path</li>
+      </ul>
+    </div>
+    <div class="card role parent">
+      <span class="emoji">🛡️</span>
+      <h3>Hardened API</h3>
+      <span class="tag">TRANSPORT & AUTH</span>
+      <ul>
+        <li>JWT on every request; server re-checks the user still exists</li>
+        <li>Rate limiting on register / login / Google (20 per 15 min)</li>
+        <li>bcrypt password hashing · JWT secret fails fast in prod</li>
+        <li>Client auto-logs-out on 401 — stale sessions can't linger</li>
+        <li>helmet headers · CORS restricted via environment config</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ BUILD ═══════════════ -->
+<section id="build" class="reveal">
+  <span class="kicker">Section 09</span>
+  <h2>How it's built & run</h2>
+  <p class="lead">A monorepo with two halves. During development the native app is installed once, then every JavaScript change streams to the phone live from Metro.</p>
+
+  <div class="build-grid">
+    <div class="card">
+      <h3 style="margin-bottom:12px">📂 Repository layout</h3>
+<pre><span class="c">Steps/</span>
+├─ <span class="o">steps-app/</span>          <span class="c"># Expo React Native app</span>
+│  ├─ src/app/          <span class="c"># expo-router screens</span>
+│  │  ├─ (tabs)/        <span class="c"># Home · Gallery · Profile</span>
+│  │  ├─ admin.tsx      <span class="c"># management dashboard</span>
+│  │  ├─ students.tsx   <span class="c"># children & guardians</span>
+│  │  └─ course-requests.tsx
+│  ├─ src/components/   <span class="c"># ui · gallery · home · profile</span>
+│  ├─ src/services/     <span class="c"># typed API clients</span>
+│  ├─ src/store/        <span class="c"># zustand (auth · locale)</span>
+│  └─ src/i18n/         <span class="c"># en · ar · he dictionaries</span>
+└─ <span class="o">steps-server/</span>       <span class="c"># Express API</span>
+   ├─ prisma/           <span class="c"># schema + migrations</span>
+   └─ src/
+      ├─ controllers/   <span class="c"># request handlers</span>
+      ├─ models/        <span class="c"># Prisma data access</span>
+      ├─ routes/        <span class="c"># endpoint definitions</span>
+      ├─ middleware/    <span class="c"># auth · roles · rate limit</span>
+      └─ lib/           <span class="c"># r2 · push · image pipeline</span></pre>
+    </div>
+    <div class="card">
+      <h3 style="margin-bottom:12px">⚡ The development loop</h3>
+<pre><span class="c"># 1 · start the API (terminal 1)</span>
+<span class="g">cd steps-server</span>
+npm run dev              <span class="c"># tsx watch · :4000</span>
+
+<span class="c"># 2 · start the app bundler (terminal 2)</span>
+<span class="g">cd steps-app</span>
+npx expo start --dev-client
+
+<span class="c"># open the installed Steps app on the phone —</span>
+<span class="c"># it pulls the JS bundle live from Metro.</span>
+<span class="c"># Every save hot-reloads on the device. ⚡</span></pre>
+      <h3 style="margin:18px 0 12px">📦 Native builds (only when native changes)</h3>
+<pre><span class="c"># development client — for daily work</span>
+npx eas-cli build --profile development --platform ios
+
+<span class="c"># preview — standalone, for handing to testers</span>
+npx eas-cli build --profile preview --platform ios
+
+<span class="c"># JS-only changes NEVER need a rebuild.</span>
+<span class="c"># Rebuild only for: new native modules,</span>
+<span class="c"># app.json icon/splash/permissions/plugins.</span></pre>
+    </div>
+  </div>
+
+  <div class="callout ok" style="margin-top:18px">🌍 <span><b>Internationalization is not a bolt-on:</b> every string in the app exists in English, Arabic and Hebrew, and every screen mirrors correctly right-to-left. RTL is handled in JavaScript so it works identically across build types.</span></div>
+</section>
+
+</main>
+
+<footer>
+  <span class="mascot">🐘</span>
+  Steps Academy · System overview & architecture · generated August 2026<br/>
+  React Native + Expo &nbsp;·&nbsp; Express + Prisma + PostgreSQL &nbsp;·&nbsp; Cloudflare R2 &nbsp;·&nbsp; Made with love 🌸
+</footer>
+
+<script>
+  // Scroll-spy: highlight the nav link of the section in view.
+  const links = document.querySelectorAll("nav a");
+  const sections = [...document.querySelectorAll("main section")];
+  const byId = Object.fromEntries([...links].map(a => [a.getAttribute("href").slice(1), a]));
+  const spy = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        links.forEach(l => l.classList.remove("active"));
+        byId[e.target.id]?.classList.add("active");
+      }
+    });
+  }, { rootMargin: "-30% 0px -60% 0px" });
+  sections.forEach(s => spy.observe(s));
+
+  // Gentle reveal-on-scroll.
+  const reveal = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add("visible"); reveal.unobserve(e.target); } });
+  }, { threshold: 0.08 });
+  document.querySelectorAll(".reveal").forEach(el => reveal.observe(el));
+</script>
+
+</body>
+</html>
