@@ -5,12 +5,14 @@ import {
   createEvent,
   deleteEvent,
   deletePhoto,
+  getGalleryQuote,
   getNextEvent,
   listEventPhotos,
   listEvents,
   myEventGallery,
   myGallery,
   removeTag,
+  setGalleryQuote,
   updateEventAttendees,
   updateEventCaption,
   uploadPhotos,
@@ -19,6 +21,10 @@ import { adminOnly, requireAuth } from "../middleware/auth";
 import { upload } from "../middleware/upload";
 
 const router = Router();
+
+// Quote routes come before /events/:id so "quote" isn't captured as an id.
+router.get("/quote", requireAuth, getGalleryQuote);
+router.put("/quote", requireAuth, adminOnly, setGalleryQuote);
 
 router.post("/events", requireAuth, adminOnly, createEvent);
 router.get("/events", requireAuth, listEvents);

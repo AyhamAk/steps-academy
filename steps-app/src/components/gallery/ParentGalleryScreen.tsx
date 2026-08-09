@@ -7,7 +7,13 @@ import { Colors } from "../../constants/Colors";
 import { Fonts } from "../../constants/Fonts";
 import { Type } from "../../constants/Typography";
 import { useTranslation } from "../../i18n/useTranslation";
-import { isPhotoTaggedWithAny, myGallery, Photo, resolvePhotoUrl } from "../../services/galleryApi";
+import {
+  getGalleryQuote,
+  isPhotoTaggedWithAny,
+  myGallery,
+  Photo,
+  resolvePhotoUrl,
+} from "../../services/galleryApi";
 import { useChildren } from "../../store/authStore";
 import { formatIsoDate } from "../../utils/date";
 import { BalloonLoader } from "../ui/BalloonLoader";
@@ -63,12 +69,21 @@ export function ParentGalleryScreen() {
     queryKey: ["gallery", "mine"],
     queryFn: myGallery,
   });
+  const { data: quote } = useQuery({ queryKey: ["gallery", "quote"], queryFn: getGalleryQuote });
 
   return (
     <>
       <ScrollView contentContainerStyle={styles.content}>
         <ScreenFadeIn>
           <StepsHeader title={t.gallery.pageTitle} subtitle={t.gallery.parentSubtitle} />
+
+          {/* A message the academy pins above every album. */}
+          {quote ? (
+            <View style={styles.quoteCard}>
+              <Text style={styles.quoteMark}>“</Text>
+              <Text style={[styles.quoteText, rtlText]}>{quote}</Text>
+            </View>
+          ) : null}
 
           {isError ? (
             <>
@@ -199,6 +214,29 @@ const styles = StyleSheet.create({
   eventChevron: {
     fontSize: 22,
     color: Colors.textLight,
+  },
+  quoteCard: {
+    backgroundColor: `${Colors.honey}1A`,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: `${Colors.honey}66`,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    marginTop: 16,
+  },
+  quoteMark: {
+    fontFamily: Fonts.extraBold,
+    fontSize: 26,
+    color: Colors.honey,
+    lineHeight: 26,
+  },
+  quoteText: {
+    ...Type.body,
+    fontSize: 14.5,
+    color: Colors.bark,
+    fontStyle: "italic",
+    lineHeight: 21,
+    marginTop: 2,
   },
   refreshButton: {
     marginTop: 16,

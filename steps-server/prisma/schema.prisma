@@ -36,6 +36,13 @@ enum WeekDay {
   thu
 }
 
+/// Small key/value store for academy-wide settings, e.g. the gallery quote.
+model AppSetting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
 /// One activity in the recurring weekly timetable shown on Home.
 model ScheduleActivity {
   id    String  @id @default(uuid())
@@ -59,6 +66,12 @@ model User {
   googleId     String?
   role         Role     @default(parent)
   pushToken    String?
+  /**
+   * What the parent said their child is called at sign-up. A claim only —
+   * it grants nothing. An admin reads it to know who to link, then links a
+   * real Student record. Never used to resolve photo visibility.
+   */
+  claimedChildName String?
   createdAt    DateTime @default(now())
 
   events        Event[]

@@ -17,6 +17,7 @@ import {
 
 import { Screen } from "../components/Screen";
 import { StepsButton } from "../components/ui/StepsButton";
+import { LanguagePicker } from "../components/ui/LanguagePicker";
 import { StepsLogo } from "../components/ui/StepsLogo";
 import { Touchable } from "../components/ui/Touchable";
 import { Colors } from "../constants/Colors";
@@ -133,6 +134,7 @@ export default function AuthScreen() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [childName, setChildName] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
   const { isLoading, error, register, login, signInWithGoogle } = useAuth();
 
@@ -168,6 +170,7 @@ export default function AuthScreen() {
       name: name.trim(),
       email: email.trim(),
       password,
+      childName: childName.trim() || undefined,
     });
     if (ok) router.replace("/(tabs)");
   };
@@ -286,6 +289,12 @@ export default function AuthScreen() {
                   }}
                 />
 
+                <AuthInput
+                  placeholder={t.auth.childNamePlaceholder}
+                  placeholderTextColor={Colors.textLight}
+                  value={childName}
+                  onChangeText={setChildName}
+                />
                 <Text style={styles.childrenHint}>{t.auth.childrenLinkedByAcademy}</Text>
 
                 {message ? <Text style={styles.error}>{message}</Text> : null}
@@ -306,6 +315,9 @@ export default function AuthScreen() {
               </View>
             </AnimatedPanel>
           )}
+          <View style={styles.languageBlock}>
+            <LanguagePicker compact />
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </Screen>
@@ -384,6 +396,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   linkButton: { paddingVertical: 8, marginTop: 2 },
+  languageBlock: { marginTop: 28, paddingHorizontal: 24 },
   link: {
     textAlign: "center",
     color: Colors.textLight,

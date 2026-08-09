@@ -15,6 +15,16 @@ export const env = {
   jwtSecret: process.env.JWT_SECRET ?? "dev-only-insecure-secret",
   jwtExpiresIn: process.env.JWT_EXPIRES_IN ?? "30d",
   googleClientId: process.env.GOOGLE_CLIENT_ID ?? "",
+  /**
+   * A Google ID token's audience is whichever client ID requested it, so a
+   * sign-in from iOS carries the iOS client ID — not the web one. Verifying
+   * against a single ID fails for every platform except that one.
+   */
+  googleAudiences: [
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_IOS_CLIENT_ID,
+    process.env.GOOGLE_ANDROID_CLIENT_ID,
+  ].filter((id): id is string => !!id),
   adminEmails: (process.env.ADMIN_EMAILS ?? "")
     .split(",")
     .map((email) => email.trim().toLowerCase())

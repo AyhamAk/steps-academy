@@ -122,8 +122,9 @@ export const en = {
     passwordPlaceholder: "Password",
     createAccountButton: "Create account",
     signIn: "Sign in",
+    childNamePlaceholder: "Your child's name (optional)",
     childrenLinkedByAcademy:
-      "👶 The academy will link your children to this account, so only their photos are shared with you.",
+      "👶 The academy checks this and links your child, so only their photos are shared with you.",
     nameRequired: "Please enter your name",
     emailInvalid: "Please enter a valid email address",
     passwordTooShort: "Password must be at least 8 characters",
@@ -234,6 +235,20 @@ export const en = {
     fieldColor: "Colour",
     namePlaceholder: "e.g. Morning Circle",
     timeHint: "24-hour clock",
+  },
+  myCourses: {
+    title: "🎓 My Courses",
+    enrolled: "Enrolled",
+    pending: "Pending",
+    withdraw: "Withdraw request",
+    leave: "Leave course",
+    withdrawTitle: "Withdraw request?",
+    withdrawMessage: (child: string, course: string) =>
+      `${child}'s request for ${course} will be withdrawn. You can request again later.`,
+    leaveTitle: "Leave the course?",
+    leaveMessage: (child: string, course: string) =>
+      `${child} will be taken out of ${course} and the place given to another family.`,
+    cancelFailed: "Couldn't update the enrolment",
   },
   coursesAdmin: {
     title: "Courses",
@@ -394,6 +409,9 @@ export const en = {
     noStudentsYet: "No students yet — add them in Students first.",
 
     tapPhotoToEditTags: "Tap a photo to edit tags",
+    quoteLabel: "💬 Pinned message for families",
+    quotePlaceholder: "A short note shown above every album...",
+    quoteSave: "Save",
     captionNoteLabel: "Note from the Academy",
     captionAdd: "✏️ Add event caption",
     captionPlaceholder: "Write a note that parents will see...",
@@ -567,8 +585,9 @@ export const ar: Translations = {
     passwordPlaceholder: "كلمة المرور",
     createAccountButton: "إنشاء حساب",
     signIn: "تسجيل الدخول",
+    childNamePlaceholder: "اسم طفلك (اختياري)",
     childrenLinkedByAcademy:
-      "👶 ستقوم الأكاديمية بربط أطفالك بهذا الحساب، بحيث تُشارَك معك صورهم فقط.",
+      "👶 تتحقق الأكاديمية من هذا وتربط طفلك، بحيث تُشارَك معك صوره فقط.",
     nameRequired: "يرجى إدخال اسمك",
     emailInvalid: "يرجى إدخال بريد إلكتروني صحيح",
     passwordTooShort: "يجب أن تكون كلمة المرور 8 أحرف على الأقل",
@@ -677,6 +696,20 @@ export const ar: Translations = {
     fieldColor: "اللون",
     namePlaceholder: "مثال: حلقة الصباح",
     timeHint: "نظام 24 ساعة",
+  },
+  myCourses: {
+    title: "🎓 دوراتي",
+    enrolled: "مسجّل",
+    pending: "قيد الانتظار",
+    withdraw: "سحب الطلب",
+    leave: "مغادرة الدورة",
+    withdrawTitle: "سحب الطلب؟",
+    withdrawMessage: (child: string, course: string) =>
+      `سيتم سحب طلب ${child} لـ ${course}. يمكنك التقديم مرة أخرى لاحقاً.`,
+    leaveTitle: "مغادرة الدورة؟",
+    leaveMessage: (child: string, course: string) =>
+      `سيتم إخراج ${child} من ${course} وسيُمنح المكان لعائلة أخرى.`,
+    cancelFailed: "تعذّر تحديث التسجيل",
   },
   coursesAdmin: {
     title: "الدورات",
@@ -834,6 +867,9 @@ export const ar: Translations = {
     noStudentsYet: "لا يوجد طلاب بعد — أضفهم من صفحة الطلاب أولاً.",
 
     tapPhotoToEditTags: "اضغط على صورة لتعديل الوسوم",
+    quoteLabel: "💬 رسالة مثبّتة للعائلات",
+    quotePlaceholder: "ملاحظة قصيرة تظهر فوق كل الألبومات...",
+    quoteSave: "حفظ",
     captionNoteLabel: "ملاحظة من الأكاديمية",
     captionAdd: "✏️ أضف وصفاً للفعالية",
     captionPlaceholder: "اكتب وصفاً يراه أولياء الأمور...",
@@ -1002,8 +1038,9 @@ export const he: Translations = {
     passwordPlaceholder: "סיסמה",
     createAccountButton: "צור חשבון",
     signIn: "התחבר",
+    childNamePlaceholder: "שם הילד/ה (אופציונלי)",
     childrenLinkedByAcademy:
-      "👶 האקדמיה תקשר את ילדיך לחשבון הזה, כך שרק התמונות שלהם ישותפו איתך.",
+      "👶 האקדמיה בודקת זאת ומקשרת את ילדך, כך שרק התמונות שלו ישותפו איתך.",
     nameRequired: "אנא הזן את שמך",
     emailInvalid: "אנא הזן כתובת אימייל תקינה",
     passwordTooShort: "הסיסמה חייבת להכיל לפחות 8 תווים",
@@ -1116,6 +1153,20 @@ export const he: Translations = {
     fieldColor: "צבע",
     namePlaceholder: "לדוגמה: מעגל בוקר",
     timeHint: "שעון 24 שעות",
+  },
+  myCourses: {
+    title: "🎓 הקורסים שלי",
+    enrolled: "רשום",
+    pending: "ממתין",
+    withdraw: "בטל בקשה",
+    leave: "עזוב את הקורס",
+    withdrawTitle: "לבטל את הבקשה?",
+    withdrawMessage: (child: string, course: string) =>
+      `הבקשה של ${child} ל${course} תבוטל. אפשר לבקש שוב מאוחר יותר.`,
+    leaveTitle: "לעזוב את הקורס?",
+    leaveMessage: (child: string, course: string) =>
+      `${child} יוצא מ${course} והמקום יימסר למשפחה אחרת.`,
+    cancelFailed: "לא ניתן לעדכן את ההרשמה",
   },
   coursesAdmin: {
     title: "קורסים",
@@ -1273,6 +1324,9 @@ export const he: Translations = {
     noStudentsYet: "אין עדיין תלמידים — הוסף אותם בעמוד התלמידים תחילה.",
 
     tapPhotoToEditTags: "הקש על תמונה כדי לערוך תיוגים",
+    quoteLabel: "💬 הודעה מוצמדת למשפחות",
+    quotePlaceholder: "הערה קצרה שתופיע מעל כל האלבומים...",
+    quoteSave: "שמור",
     captionNoteLabel: "הערה מהאקדמיה",
     captionAdd: "✏️ הוסף תיאור לאירוע",
     captionPlaceholder: "כתוב הערה שההורים יראו...",

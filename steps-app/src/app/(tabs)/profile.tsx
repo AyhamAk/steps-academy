@@ -6,7 +6,9 @@ import { Alert, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { ChangePasswordModal } from "../../components/profile/ChangePasswordModal";
 import { ContactAcademyModal } from "../../components/profile/ContactAcademyModal";
+import { MyCoursesSection } from "../../components/profile/MyCoursesSection";
 import { Screen } from "../../components/Screen";
+import { LanguagePicker } from "../../components/ui/LanguagePicker";
 import { ScreenFadeIn } from "../../components/ui/ScreenFadeIn";
 import { StepsButton } from "../../components/ui/StepsButton";
 import { StepsCard } from "../../components/ui/StepsCard";
@@ -22,12 +24,6 @@ import { enrollmentSummary } from "../../services/coursesApi";
 import { getNotifications } from "../../services/notificationsApi";
 import { Locale, useLocaleStore } from "../../store/localeStore";
 import { Touchable } from "../../components/ui/Touchable";
-
-const LANGUAGES: { code: Locale; label: string }[] = [
-  { code: "en", label: "English" },
-  { code: "ar", label: "العربية" },
-  { code: "he", label: "עברית" },
-];
 
 export default function ProfileScreen() {
   const { user, logout, isLoading } = useAuth();
@@ -67,12 +63,6 @@ export default function ProfileScreen() {
     }
     return counts;
   }, [galleryGroups, childIds.join(",")]);
-
-  const handleSelectLocale = (next: Locale) => {
-    if (next === locale) return;
-    setLocale(next);
-    applyLocaleDirection(next);
-  };
 
   const confirmLogout = () => {
     Alert.alert(t.profile.logoutConfirmTitle, t.profile.logoutConfirmMessage, [
@@ -215,26 +205,13 @@ export default function ProfileScreen() {
           </View>
         ) : null}
 
+        {user?.role === "admin" ? null : <MyCoursesSection />}
+
         <View style={styles.prefsGroup}>
           <Text style={[styles.prefsGroupTitle, rtlText]}>{t.profile.preferencesTitle}</Text>
 
           <Text style={[styles.prefsSubLabel, rtlText]}>{t.profile.language}</Text>
-          <View style={styles.languageRow}>
-            {LANGUAGES.map(({ code, label }) => {
-              const active = locale === code;
-              return (
-                <Touchable
-                  key={code}
-                  style={[styles.languagePill, active && styles.languagePillActive]}
-                  onPress={() => handleSelectLocale(code)}
-                >
-                  <Text style={[styles.languagePillText, active && styles.languagePillTextActive]}>
-                    {label}
-                  </Text>
-                </Touchable>
-              );
-            })}
-          </View>
+          <LanguagePicker />
 
           <Text style={[styles.prefsSubLabel, styles.prefsSubLabelSpaced, rtlText]}>
             🔧 {t.profile.settingsTitle}
@@ -484,30 +461,6 @@ const styles = StyleSheet.create({
   },
   prefsSubLabelSpaced: {
     marginTop: 20,
-  },
-  languageRow: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  languagePill: {
-    flex: 1,
-    borderWidth: 1.5,
-    borderColor: Colors.border,
-    borderRadius: 12,
-    paddingVertical: 12,
-    alignItems: "center",
-  },
-  languagePillActive: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
-  },
-  languagePillText: {
-    fontFamily: Fonts.semiBold,
-    fontSize: 14,
-    color: Colors.textLight,
-  },
-  languagePillTextActive: {
-    color: "#FFFFFF",
   },
   settingsRow: {
     borderTopWidth: 1,

@@ -9,10 +9,11 @@ import { signToken } from "../utils/jwt";
 const googleClient = new OAuth2Client(env.googleClientId);
 
 export async function register(req: Request, res: Response) {
-  const { email, name, password } = req.body as {
+  const { email, name, password, childName } = req.body as {
     email?: string;
     name?: string;
     password?: string;
+    childName?: string;
   };
 
   if (!email || !name || !password) {
@@ -30,9 +31,17 @@ export async function register(req: Request, res: Response) {
 
   const passwordHash = await bcrypt.hash(password, 10);
   const role = env.adminEmails.includes(email.toLowerCase()) ? "admin" : "parent";
-  // A new account starts with no children. An admin links them to real Student
-  // records — a parent can no longer grant themselves access by typing a name.
-  const user = await UserModel.create({ email, name, passwordHash, role });
+  // The child's name is recorded as a claim so the academy knows who this
+  // account belongs to — it grants no access. Only an admin linking a real
+  // Student record does that, otherwise anyone typing "Sara" would reach
+  // every Sara's photos.
+  const user = await UserModel.create({
+    email,
+    name,
+    passwordHash,
+    role,
+    claimedChildName: childName?.trim() || null,
+  });
   const token = signToken({ userId: user.id });
 
   res.status(201).json({ token, user: await UserModel.toPublic(user) });
@@ -69,7 +78,7 @@ export async function googleAuth(req: Request, res: Response) {
   try {
     const ticket = await googleClient.verifyIdToken({
       idToken,
-      audience: env.googleClientId,
+      audience: env.googleAudiences,
     });
     const payload = ticket.getPayload();
     if (!payload?.email) {

@@ -16,7 +16,17 @@ export type ParentAccount = {
   name: string;
   email: string;
   createdAt: string;
+  /** What they said their child is called at sign-up — a hint, not access. */
+  claimedChildName: string | null;
   children: { id: string; name: string }[];
+};
+
+export type ParentAwaitingLink = {
+  id: string;
+  name: string;
+  email: string;
+  claimedChildName: string | null;
+  createdAt: string;
 };
 
 export type AdminOverview = {
@@ -27,6 +37,8 @@ export type AdminOverview = {
   events: number;
   photos: number;
   pendingRequests: number;
+  /** Parents who signed up but have no child linked yet. */
+  parentsAwaitingLink: number;
   courses: number;
 };
 
@@ -81,6 +93,11 @@ export async function unlinkGuardian(studentId: string, parentId: string) {
     `/api/students/${studentId}/guardians/${parentId}`
   );
   return data.guardians;
+}
+
+export async function listAwaitingLink() {
+  const { data } = await api.get<{ parents: ParentAwaitingLink[] }>("/api/students/awaiting-link");
+  return data.parents;
 }
 
 export async function listParents(query: PageQuery = {}) {

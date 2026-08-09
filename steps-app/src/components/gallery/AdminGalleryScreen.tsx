@@ -1,7 +1,16 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as ImagePicker from "expo-image-picker";
 import { useState } from "react";
-import { Alert, Image, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Alert,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 
 import { Colors } from "../../constants/Colors";
 import { Fonts } from "../../constants/Fonts";
@@ -9,9 +18,11 @@ import { Type } from "../../constants/Typography";
 import { useTranslation } from "../../i18n/useTranslation";
 import {
   GalleryEvent,
+  getGalleryQuote,
   listEventPhotosAdmin,
   listEvents,
   Photo,
+  setGalleryQuote,
   uploadEventPhoto,
 } from "../../services/galleryApi";
 import { listStudents } from "../../services/studentsApi";
@@ -21,6 +32,7 @@ import { SkeletonEventList } from "../ui/Skeleton";
 import { StepsButton } from "../ui/StepsButton";
 import { StepsCard } from "../ui/StepsCard";
 import { StepsHeader } from "../ui/StepsHeader";
+import { Touchable } from "../ui/Touchable";
 import { EmptyState } from "./EmptyState";
 import { EventPickerModal } from "./EventPickerModal";
 import { ReviewGridModal } from "./ReviewGridModal";
@@ -33,6 +45,7 @@ export function AdminGalleryScreen() {
   const { t, isRTL, rtlText } = useTranslation();
   const queryClient = useQueryClient();
   const [isPickerVisible, setIsPickerVisible] = useState(false);
+  const [quoteDraft, setQuoteDraft] = useState<string | null>(null);
 
   const [reviewEvent, setReviewEvent] = useState<GalleryEvent | null>(null);
   const [reviewPhotos, setReviewPhotos] = useState<Photo[]>([]);
@@ -55,6 +68,21 @@ export function AdminGalleryScreen() {
       return { events: eventList, students: studentPage.students };
     },
   });
+  const { data: savedQuote } = useQuery({
+    queryKey: ["gallery", "quote"],
+    queryFn: getGalleryQuote,
+  });
+  const saveQuote = useMutation({
+    mutationFn: (quote: string | null) => setGalleryQuote(quote),
+    onSuccess: (quote) => {
+      queryClient.setQueryData(["gallery", "quote"], quote);
+      setQuoteDraft(null);
+    },
+  });
+  // Null draft means "not editing" — fall back to whatever is saved.
+  const quoteValue = quoteDraft ?? savedQuote ?? "";
+  const isQuoteDirty = quoteDraft !== null && quoteDraft.trim() !== (savedQuote ?? "").trim();
+
   const events = data?.events ?? [];
   const students = data?.students ?? [];
 
@@ -175,6 +203,36 @@ export function AdminGalleryScreen() {
     <ScrollView contentContainerStyle={styles.content}>
       <ScreenFadeIn>
       <StepsHeader title={t.gallery.pageTitle} subtitle={t.gallery.adminSubtitle} />
+
+      {/* One message pinned above every album parents see. */}
+      <View style={styles.quoteBox}>
+        <Text style={[styles.quoteLabel, rtlText]}>{t.gallery.quoteLabel}</Text>
+        <TextInput
+          value={quoteValue}
+          onChangeText={setQuoteDraft}
+          placeholder={t.gallery.quotePlaceholder}
+          placeholderTextColor={Colors.textLight}
+          style={[styles.quoteInput, rtlText]}
+          multiline
+          maxLength={280}
+        />
+        <View style={[styles.quoteFooter, isRTL && styles.rowReverse]}>
+          <Text style={styles.quoteCount}>{quoteValue.length}/280</Text>
+          {isQuoteDirty ? (
+            <Touchable
+              style={styles.quoteSave}
+              onPress={() => saveQuote.mutate(quoteDraft?.trim() || null)}
+              disabled={saveQuote.isPending}
+            >
+              {saveQuote.isPending ? (
+                <ActivityIndicator color="#FFFFFF" />
+              ) : (
+                <Text style={styles.quoteSaveText}>{t.gallery.quoteSave}</Text>
+              )}
+            </Touchable>
+          ) : null}
+        </View>
+      </View>
 
       <Text style={[styles.sectionTitle, rtlText]}>{t.gallery.eventsSectionTitle}</Text>
 
@@ -358,6 +416,50 @@ const styles = StyleSheet.create({
     fontSize: 22,
     color: Colors.textLight,
   },
+  quoteBox: {
+    backgroundColor: Colors.linen,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    padding: 14,
+    marginTop: 16,
+  },
+  quoteLabel: {
+    fontFamily: Fonts.bold,
+    fontSize: 12,
+    color: Colors.honey,
+    letterSpacing: 0.4,
+    textTransform: "uppercase",
+    marginBottom: 8,
+  },
+  quoteInput: {
+    backgroundColor: Colors.background,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    fontFamily: Fonts.regular,
+    fontSize: 14,
+    color: Colors.bark,
+    minHeight: 64,
+    textAlignVertical: "top",
+  },
+  quoteFooter: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 8,
+    minHeight: 34,
+  },
+  quoteCount: { ...Type.caption, fontSize: 11, color: Colors.textLight },
+  quoteSave: {
+    backgroundColor: Colors.terracotta,
+    borderRadius: 10,
+    paddingHorizontal: 18,
+    paddingVertical: 8,
+  },
+  quoteSaveText: { fontFamily: Fonts.bold, fontSize: 13, color: "#FFFFFF" },
   previewRow: {
     flexDirection: "row",
     gap: 6,

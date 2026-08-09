@@ -148,6 +148,17 @@ export async function removePhotoTag(photoId: string, tagId: string) {
   return data.photo;
 }
 
+/** A short message the academy pins above every album. */
+export async function getGalleryQuote() {
+  const { data } = await api.get<{ quote: string | null }>("/api/gallery/quote");
+  return data.quote;
+}
+
+export async function setGalleryQuote(quote: string | null) {
+  const { data } = await api.put<{ quote: string | null }>("/api/gallery/quote", { quote });
+  return data.quote;
+}
+
 export async function myGallery() {
   const { data } = await api.get<{ groups: GalleryGroup[] }>("/api/gallery/me");
   return data.groups;

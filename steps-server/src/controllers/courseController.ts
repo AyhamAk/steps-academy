@@ -127,7 +127,11 @@ export async function requestEnrollment(req: Request, res: Response) {
   res.status(201).json({ enrollment: serializeEnrollment(enrollment) });
 }
 
-/** Parent withdraws their own still-pending request. */
+/**
+ * Parent withdraws a request, or takes their child out of a course they were
+ * already approved for — plans change, and cancelling frees the place for
+ * someone else.
+ */
 export async function cancelEnrollment(req: Request, res: Response) {
   const enrollment = await EnrollmentModel.findById(param(req, "enrollmentId"));
   if (!enrollment) return res.status(404).json({ message: "Request not found" });
@@ -136,11 +140,26 @@ export async function cancelEnrollment(req: Request, res: Response) {
   if (!guardianOf.includes(enrollment.studentId)) {
     return res.status(403).json({ message: "You are not a guardian of this child" });
   }
-  if (enrollment.status !== "pending") {
-    return res.status(409).json({ message: "Only a pending request can be cancelled" });
+  if (enrollment.status !== "pending" && enrollment.status !== "approved") {
+    return res.status(409).json({ message: "This enrolment has already ended" });
   }
 
+  const wasApproved = enrollment.status === "approved";
   const cancelled = await EnrollmentModel.cancel(enrollment.id);
+
+  // Leaving a course the academy had approved is news; withdrawing a request
+  // that was never decided isn't.
+  if (wasApproved) {
+    const admins = await UserModel.listAdmins();
+    if (admins.length > 0) {
+      await sendPushToUsers(admins, {
+        title: "A child left a course",
+        body: `${enrollment.student.name} is no longer enrolled in ${enrollment.course.name}.`,
+        data: { type: "course" },
+      });
+    }
+  }
+
   res.json({ enrollment: cancelled ? serializeEnrollment(cancelled) : null });
 }
 

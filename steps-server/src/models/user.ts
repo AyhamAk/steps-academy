@@ -16,6 +16,7 @@ type CreateUserInput = {
   passwordHash?: string | null;
   googleId?: string | null;
   role?: Role;
+  claimedChildName?: string | null;
 };
 
 export const UserModel = {
@@ -27,6 +28,7 @@ export const UserModel = {
         passwordHash: input.passwordHash ?? null,
         googleId: input.googleId ?? null,
         role: input.role ?? "parent",
+        claimedChildName: input.claimedChildName ?? null,
       },
     });
   },
@@ -68,6 +70,10 @@ export const UserModel = {
     return prisma.user.findMany({ where: { role: "parent" } });
   },
 
+  async listAdmins(): Promise<User[]> {
+    return prisma.user.findMany({ where: { role: "admin" } });
+  },
+
   /** Parents with their linked children in one query, searchable and paged. */
   async listParentsWithChildren({
     search,
@@ -107,9 +113,22 @@ export const UserModel = {
         name: parent.name,
         email: parent.email,
         createdAt: parent.createdAt,
+        // What they said their child is called at sign-up — shown to the admin
+        // as a hint for who to link, never as access.
+        claimedChildName: parent.claimedChildName,
         children: parent.children.map((link) => link.student),
       })),
     };
+  },
+
+  /** Parents who signed up but have no child linked yet — the admin's to-do list. */
+  async listAwaitingLink() {
+    const parents = await prisma.user.findMany({
+      where: { role: "parent", children: { none: {} } },
+      orderBy: { createdAt: "desc" },
+      select: { id: true, name: true, email: true, claimedChildName: true, createdAt: true },
+    });
+    return parents;
   },
 
   /** Always goes through the DB for children, so a client can never be told

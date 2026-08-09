@@ -5,6 +5,7 @@ import {
   createStudent,
   deleteStudent,
   linkGuardian,
+  listAwaitingLink,
   listParents,
   listStudents,
   unlinkGuardian,
@@ -26,5 +27,6 @@ router.delete("/:studentId/guardians/:parentId", requireAuth, adminOnly, unlinkG
 
 router.get("/parents/all", requireAuth, adminOnly, listParents);
 router.get("/overview", requireAuth, adminOnly, adminOverview);
+router.get("/awaiting-link", requireAuth, adminOnly, listAwaitingLink);
 
 export default router;

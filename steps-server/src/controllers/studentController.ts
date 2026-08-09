@@ -126,5 +126,14 @@ export async function listParents(req: Request, res: Response) {
 
 /** Counts for the admin dashboard — all aggregates, nothing loaded into memory. */
 export async function adminOverview(_req: Request, res: Response) {
-  res.json(await StudentModel.adminCounts());
+  const [counts, awaitingLink] = await Promise.all([
+    StudentModel.adminCounts(),
+    UserModel.listAwaitingLink(),
+  ]);
+  res.json({ ...counts, parentsAwaitingLink: awaitingLink.length });
+}
+
+/** Parents with no child linked yet, newest first. */
+export async function listAwaitingLink(_req: Request, res: Response) {
+  res.json({ parents: await UserModel.listAwaitingLink() });
 }

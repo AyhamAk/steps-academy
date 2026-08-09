@@ -7,6 +7,7 @@ import { DEFAULT_PAGE_SIZE, EventModel } from "../models/event";
 import { NotificationModel } from "../models/notification";
 import { Photo, PhotoModel } from "../models/photo";
 import { PhotoTagModel } from "../models/photoTag";
+import { SETTING_KEYS, SettingModel } from "../models/setting";
 import { StudentModel } from "../models/student";
 import { UserModel } from "../models/user";
 
@@ -319,6 +320,22 @@ export async function removeTag(req: Request, res: Response) {
 
   await PhotoTagModel.remove(tag.id);
   res.json({ photo: await serializePhoto(photo.id) });
+}
+
+/** A short message the academy pins above every album in the gallery. */
+export async function getGalleryQuote(_req: Request, res: Response) {
+  res.json({ quote: await SettingModel.get(SETTING_KEYS.galleryQuote) });
+}
+
+export async function setGalleryQuote(req: Request, res: Response) {
+  const { quote } = req.body as { quote?: unknown };
+  if (quote !== null && typeof quote !== "string") {
+    return res.status(400).json({ message: "quote must be a string or null" });
+  }
+  if (typeof quote === "string" && quote.trim().length > 280) {
+    return res.status(400).json({ message: "quote must be 280 characters or fewer" });
+  }
+  res.json({ quote: await SettingModel.set(SETTING_KEYS.galleryQuote, quote ?? null) });
 }
 
 export async function myGallery(req: Request, res: Response) {

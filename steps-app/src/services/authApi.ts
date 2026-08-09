@@ -10,6 +10,8 @@ export async function registerRequest(input: {
   email: string;
   name: string;
   password: string;
+  /** A claim for the academy to act on — it grants no access on its own. */
+  childName?: string;
 }) {
   const { data } = await api.post<AuthResponse>("/api/auth/register", input);
   return data;
