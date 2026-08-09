@@ -1,0 +1,287 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import { Alert, FlatList, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+
+import { EmptyState } from "../components/gallery/EmptyState";
+import { Screen } from "../components/Screen";
+import { BalloonLoader } from "../components/ui/BalloonLoader";
+import { ScreenFadeIn } from "../components/ui/ScreenFadeIn";
+import { StepsButton } from "../components/ui/StepsButton";
+import { StepsHeader } from "../components/ui/StepsHeader";
+import { Colors } from "../constants/Colors";
+import { Fonts } from "../constants/Fonts";
+import { Type } from "../constants/Typography";
+import { useTranslation } from "../i18n/useTranslation";
+import {
+  createStudent,
+  deleteStudent,
+  linkGuardian,
+  listParents,
+  listStudents,
+  Student,
+  unlinkGuardian,
+} from "../services/studentsApi";
+
+function GuardianPicker({
+  student,
+  onDone,
+}: {
+  student: Student;
+  onDone: () => void;
+}) {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const { data: parents } = useQuery({ queryKey: ["parents"], queryFn: listParents });
+
+  const link = useMutation({
+    mutationFn: (parentId: string) => linkGuardian(student.id, parentId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["students"] });
+      onDone();
+    },
+  });
+
+  const linkedIds = student.guardians.map((guardian) => guardian.id);
+  const available = (parents ?? []).filter((parent) => !linkedIds.includes(parent.id));
+
+  return (
+    <View style={styles.picker}>
+      <Text style={styles.pickerTitle}>{t.students.linkGuardianTitle(student.name)}</Text>
+      {available.length === 0 ? (
+        <Text style={styles.muted}>{t.students.noParentsAvailable}</Text>
+      ) : (
+        available.map((parent) => (
+          <Pressable
+            key={parent.id}
+            style={styles.pickerRow}
+            onPress={() => link.mutate(parent.id)}
+          >
+            <View style={styles.flex}>
+              <Text style={styles.pickerName}>{parent.name}</Text>
+              <Text style={styles.pickerEmail}>{parent.email}</Text>
+            </View>
+            <Text style={styles.linkAction}>+ {t.students.link}</Text>
+          </Pressable>
+        ))
+      )}
+      <StepsButton
+        label={t.common.done}
+        variant="outline"
+        onPress={onDone}
+        style={styles.pickerDone}
+      />
+    </View>
+  );
+}
+
+function StudentCard({ student }: { student: Student }) {
+  const { t, isRTL, rtlText } = useTranslation();
+  const queryClient = useQueryClient();
+  const [isPickingGuardian, setIsPickingGuardian] = useState(false);
+
+  const refresh = () => queryClient.invalidateQueries({ queryKey: ["students"] });
+
+  const unlink = useMutation({
+    mutationFn: (parentId: string) => unlinkGuardian(student.id, parentId),
+    onSuccess: refresh,
+  });
+  const remove = useMutation({ mutationFn: () => deleteStudent(student.id), onSuccess: refresh });
+
+  const confirmRemove = () =>
+    Alert.alert(t.students.deleteTitle, t.students.deleteMessage(student.name), [
+      { text: t.common.cancel, style: "cancel" },
+      { text: t.students.delete, style: "destructive", onPress: () => remove.mutate() },
+    ]);
+
+  return (
+    <View style={styles.card}>
+      <View style={[styles.cardHeader, isRTL && styles.rowReverse]}>
+        <View style={styles.avatar}>
+          <Text style={styles.avatarEmoji}>🐘</Text>
+        </View>
+        <View style={styles.flex}>
+          <Text style={[styles.name, rtlText]}>{student.name}</Text>
+          <Text style={[styles.meta, rtlText]}>
+            {student.guardians.length === 0
+              ? t.students.noGuardians
+              : t.students.guardianCount(student.guardians.length)}
+          </Text>
+        </View>
+        <Pressable onPress={confirmRemove} hitSlop={8}>
+          <Text style={styles.removeIcon}>🗑</Text>
+        </Pressable>
+      </View>
+
+      {student.guardians.length > 0 ? (
+        <View style={styles.guardianList}>
+          {student.guardians.map((guardian) => (
+            <View key={guardian.id} style={[styles.guardianRow, isRTL && styles.rowReverse]}>
+              <View style={styles.flex}>
+                <Text style={[styles.guardianName, rtlText]}>{guardian.name}</Text>
+                <Text style={[styles.guardianEmail, rtlText]}>{guardian.email}</Text>
+              </View>
+              <Pressable onPress={() => unlink.mutate(guardian.id)} hitSlop={8}>
+                <Text style={styles.unlink}>{t.students.unlink}</Text>
+              </Pressable>
+            </View>
+          ))}
+        </View>
+      ) : null}
+
+      {isPickingGuardian ? (
+        <GuardianPicker student={student} onDone={() => setIsPickingGuardian(false)} />
+      ) : (
+        <Pressable style={styles.addGuardian} onPress={() => setIsPickingGuardian(true)}>
+          <Text style={styles.addGuardianText}>+ {t.students.addGuardian}</Text>
+        </Pressable>
+      )}
+    </View>
+  );
+}
+
+export default function StudentsScreen() {
+  const { t, rtlText } = useTranslation();
+  const queryClient = useQueryClient();
+  const [newName, setNewName] = useState("");
+
+  const { data: students, isError } = useQuery({ queryKey: ["students"], queryFn: listStudents });
+
+  const create = useMutation({
+    mutationFn: () => createStudent({ name: newName.trim() }),
+    onSuccess: () => {
+      setNewName("");
+      queryClient.invalidateQueries({ queryKey: ["students"] });
+    },
+  });
+
+  return (
+    <Screen>
+      <ScreenFadeIn style={styles.flex}>
+        <StepsHeader title={t.students.title} subtitle={t.students.subtitle} showBack />
+
+        <View style={styles.addRow}>
+          <TextInput
+            value={newName}
+            onChangeText={setNewName}
+            placeholder={t.students.namePlaceholder}
+            placeholderTextColor={Colors.textLight}
+            style={[styles.input, rtlText]}
+            returnKeyType="done"
+            onSubmitEditing={() => newName.trim() && create.mutate()}
+          />
+          <Pressable
+            style={[styles.addButton, !newName.trim() && styles.addButtonDisabled]}
+            disabled={!newName.trim() || create.isPending}
+            onPress={() => create.mutate()}
+          >
+            <Text style={styles.addButtonText}>{create.isPending ? "…" : "+"}</Text>
+          </Pressable>
+        </View>
+
+        {isError ? (
+          <EmptyState emoji="⚠️" title={t.students.couldntLoad} subtitle={t.common.tryAgain} />
+        ) : !students ? (
+          <BalloonLoader label={t.students.loading} />
+        ) : students.length === 0 ? (
+          <EmptyState emoji="👶" title={t.students.empty} subtitle={t.students.emptySubtitle} />
+        ) : (
+          <FlatList
+            data={students}
+            keyExtractor={(student) => student.id}
+            renderItem={({ item }) => <StudentCard student={item} />}
+            contentContainerStyle={styles.list}
+            keyboardShouldPersistTaps="handled"
+          />
+        )}
+      </ScreenFadeIn>
+    </Screen>
+  );
+}
+
+const styles = StyleSheet.create({
+  flex: { flex: 1 },
+  rowReverse: { flexDirection: "row-reverse" },
+  addRow: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  input: {
+    flex: 1,
+    backgroundColor: Colors.linen,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontFamily: Fonts.regular,
+    fontSize: 15,
+    color: Colors.bark,
+  },
+  addButton: {
+    width: 48,
+    borderRadius: 14,
+    backgroundColor: Colors.terracotta,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  addButtonDisabled: { opacity: 0.4 },
+  addButtonText: { fontFamily: Fonts.bold, fontSize: 22, color: "#FFFFFF" },
+  list: { paddingTop: 8, paddingBottom: 32, gap: 12 },
+  card: {
+    backgroundColor: Colors.linen,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    padding: 16,
+  },
+  cardHeader: { flexDirection: "row", alignItems: "center", gap: 12 },
+  avatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: `${Colors.terracotta}26`,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  avatarEmoji: { fontSize: 22 },
+  name: { ...Type.body, fontFamily: Fonts.bold, color: Colors.bark },
+  meta: { ...Type.caption, color: Colors.textLight, marginTop: 2 },
+  removeIcon: { fontSize: 18 },
+  guardianList: {
+    marginTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+    paddingTop: 10,
+    gap: 8,
+  },
+  guardianRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+  guardianName: { fontFamily: Fonts.semiBold, fontSize: 14, color: Colors.bark },
+  guardianEmail: { ...Type.caption, color: Colors.textLight },
+  unlink: { fontFamily: Fonts.semiBold, fontSize: 13, color: Colors.clay },
+  addGuardian: { marginTop: 12 },
+  addGuardianText: { fontFamily: Fonts.semiBold, fontSize: 13, color: Colors.terracotta },
+  picker: {
+    marginTop: 12,
+    backgroundColor: Colors.cream,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    padding: 12,
+  },
+  pickerTitle: { fontFamily: Fonts.bold, fontSize: 13, color: Colors.bark, marginBottom: 8 },
+  pickerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  pickerName: { fontFamily: Fonts.semiBold, fontSize: 14, color: Colors.bark },
+  pickerEmail: { ...Type.caption, color: Colors.textLight },
+  linkAction: { fontFamily: Fonts.bold, fontSize: 13, color: Colors.forest },
+  pickerDone: { marginTop: 12 },
+  muted: { ...Type.caption, color: Colors.textLight, paddingVertical: 8 },
+});

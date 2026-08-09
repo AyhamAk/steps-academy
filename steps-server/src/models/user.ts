@@ -4,7 +4,11 @@ import { prisma } from "../lib/prisma";
 
 export type { Role };
 export type User = PrismaUser;
-export type PublicUser = Omit<User, "passwordHash" | "googleId" | "pushToken">;
+export type PublicChild = { id: string; name: string };
+export type PublicUser = Omit<User, "passwordHash" | "googleId" | "pushToken"> & {
+  /** Children this account is a guardian of. Admin-assigned, never self-declared. */
+  children: PublicChild[];
+};
 
 type CreateUserInput = {
   email: string;
@@ -12,7 +16,6 @@ type CreateUserInput = {
   passwordHash?: string | null;
   googleId?: string | null;
   role?: Role;
-  childNames?: string[];
 };
 
 export const UserModel = {
@@ -24,7 +27,6 @@ export const UserModel = {
         passwordHash: input.passwordHash ?? null,
         googleId: input.googleId ?? null,
         role: input.role ?? "parent",
-        childNames: input.childNames ?? [],
       },
     });
   },
@@ -37,9 +39,9 @@ export const UserModel = {
     return prisma.user.findUnique({ where: { email: email.toLowerCase() } });
   },
 
-  async updateChildNames(id: string, childNames: string[]): Promise<User | null> {
+  async updateName(id: string, name: string): Promise<User | null> {
     try {
-      return await prisma.user.update({ where: { id }, data: { childNames } });
+      return await prisma.user.update({ where: { id }, data: { name } });
     } catch {
       return null;
     }
@@ -66,13 +68,20 @@ export const UserModel = {
     return prisma.user.findMany({ where: { role: "parent" } });
   },
 
-  toPublic(user: User): PublicUser {
+  /** Always goes through the DB for children, so a client can never be told
+   *  about a child this account isn't actually linked to. */
+  async toPublic(user: User): Promise<PublicUser> {
     const {
       passwordHash: _passwordHash,
       googleId: _googleId,
       pushToken: _pushToken,
-      ...publicUser
+      ...rest
     } = user;
-    return publicUser;
+    const links = await prisma.parentStudent.findMany({
+      where: { parentId: user.id },
+      include: { student: { select: { id: true, name: true } } },
+      orderBy: { student: { name: "asc" } },
+    });
+    return { ...rest, children: links.map((link) => link.student) };
   },
 };

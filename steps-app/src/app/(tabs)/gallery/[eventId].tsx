@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Animated, FlatList, Image, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { EmptyState } from "../../../components/gallery/EmptyState";
+import { EventCaption } from "../../../components/gallery/EventCaption";
 import { FullscreenPhotoViewer } from "../../../components/gallery/FullscreenPhotoViewer";
 import { Screen } from "../../../components/Screen";
 import { BalloonLoader } from "../../../components/ui/BalloonLoader";
@@ -64,7 +65,8 @@ function PhotoTile({
 export default function EventGalleryScreen() {
   const { t } = useTranslation();
   const { eventId } = useLocalSearchParams<{ eventId: string }>();
-  const childNames = useAuthStore((state) => state.user?.childNames ?? []);
+  const children = useAuthStore((state) => state.user?.children ?? []);
+  const childIds = children.map((child) => child.id);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
   const { data, isError } = useQuery({
@@ -82,6 +84,8 @@ export default function EventGalleryScreen() {
           subtitle={data ? formatIsoDate(data.event.date, t) : undefined}
           showBack
         />
+
+        <EventCaption caption={data?.event.caption} variant="detail" />
 
         {isError ? (
           <EmptyState
@@ -104,7 +108,7 @@ export default function EventGalleryScreen() {
               <PhotoTile
                 photo={item}
                 index={index}
-                tagged={isPhotoTaggedWithAny(item, childNames)}
+                tagged={isPhotoTaggedWithAny(item, childIds)}
                 onPress={() => setActiveIndex(index)}
               />
             )}
@@ -115,7 +119,7 @@ export default function EventGalleryScreen() {
       <FullscreenPhotoViewer
         photos={activeIndex === null ? null : photos}
         initialIndex={activeIndex ?? 0}
-        childNames={childNames}
+        childIds={childIds}
         onClose={() => setActiveIndex(null)}
       />
     </Screen>

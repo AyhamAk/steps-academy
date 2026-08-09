@@ -16,15 +16,15 @@ import { Colors } from "../../constants/Colors";
 import { Fonts } from "../../constants/Fonts";
 import { useTranslation } from "../../i18n/useTranslation";
 import { createEvent, GalleryEvent } from "../../services/galleryApi";
+import { Student } from "../../services/studentsApi";
 import { formatIsoDate } from "../../utils/date";
 import { StepsButton } from "../ui/StepsButton";
-import { NameChipInput } from "./NameChipInput";
 
 type EventPickerModalProps = {
   visible: boolean;
   onClose: () => void;
   events: GalleryEvent[];
-  students: string[];
+  students: Student[];
   onSelectExisting: (event: GalleryEvent) => void;
   onCreated: (event: GalleryEvent) => void;
 };
@@ -45,7 +45,7 @@ export function EventPickerModal({
   const [mode, setMode] = useState<"list" | "create">("list");
   const [name, setName] = useState("");
   const [date, setDate] = useState(todayIso());
-  const [attendees, setAttendees] = useState<string[]>([]);
+  const [attendeeIds, setAttendeeIds] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -53,7 +53,7 @@ export function EventPickerModal({
     setMode("list");
     setName("");
     setDate(todayIso());
-    setAttendees([]);
+    setAttendeeIds([]);
     setError(null);
   };
 
@@ -70,7 +70,7 @@ export function EventPickerModal({
     setIsSaving(true);
     setError(null);
     try {
-      const event = await createEvent({ name: name.trim(), date: date.trim(), attendees });
+      const event = await createEvent({ name: name.trim(), date: date.trim(), attendeeIds });
       reset();
       onCreated(event);
     } catch {
@@ -145,12 +145,38 @@ export function EventPickerModal({
               />
 
               <Text style={styles.label}>{t.gallery.kidsWhoAttended}</Text>
-              <NameChipInput
-                names={attendees}
-                onChange={setAttendees}
-                suggestions={students}
-                placeholder={t.gallery.kidNamePlaceholder}
-              />
+              {students.length === 0 ? (
+                <Text style={styles.emptyText}>{t.gallery.noStudentsYet}</Text>
+              ) : (
+                <View style={styles.studentGrid}>
+                  {students.map((student) => {
+                    const isSelected = attendeeIds.includes(student.id);
+                    return (
+                      <Pressable
+                        key={student.id}
+                        onPress={() =>
+                          setAttendeeIds((prev) =>
+                            isSelected
+                              ? prev.filter((id) => id !== student.id)
+                              : [...prev, student.id]
+                          )
+                        }
+                        style={[styles.studentChip, isSelected && styles.studentChipSelected]}
+                      >
+                        <Text
+                          style={[
+                            styles.studentChipText,
+                            isSelected && styles.studentChipTextSelected,
+                          ]}
+                        >
+                          {isSelected ? "✓ " : ""}
+                          {student.name}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              )}
 
               {error ? <Text style={styles.error}>{error}</Text> : null}
 
@@ -237,6 +263,31 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: Colors.textLight,
     marginTop: 2,
+  },
+  studentGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  studentChip: {
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+    backgroundColor: Colors.linen,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+  studentChipSelected: {
+    backgroundColor: Colors.terracotta,
+    borderColor: Colors.terracotta,
+  },
+  studentChipText: {
+    fontFamily: Fonts.semiBold,
+    fontSize: 13,
+    color: Colors.bark,
+  },
+  studentChipTextSelected: {
+    color: "#FFFFFF",
   },
   emptyText: {
     fontFamily: Fonts.regular,

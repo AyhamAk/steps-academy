@@ -13,6 +13,7 @@ import gamesRoutes from "./routes/gamesRoutes";
 import notificationRoutes from "./routes/notificationRoutes";
 import profileRoutes from "./routes/profileRoutes";
 import shopRoutes from "./routes/shopRoutes";
+import studentRoutes from "./routes/studentRoutes";
 
 const app = express();
 
@@ -34,6 +35,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/games", gamesRoutes);
 app.use("/api/shop", shopRoutes);
 app.use("/api/gallery", galleryRoutes);
+app.use("/api/students", studentRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/announcements", announcementRoutes);
 app.use("/api/notifications", notificationRoutes);

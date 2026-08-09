@@ -6,6 +6,7 @@ import { EventModel } from "./models/event";
 import { NotificationModel } from "./models/notification";
 import { PhotoModel } from "./models/photo";
 import { PhotoTagModel } from "./models/photoTag";
+import { StudentModel } from "./models/student";
 import { UserModel } from "./models/user";
 
 /**
@@ -29,26 +30,34 @@ export async function runDevSeed(): Promise<void> {
     name: "Sarah",
     passwordHash,
     role: "parent",
-    childNames: ["Layla"],
   });
+
+  // Real Student records — Sarah is linked to Layla only, so she sees Layla's
+  // photos and nothing else, even though other children are in the same events.
+  const classmateNames = ["Layla", "Omar", "Sara", "Noor", "Yusuf", "Maya", "Adam", "Lina"];
+  const students = await Promise.all(
+    classmateNames.map((name) => StudentModel.create({ name }))
+  );
+  const layla = students[0];
+  await StudentModel.linkParent(sarah.id, layla.id);
 
   const artShow = await EventModel.create({
     name: "Art Show",
     date: "2026-07-27",
-    attendees: ["Layla", "Omar", "Sara", "Noor", "Yusuf", "Maya", "Adam", "Lina"],
+    attendeeIds: students.map((student) => student.id),
     createdBy: sarah.id,
   });
   const summerSplash = await EventModel.create({
     name: "Summer Splash",
     date: "2026-07-30",
-    attendees: ["Layla", "Omar", "Sara"],
+    attendeeIds: students.slice(0, 3).map((student) => student.id),
     createdBy: sarah.id,
   });
   // Future event with no photos — surfaces as "Next Event" on Home.
   await EventModel.create({
     name: "Fall Festival",
     date: "2026-08-15",
-    attendees: [],
+    attendeeIds: [],
     createdBy: sarah.id,
   });
 
@@ -59,7 +68,7 @@ export async function runDevSeed(): Promise<void> {
       externalUrl: `https://picsum.photos/seed/${seed}/600/600`,
       uploadedBy: sarah.id,
     });
-    if (taggedLayla) await PhotoTagModel.create(photo.id, "Layla");
+    if (taggedLayla) await PhotoTagModel.create(photo.id, layla.id);
   };
 
   // Art Show — 18 photos, Layla tagged in the odd-indexed ones (9 of Layla's).

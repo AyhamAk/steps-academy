@@ -26,7 +26,6 @@ model User {
   passwordHash String?
   googleId     String?
   role         Role     @default(parent)
-  childNames   String[]
   pushToken    String?
   createdAt    DateTime @default(now())
 
@@ -34,18 +33,65 @@ model User {
   photos        Photo[]
   announcements Announcement[]
   notifications Notification[]
+  children      ParentStudent[]
+}
+
+/// A child enrolled at the academy. Created by an admin — never by a parent
+/// typing a name — because photo visibility is derived from these records.
+model Student {
+  id        String   @id @default(uuid())
+  name      String
+  /// ISO yyyy-mm-dd. Optional, but the practical way to tell apart two
+  /// children who share a first name.
+  birthDate String?
+  notes     String?
+  createdAt DateTime @default(now())
+
+  guardians ParentStudent[]
+  tags      PhotoTag[]
+  events    EventAttendee[]
+
+  @@index([name])
+}
+
+/// Links a parent account to a child. Many-to-many: a child can have two
+/// guardians, and a guardian can have several children.
+model ParentStudent {
+  parentId  String
+  parent    User     @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  studentId String
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([parentId, studentId])
+  @@index([studentId])
 }
 
 model Event {
   id        String   @id @default(uuid())
   name      String
   date      String
-  attendees String[]
+  // Admin-written note shown to parents on the event's gallery. One per event.
+  caption   String?
   createdBy String
   creator   User     @relation(fields: [createdBy], references: [id])
   createdAt DateTime @default(now())
 
-  photos Photo[]
+  photos    Photo[]
+  attendees EventAttendee[]
+
+  @@index([date])
+}
+
+/// Which students attended an event — drives auto-tagging on photo upload.
+model EventAttendee {
+  eventId   String
+  event     Event   @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  studentId String
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@id([eventId, studentId])
+  @@index([studentId])
 }
 
 model Photo {
@@ -72,13 +118,16 @@ model Photo {
 }
 
 model PhotoTag {
-  id          String   @id @default(uuid())
-  photoId     String
-  photo       Photo    @relation(fields: [photoId], references: [id], onDelete: Cascade)
-  studentName String
-  createdAt   DateTime @default(now())
+  id        String   @id @default(uuid())
+  photoId   String
+  photo     Photo    @relation(fields: [photoId], references: [id], onDelete: Cascade)
+  studentId String
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
 
+  @@unique([photoId, studentId])
   @@index([photoId])
+  @@index([studentId])
 }
 
 model Announcement {
@@ -101,4 +150,5 @@ model Notification {
   createdAt DateTime         @default(now())
 
   @@index([userId])
+  @@index([userId, read])
 }

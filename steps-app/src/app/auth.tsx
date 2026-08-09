@@ -11,7 +11,6 @@ import {
   View,
 } from "react-native";
 
-import { NameChipInput } from "../components/gallery/NameChipInput";
 import { Screen } from "../components/Screen";
 import { StepsButton } from "../components/ui/StepsButton";
 import { StepsLogo } from "../components/ui/StepsLogo";
@@ -87,7 +86,6 @@ export default function AuthScreen() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [childNames, setChildNames] = useState<string[]>([]);
   const [formError, setFormError] = useState<string | null>(null);
   const { isLoading, error, register, login, signInWithGoogle } = useAuth();
 
@@ -117,11 +115,12 @@ export default function AuthScreen() {
     if (password.length < MIN_PASSWORD_LENGTH) return setFormError(t.auth.passwordTooShort);
 
     setFormError(null);
+    // Children are linked by the academy after signup — a parent typing a name
+    // must not be what grants access to that child's photos.
     const ok = await register({
       name: name.trim(),
       email: email.trim(),
       password,
-      childNames,
     });
     if (ok) router.replace("/(tabs)");
   };
@@ -195,14 +194,7 @@ export default function AuthScreen() {
               />
 
               <View style={styles.childrenBlock}>
-                <Text style={styles.childrenLabel}>{t.auth.childrenLabel}</Text>
-                <Text style={styles.childrenHint}>{t.auth.childrenHint}</Text>
-                <NameChipInput
-                  names={childNames}
-                  onChange={setChildNames}
-                  suggestions={[]}
-                  placeholder={t.auth.childNamePlaceholder}
-                />
+                <Text style={styles.childrenHint}>{t.auth.childrenLinkedByAcademy}</Text>
               </View>
 
               {formError ?? error ? (

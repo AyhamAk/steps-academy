@@ -11,10 +11,10 @@ import {
   GalleryEvent,
   listEventPhotosAdmin,
   listEvents,
-  listStudents,
   Photo,
   uploadEventPhoto,
 } from "../../services/galleryApi";
+import { listStudents } from "../../services/studentsApi";
 import { formatIsoDate } from "../../utils/date";
 import { ScreenFadeIn } from "../ui/ScreenFadeIn";
 import { SkeletonEventList } from "../ui/Skeleton";
@@ -90,6 +90,22 @@ export function AdminGalleryScreen() {
     // Refresh every gallery view (admin list, parent feed, event detail) so
     // newly uploaded/tagged photos show up without a manual pull-to-refresh.
     queryClient.invalidateQueries({ queryKey: ["gallery"] });
+  };
+
+  // Keeps the open review modal and the event list in sync without a refetch —
+  // the parent-facing feed picks it up from the invalidate on close.
+  const handleCaptionSaved = (caption: string | null) => {
+    setReviewEvent((prev) => (prev ? { ...prev, caption } : prev));
+    queryClient.setQueryData(["gallery", "admin"], (old: typeof data) =>
+      old
+        ? {
+            ...old,
+            events: old.events.map((e) =>
+              e.id === reviewEvent?.id ? { ...e, caption } : e
+            ),
+          }
+        : old
+    );
   };
 
   const handleTagsChanged = (updated: Photo) => {
@@ -236,12 +252,13 @@ export function AdminGalleryScreen() {
 
       {reviewEvent ? (
         <ReviewGridModal
-          eventName={reviewEvent.name}
+          event={reviewEvent}
           photos={reviewPhotos}
           uploads={uploads}
           onAddPhotos={handleAddPhotos}
           onClose={closeReview}
           onOpenTag={setTagEditorPhoto}
+          onCaptionSaved={handleCaptionSaved}
         />
       ) : null}
 

@@ -25,14 +25,14 @@ import { matchedTagNames, Photo, resolvePhotoUrl } from "../../services/galleryA
 type FullscreenPhotoViewerProps = {
   photos: Photo[] | null;
   initialIndex?: number;
-  childNames?: string[];
+  childIds?: string[];
   onClose: () => void;
 };
 
 export function FullscreenPhotoViewer({
   photos,
   initialIndex = 0,
-  childNames = [],
+  childIds = [],
   onClose,
 }: FullscreenPhotoViewerProps) {
   const { t } = useTranslation();
@@ -48,7 +48,7 @@ export function FullscreenPhotoViewer({
 
   const safeIndex = Math.min(Math.max(index, 0), photos.length - 1);
   const current = photos[safeIndex];
-  const matched = matchedTagNames(current, childNames);
+  const matched = matchedTagNames(current, childIds);
 
   const goTo = (next: number) => {
     const clamped = Math.min(Math.max(next, 0), photos.length - 1);

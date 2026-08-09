@@ -16,6 +16,7 @@ import { StepsButton } from "../ui/StepsButton";
 import { StepsCard } from "../ui/StepsCard";
 import { StepsHeader } from "../ui/StepsHeader";
 import { EmptyState } from "./EmptyState";
+import { EventCaption } from "./EventCaption";
 import { FullscreenPhotoViewer } from "./FullscreenPhotoViewer";
 
 const EVENT_BORDER_COLORS = [Colors.terracotta, Colors.forest, Colors.sky, Colors.honey];
@@ -53,7 +54,8 @@ function TaggedThumb({
 
 export function ParentGalleryScreen() {
   const { t, isRTL, rtlText } = useTranslation();
-  const childNames = useAuthStore((state) => state.user?.childNames ?? []);
+  const children = useAuthStore((state) => state.user?.children ?? []);
+  const childIds = children.map((child) => child.id);
   const [viewer, setViewer] = useState<ViewerState | null>(null);
 
   const { data: groups, isError, refetch } = useQuery({
@@ -116,13 +118,14 @@ export function ParentGalleryScreen() {
                       </View>
                       <Text style={styles.eventChevron}>{isRTL ? "‹" : "›"}</Text>
                     </View>
+                    <EventCaption caption={group.event.caption} />
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.strip}>
                       {group.photos.slice(0, 10).map((photo, photoIndex) => (
                         <TaggedThumb
                           key={photo.id}
                           photo={photo}
                           size={72}
-                          tagged={isPhotoTaggedWithAny(photo, childNames)}
+                          tagged={isPhotoTaggedWithAny(photo, childIds)}
                           onPress={() => setViewer({ photos: group.photos, index: photoIndex })}
                         />
                       ))}
@@ -138,7 +141,7 @@ export function ParentGalleryScreen() {
       <FullscreenPhotoViewer
         photos={viewer?.photos ?? null}
         initialIndex={viewer?.index ?? 0}
-        childNames={childNames}
+        childIds={childIds}
         onClose={() => setViewer(null)}
       />
     </>

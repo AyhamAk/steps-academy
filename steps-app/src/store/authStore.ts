@@ -4,12 +4,15 @@ import { createJSONStorage, persist } from "zustand/middleware";
 
 export type Role = "admin" | "parent";
 
+/** A child this account is a guardian of. Assigned by an admin, never self-declared. */
+export type Child = { id: string; name: string };
+
 export type AuthUser = {
   id: string;
   email: string;
   name: string;
   role: Role;
-  childNames: string[];
+  children: Child[];
   createdAt: string;
 };
 

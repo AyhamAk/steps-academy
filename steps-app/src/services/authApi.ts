@@ -10,7 +10,6 @@ export async function registerRequest(input: {
   email: string;
   name: string;
   password: string;
-  childNames: string[];
 }) {
   const { data } = await api.post<AuthResponse>("/api/auth/register", input);
   return data;

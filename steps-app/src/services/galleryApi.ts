@@ -4,6 +4,8 @@ import { api, API_BASE_URL } from "./api";
 
 export type PhotoTag = {
   id: string;
+  studentId: string;
+  /** Display only — visibility is decided by studentId, never by this string. */
   studentName: string;
 };
 
@@ -15,16 +17,27 @@ export type Photo = {
   tags: PhotoTag[];
 };
 
+export type EventAttendee = { id: string; name: string };
+
 export type GalleryEvent = {
   id: string;
   name: string;
   date: string;
-  attendees: string[];
+  attendees: EventAttendee[];
+  /** Admin-written note shown to parents. Null when none has been set. */
+  caption: string | null;
   photoCount: number;
 };
 
+export type EventSummary = {
+  id: string;
+  name: string;
+  date: string;
+  caption: string | null;
+};
+
 export type GalleryGroup = {
-  event: { id: string; name: string; date: string };
+  event: EventSummary;
   photos: Photo[];
 };
 
@@ -32,15 +45,15 @@ export function resolvePhotoUrl(url: string): string {
   return url.startsWith("http") ? url : `${API_BASE_URL}${url}`;
 }
 
-/** Names from `childNames` that are tagged in this photo. */
-export function matchedTagNames(photo: Photo, childNames: string[]): string[] {
-  if (childNames.length === 0) return [];
-  return photo.tags.map((tag) => tag.studentName).filter((name) => childNames.includes(name));
+/** Names of this parent's children tagged in the photo, matched by student id. */
+export function matchedTagNames(photo: Photo, childIds: string[]): string[] {
+  if (childIds.length === 0) return [];
+  return photo.tags.filter((tag) => childIds.includes(tag.studentId)).map((tag) => tag.studentName);
 }
 
 /** True if any of the parent's children are tagged in this photo. */
-export function isPhotoTaggedWithAny(photo: Photo, childNames: string[]): boolean {
-  return matchedTagNames(photo, childNames).length > 0;
+export function isPhotoTaggedWithAny(photo: Photo, childIds: string[]): boolean {
+  return photo.tags.some((tag) => childIds.includes(tag.studentId));
 }
 
 export async function listEvents() {
@@ -48,9 +61,25 @@ export async function listEvents() {
   return data.events;
 }
 
-export async function createEvent(input: { name: string; date: string; attendees: string[] }) {
+export async function createEvent(input: { name: string; date: string; attendeeIds: string[] }) {
   const { data } = await api.post<{ event: GalleryEvent }>("/api/gallery/events", input);
   return data.event;
+}
+
+export async function updateEventAttendees(eventId: string, attendeeIds: string[]) {
+  const { data } = await api.patch<{ event: GalleryEvent }>(
+    `/api/gallery/events/${eventId}/attendees`,
+    { attendeeIds }
+  );
+  return data.event;
+}
+
+export async function deleteEvent(eventId: string) {
+  await api.delete(`/api/gallery/events/${eventId}`);
+}
+
+export async function deletePhoto(photoId: string) {
+  await api.delete(`/api/gallery/photos/${photoId}`);
 }
 
 export type NextEvent = { id: string; name: string; date: string };
@@ -60,10 +89,6 @@ export async function getNextEvent() {
   return data.event;
 }
 
-export async function listStudents() {
-  const { data } = await api.get<{ students: string[] }>("/api/gallery/students");
-  return data.students;
-}
 
 type PickedAsset = { uri: string; fileName?: string | null; mimeType?: string | null };
 
@@ -92,16 +117,24 @@ export async function uploadEventPhoto(
 }
 
 export async function listEventPhotosAdmin(eventId: string) {
-  const { data } = await api.get<{
-    event: { id: string; name: string; date: string };
-    photos: Photo[];
-  }>(`/api/gallery/events/${eventId}/photos`);
+  const { data } = await api.get<{ event: EventSummary; photos: Photo[] }>(
+    `/api/gallery/events/${eventId}/photos`
+  );
   return data;
 }
 
-export async function addPhotoTag(photoId: string, studentName: string) {
+/** Admin only. Pass null (or an empty string) to clear the caption. */
+export async function updateEventCaption(eventId: string, caption: string | null) {
+  const { data } = await api.patch<{ event: Omit<GalleryEvent, "photoCount"> }>(
+    `/api/gallery/events/${eventId}/caption`,
+    { caption }
+  );
+  return data.event;
+}
+
+export async function addPhotoTag(photoId: string, studentId: string) {
   const { data } = await api.post<{ photo: Photo }>(`/api/gallery/photos/${photoId}/tags`, {
-    studentName,
+    studentId,
   });
   return data.photo;
 }
@@ -119,9 +152,8 @@ export async function myGallery() {
 }
 
 export async function myEventGallery(eventId: string) {
-  const { data } = await api.get<{
-    event: { id: string; name: string; date: string };
-    photos: Photo[];
-  }>(`/api/gallery/me/${eventId}`);
+  const { data } = await api.get<{ event: EventSummary; photos: Photo[] }>(
+    `/api/gallery/me/${eventId}`
+  );
   return data;
 }

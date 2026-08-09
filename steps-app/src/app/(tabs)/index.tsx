@@ -33,6 +33,8 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 
+import { CoursesSection } from "../../components/home/CoursesSection";
+import { WeeklyScheduleSection } from "../../components/home/WeeklyScheduleSection";
 import { Screen } from "../../components/Screen";
 import { StepsButton } from "../../components/ui/StepsButton";
 import { StepsCard } from "../../components/ui/StepsCard";
@@ -41,7 +43,6 @@ import { StepsLogo } from "../../components/ui/StepsLogo";
 import { ToastBanner, useToast } from "../../components/ui/Toast";
 import { Colors } from "../../constants/Colors";
 import { Fonts } from "../../constants/Fonts";
-import { ActivityCategory, MOCK_ACTIVITIES } from "../../constants/mockData";
 import { Type } from "../../constants/Typography";
 import { useReduceMotionSetting } from "../../hooks/useReduceMotionSetting";
 import { Translations } from "../../i18n/translations";
@@ -57,13 +58,6 @@ import {
 } from "../../services/galleryApi";
 import { useAuthStore } from "../../store/authStore";
 import { formatIsoDate, parseIsoDate } from "../../utils/date";
-
-const ACTIVITY_ACCENT: Record<ActivityCategory, string> = {
-  art: Colors.honey,
-  cognitive: Colors.sky,
-  music: Colors.clay,
-  outdoor: Colors.forest,
-};
 
 type SalutationKey = "goodMorning" | "goodAfternoon" | "goodEvening" | "goodNight";
 
@@ -290,7 +284,7 @@ function EventQuickAddModal({
     setIsSaving(true);
     setError(null);
     try {
-      const event = await createEvent({ name: name.trim(), date: date.trim(), attendees: [] });
+      const event = await createEvent({ name: name.trim(), date: date.trim(), attendeeIds: [] });
       onCreated(event);
       setName("");
       setDate(todayIso());
@@ -415,20 +409,20 @@ function AnnouncementQuickAddModal({
   );
 }
 
-function ChildStrip({ childNames }: { childNames: string[] }) {
-  if (childNames.length === 0) return null;
+function ChildStrip({ children }: { children: { id: string; name: string }[] }) {
+  if (children.length === 0) return null;
   return (
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={styles.childStrip}
     >
-      {childNames.map((name) => (
-        <View key={name} style={styles.childChip}>
+      {children.map((child) => (
+        <View key={child.id} style={styles.childChip}>
           <View style={styles.childAvatar}>
             <Text style={styles.childAvatarEmoji}>🐘</Text>
           </View>
-          <Text style={styles.childChipName}>{name}</Text>
+          <Text style={styles.childChipName}>{child.name}</Text>
         </View>
       ))}
     </ScrollView>
@@ -505,7 +499,8 @@ export default function HomeScreen() {
   const [isAnnouncementModalVisible, setIsAnnouncementModalVisible] = useState(false);
   const queryClient = useQueryClient();
 
-  const childNames = user?.childNames ?? [];
+  const children = user?.children ?? [];
+  const childIds = children.map((child) => child.id);
 
   const { data: nextEvent } = useQuery({
     queryKey: ["home", "nextEvent"],
@@ -520,19 +515,19 @@ export default function HomeScreen() {
   const { data: galleryGroups } = useQuery({
     queryKey: ["gallery", "mine"],
     queryFn: myGallery,
-    enabled: childNames.length > 0,
+    enabled: children.length > 0,
   });
   const heroPhotoUrl = useMemo(() => {
     if (!galleryGroups) return null;
     const tagged = galleryGroups
       .flatMap((group) => group.photos)
-      .find((photo) => isPhotoTaggedWithAny(photo, childNames));
+      .find((photo) => isPhotoTaggedWithAny(photo, childIds));
     return tagged ? resolvePhotoUrl(tagged.url) : null;
-  }, [galleryGroups, childNames.join(",")]);
+  }, [galleryGroups, childIds.join(",")]);
 
   const { message: toastMessage, opacity: toastOpacity, showToast } = useToast();
 
-  const primaryChildName = childNames[0] ?? null;
+  const primaryChildName = children[0]?.name ?? null;
   const { salutationKey, emoji } = getTimeOfDayGreeting();
   const salutation = t.home[salutationKey];
   const firstName = getFirstName(user?.name);
@@ -680,7 +675,7 @@ export default function HomeScreen() {
             <Animated.Text style={[styles.subtitle, subtitleStyle]}>{subtitle}</Animated.Text>
           </View>
 
-          <ChildStrip childNames={childNames} />
+          <ChildStrip children={children} />
         </Animated.View>
 
         <HeroCarousel
@@ -693,37 +688,7 @@ export default function HomeScreen() {
           onToast={showToast}
         />
 
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, rtlText, styles.activitiesSectionTitle]}>
-            {t.home.todayTitle}
-          </Text>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.activitiesScroll}
-          >
-            {MOCK_ACTIVITIES.map((activity) => (
-              <View
-                key={activity.id}
-                style={[
-                  styles.activityCard,
-                  isRTL
-                    ? { borderRightWidth: 4, borderRightColor: ACTIVITY_ACCENT[activity.category] }
-                    : { borderLeftWidth: 4, borderLeftColor: ACTIVITY_ACCENT[activity.category] },
-                ]}
-              >
-                <Text style={styles.activityEmoji}>{activity.emoji}</Text>
-                <Text style={styles.activityName}>{activity.name}</Text>
-                <Text style={styles.activityTime}>{activity.time}</Text>
-                {activity.childJoined && primaryChildName ? (
-                  <View style={styles.joinedBadge}>
-                    <Text style={styles.joinedText}>{t.home.childJoined(primaryChildName)}</Text>
-                  </View>
-                ) : null}
-              </View>
-            ))}
-          </ScrollView>
-        </View>
+        <WeeklyScheduleSection />
 
         <Animated.View style={[styles.section, eventSectionStyle]}>
           <View style={[styles.sectionHeaderRow, isRTL && styles.rowReverse]}>
@@ -764,6 +729,8 @@ export default function HomeScreen() {
             <SkeletonEventCard thumbCount={0} />
           )}
         </Animated.View>
+
+        <CoursesSection />
 
         <Animated.View style={[styles.section, announcementSectionStyle]}>
           <View style={[styles.sectionHeaderRow, isRTL && styles.rowReverse]}>
@@ -1051,52 +1018,6 @@ const styles = StyleSheet.create({
     ...Type.body,
     fontFamily: Fonts.bold,
     color: Colors.bark,
-  },
-  activitiesSectionTitle: {
-    marginBottom: 12,
-  },
-  activitiesScroll: {
-    gap: 12,
-    paddingEnd: 8,
-  },
-  activityCard: {
-    width: 130,
-    backgroundColor: Colors.linen,
-    borderRadius: 16,
-    padding: 14,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
-  },
-  activityEmoji: {
-    fontSize: 28,
-  },
-  activityName: {
-    fontSize: 14,
-    fontFamily: Fonts.bold,
-    color: Colors.bark,
-    marginTop: 8,
-  },
-  activityTime: {
-    fontSize: 12,
-    fontFamily: Fonts.regular,
-    color: Colors.textLight,
-    marginTop: 2,
-  },
-  joinedBadge: {
-    marginTop: 8,
-    backgroundColor: Colors.terracotta,
-    borderRadius: 6,
-    paddingHorizontal: 6,
-    paddingVertical: 3,
-    alignSelf: "flex-start",
-  },
-  joinedText: {
-    fontSize: 10,
-    fontFamily: Fonts.bold,
-    color: "#FFFFFF",
   },
   section: {
     marginBottom: 24,

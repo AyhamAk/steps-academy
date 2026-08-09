@@ -1,25 +1,18 @@
-import { PhotoTag as PrismaPhotoTag } from "@prisma/client";
+import { PhotoTag as PrismaPhotoTag, Student } from "@prisma/client";
 
 import { prisma } from "../lib/prisma";
 
 export type PhotoTag = PrismaPhotoTag;
-
-function normalize(name: string): string {
-  return name.trim().toLowerCase();
-}
+export type PhotoTagWithStudent = PhotoTag & { student: Student };
 
 export const PhotoTagModel = {
-  /** No-op if this photo already has a tag with the same (case-insensitive) name. */
-  async create(photoId: string, studentName: string): Promise<PhotoTag | undefined> {
-    const trimmed = studentName.trim();
-    if (!trimmed) return undefined;
-
-    const existing = (await this.listByPhoto(photoId)).find(
-      (tag) => normalize(tag.studentName) === normalize(trimmed)
-    );
-    if (existing) return existing;
-
-    return prisma.photoTag.create({ data: { photoId, studentName: trimmed } });
+  /** No-op if this student is already tagged in this photo. */
+  async create(photoId: string, studentId: string): Promise<PhotoTag> {
+    return prisma.photoTag.upsert({
+      where: { photoId_studentId: { photoId, studentId } },
+      create: { photoId, studentId },
+      update: {},
+    });
   },
 
   async remove(tagId: string): Promise<boolean> {
@@ -35,27 +28,34 @@ export const PhotoTagModel = {
     return prisma.photoTag.findUnique({ where: { id } });
   },
 
-  async listByPhoto(photoId: string): Promise<PhotoTag[]> {
-    return prisma.photoTag.findMany({ where: { photoId } });
+  async listByPhoto(photoId: string): Promise<PhotoTagWithStudent[]> {
+    return prisma.photoTag.findMany({ where: { photoId }, include: { student: true } });
   },
 
-  async listByPhotoIds(photoIds: string[]): Promise<PhotoTag[]> {
-    return prisma.photoTag.findMany({ where: { photoId: { in: photoIds } } });
+  async listByPhotoIds(photoIds: string[]): Promise<PhotoTagWithStudent[]> {
+    if (photoIds.length === 0) return [];
+    return prisma.photoTag.findMany({
+      where: { photoId: { in: photoIds } },
+      include: { student: true },
+    });
   },
 
-  async listAll(): Promise<PhotoTag[]> {
-    return prisma.photoTag.findMany();
+  /**
+   * Photo ids, among those given, tagged with at least one of these students.
+   * Replaces the old case-insensitive name comparison: visibility is now a
+   * foreign-key match, so two children sharing a name can never collide.
+   */
+  async photoIdsForStudents(photoIds: string[], studentIds: string[]): Promise<Set<string>> {
+    if (photoIds.length === 0 || studentIds.length === 0) return new Set();
+    const rows = await prisma.photoTag.findMany({
+      where: { photoId: { in: photoIds }, studentId: { in: studentIds } },
+      select: { photoId: true },
+      distinct: ["photoId"],
+    });
+    return new Set(rows.map((row) => row.photoId));
   },
 
-  async matchesAnyChild(photoId: string, childNames: string[]): Promise<boolean> {
-    const normalizedChildren = childNames.map(normalize);
-    const tags = await this.listByPhoto(photoId);
-    return tags.some((tag) => normalizedChildren.includes(normalize(tag.studentName)));
-  },
-
-  /** Same match rule as matchesAnyChild, but against already-fetched tags — for batched lookups. */
-  tagsMatchAnyChild(tags: PhotoTag[], childNames: string[]): boolean {
-    const normalizedChildren = childNames.map(normalize);
-    return tags.some((tag) => normalizedChildren.includes(normalize(tag.studentName)));
+  tagsMatchAnyStudent(tags: PhotoTag[], studentIds: string[]): boolean {
+    return tags.some((tag) => studentIds.includes(tag.studentId));
   },
 };

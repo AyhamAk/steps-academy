@@ -33,8 +33,9 @@ export default function ProfileScreen() {
   const locale = useLocaleStore((state) => state.locale);
   const setLocale = useLocaleStore((state) => state.setLocale);
   const { message: toastMessage, opacity: toastOpacity, showToast } = useToast();
-  const childNames = user?.childNames ?? [];
-  const [selectedChild, setSelectedChild] = useState<string | null>(childNames[0] ?? null);
+  const children = user?.children ?? [];
+  const childIds = children.map((child) => child.id);
+  const [selectedChildId, setSelectedChildId] = useState<string | null>(children[0]?.id ?? null);
   const [activeSheet, setActiveSheet] = useState<"password" | "contact" | null>(null);
 
   // Shares its cache key with Home/ParentGalleryScreen — visiting any of the
@@ -42,9 +43,10 @@ export default function ProfileScreen() {
   const { data: galleryGroups } = useQuery({
     queryKey: ["gallery", "mine"],
     queryFn: myGallery,
-    enabled: childNames.length > 0,
+    enabled: children.length > 0,
   });
 
+  // Keyed by student id, so two children with the same name keep separate counts.
   const photosThisMonthByChild = useMemo(() => {
     const counts = new Map<string, number>();
     if (!galleryGroups) return counts;
@@ -55,13 +57,14 @@ export default function ProfileScreen() {
         if (uploaded.getMonth() !== now.getMonth() || uploaded.getFullYear() !== now.getFullYear()) {
           continue;
         }
-        for (const name of matchedTagNames(photo, childNames)) {
-          counts.set(name, (counts.get(name) ?? 0) + 1);
+        for (const tag of photo.tags) {
+          if (!childIds.includes(tag.studentId)) continue;
+          counts.set(tag.studentId, (counts.get(tag.studentId) ?? 0) + 1);
         }
       }
     }
     return counts;
-  }, [galleryGroups, childNames.join(",")]);
+  }, [galleryGroups, childIds.join(",")]);
 
   const handleSelectLocale = (next: Locale) => {
     if (next === locale) return;
@@ -92,6 +95,19 @@ export default function ProfileScreen() {
     onPress: () => void;
     badge?: number;
   }[] = [
+    // Admin-only: students decide who can see which photos, so this is the
+    // most important screen an admin has.
+    ...(user?.role === "admin"
+      ? [
+          {
+            key: "students",
+            label: t.students.title,
+            icon: "people-outline" as keyof typeof Ionicons.glyphMap,
+            tint: Colors.honey,
+            onPress: () => router.push("/students"),
+          },
+        ]
+      : []),
     {
       key: "notifications",
       label: t.profile.notifications,
@@ -145,7 +161,7 @@ export default function ProfileScreen() {
           ) : null}
         </StepsCard>
 
-        {childNames.length > 0 ? (
+        {children.length > 0 ? (
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, rtlText]}>{t.profile.myKidsTitle}</Text>
             <ScrollView
@@ -153,33 +169,29 @@ export default function ProfileScreen() {
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.kidsStrip}
             >
-              {childNames.map((name) => {
-                const isSelected = name === selectedChild;
+              {children.map((child) => {
+                const isSelected = child.id === selectedChildId;
                 return (
                   <Pressable
-                    key={name}
-                    style={({ pressed }) => [
-                      styles.kidCard,
-                      isSelected && styles.kidCardSelected,
-                      pressed && styles.pressedFeedback,
-                    ]}
-                    onPress={() => setSelectedChild(name)}
+                    key={child.id}
+                    style={[styles.kidCard, isSelected && styles.kidCardSelected]}
+                    onPress={() => setSelectedChildId(child.id)}
                   >
                     <View style={styles.kidAvatar}>
                       <Text style={styles.kidAvatarEmoji}>🐘</Text>
                     </View>
-                    <Text style={styles.kidName}>{name}</Text>
+                    <Text style={styles.kidName}>{child.name}</Text>
                   </Pressable>
                 );
               })}
             </ScrollView>
 
-            {selectedChild ? (
+            {selectedChildId ? (
               <View style={[styles.dashCard, isRTL ? styles.dashCardAccentRTL : styles.dashCardAccentLTR]}>
                 <View style={[styles.dashRow, isRTL && styles.dashRowRTL]}>
                   <Text style={styles.dashEmoji}>📸</Text>
                   <Text style={[styles.dashText, rtlText]}>
-                    {t.profile.photosThisMonth(photosThisMonthByChild.get(selectedChild) ?? 0)}
+                    {t.profile.photosThisMonth(photosThisMonthByChild.get(selectedChildId) ?? 0)}
                   </Text>
                 </View>
                 <View style={[styles.dashRow, styles.dashRowLast, isRTL && styles.dashRowRTL]}>

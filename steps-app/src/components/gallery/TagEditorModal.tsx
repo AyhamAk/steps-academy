@@ -17,10 +17,11 @@ import { Colors } from "../../constants/Colors";
 import { Fonts } from "../../constants/Fonts";
 import { useTranslation } from "../../i18n/useTranslation";
 import { addPhotoTag, Photo, removePhotoTag, resolvePhotoUrl } from "../../services/galleryApi";
+import { Student } from "../../services/studentsApi";
 
 type TagEditorModalProps = {
   photo: Photo | null;
-  suggestions: string[];
+  suggestions: Student[];
   onClose: () => void;
   onTagsChanged: (photo: Photo) => void;
 };
@@ -32,12 +33,13 @@ export function TagEditorModal({ photo, suggestions, onClose, onTagsChanged }: T
 
   if (!photo) return null;
 
-  const handleAdd = async (raw: string) => {
-    const trimmed = raw.trim();
-    if (!trimmed || busy) return;
+  // Only enrolled students can be tagged — free text would recreate the
+  // name-matching hole that let same-named children leak across families.
+  const handleAdd = async (studentId: string) => {
+    if (busy) return;
     setBusy(true);
     try {
-      const updated = await addPhotoTag(photo.id, trimmed);
+      const updated = await addPhotoTag(photo.id, studentId);
       onTagsChanged(updated);
       setDraft("");
     } finally {
@@ -56,10 +58,11 @@ export function TagEditorModal({ photo, suggestions, onClose, onTagsChanged }: T
     }
   };
 
+  const query = draft.trim().toLowerCase();
   const filteredSuggestions = suggestions
-    .filter((name) => !photo.tags.some((tag) => tag.studentName.toLowerCase() === name.toLowerCase()))
-    .filter((name) => !draft.trim() || name.toLowerCase().includes(draft.trim().toLowerCase()))
-    .slice(0, 8);
+    .filter((student) => !photo.tags.some((tag) => tag.studentId === student.id))
+    .filter((student) => !query || student.name.toLowerCase().includes(query))
+    .slice(0, 12);
 
   return (
     <Modal visible={!!photo} animationType="slide" onRequestClose={onClose} transparent>
@@ -94,7 +97,6 @@ export function TagEditorModal({ photo, suggestions, onClose, onTagsChanged }: T
             placeholder={t.gallery.searchKidName}
             placeholderTextColor={Colors.textLight}
             style={styles.input}
-            onSubmitEditing={() => handleAdd(draft)}
             returnKeyType="done"
           />
 
@@ -105,13 +107,19 @@ export function TagEditorModal({ photo, suggestions, onClose, onTagsChanged }: T
               keyboardShouldPersistTaps="handled"
               style={styles.suggestionRow}
             >
-              {filteredSuggestions.map((name) => (
-                <Pressable key={name} style={styles.suggestionChip} onPress={() => handleAdd(name)}>
-                  <Text style={styles.suggestionText}>+ {name}</Text>
+              {filteredSuggestions.map((student) => (
+                <Pressable
+                  key={student.id}
+                  style={styles.suggestionChip}
+                  onPress={() => handleAdd(student.id)}
+                >
+                  <Text style={styles.suggestionText}>+ {student.name}</Text>
                 </Pressable>
               ))}
             </ScrollView>
-          ) : null}
+          ) : (
+            <Text style={styles.noTags}>{t.gallery.noStudentsYet}</Text>
+          )}
 
           {busy ? <ActivityIndicator style={{ marginTop: 12 }} color={Colors.primary} /> : null}
         </View>

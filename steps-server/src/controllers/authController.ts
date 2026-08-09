@@ -8,29 +8,11 @@ import { signToken } from "../utils/jwt";
 
 const googleClient = new OAuth2Client(env.googleClientId);
 
-/** Trim names, drop empties, and dedupe case-insensitively (first spelling wins). */
-function cleanChildNames(childNames: unknown): string[] {
-  if (!Array.isArray(childNames)) return [];
-  const seen = new Set<string>();
-  const result: string[] = [];
-  for (const raw of childNames) {
-    if (typeof raw !== "string") continue;
-    const trimmed = raw.trim();
-    if (!trimmed) continue;
-    const key = trimmed.toLowerCase();
-    if (seen.has(key)) continue;
-    seen.add(key);
-    result.push(trimmed);
-  }
-  return result;
-}
-
 export async function register(req: Request, res: Response) {
-  const { email, name, password, childNames } = req.body as {
+  const { email, name, password } = req.body as {
     email?: string;
     name?: string;
     password?: string;
-    childNames?: string[];
   };
 
   if (!email || !name || !password) {
@@ -48,16 +30,12 @@ export async function register(req: Request, res: Response) {
 
   const passwordHash = await bcrypt.hash(password, 10);
   const role = env.adminEmails.includes(email.toLowerCase()) ? "admin" : "parent";
-  const user = await UserModel.create({
-    email,
-    name,
-    passwordHash,
-    role,
-    childNames: cleanChildNames(childNames),
-  });
+  // A new account starts with no children. An admin links them to real Student
+  // records — a parent can no longer grant themselves access by typing a name.
+  const user = await UserModel.create({ email, name, passwordHash, role });
   const token = signToken({ userId: user.id });
 
-  res.status(201).json({ token, user: UserModel.toPublic(user) });
+  res.status(201).json({ token, user: await UserModel.toPublic(user) });
 }
 
 export async function login(req: Request, res: Response) {
@@ -78,7 +56,7 @@ export async function login(req: Request, res: Response) {
   }
 
   const token = signToken({ userId: user.id });
-  res.json({ token, user: UserModel.toPublic(user) });
+  res.json({ token, user: await UserModel.toPublic(user) });
 }
 
 export async function googleAuth(req: Request, res: Response) {
@@ -110,7 +88,7 @@ export async function googleAuth(req: Request, res: Response) {
     }
 
     const token = signToken({ userId: user.id });
-    res.json({ token, user: UserModel.toPublic(user) });
+    res.json({ token, user: await UserModel.toPublic(user) });
   } catch {
     res.status(401).json({ message: "Google token verification failed" });
   }
@@ -121,7 +99,7 @@ export async function me(req: Request, res: Response) {
   if (!user) {
     return res.status(404).json({ message: "User not found" });
   }
-  res.json({ user: UserModel.toPublic(user) });
+  res.json({ user: await UserModel.toPublic(user) });
 }
 
 export async function logout(req: Request, res: Response) {
@@ -167,16 +145,21 @@ export async function changePassword(req: Request, res: Response) {
   res.json({ message: "Password updated" });
 }
 
+/**
+ * Own display name only. This endpoint used to accept `childNames`, which let
+ * any parent grant themselves access to photos of any child sharing that name
+ * — children are now linked by an admin through the students API.
+ */
 export async function updateMe(req: Request, res: Response) {
-  const { childNames } = req.body as { childNames?: string[] };
+  const { name } = req.body as { name?: string };
 
-  if (!Array.isArray(childNames) || !childNames.every((n) => typeof n === "string")) {
-    return res.status(400).json({ message: "childNames must be an array of strings" });
+  if (typeof name !== "string" || !name.trim()) {
+    return res.status(400).json({ message: "name is required" });
   }
 
-  const user = await UserModel.updateChildNames(req.userId!, cleanChildNames(childNames));
+  const user = await UserModel.updateName(req.userId!, name.trim());
   if (!user) {
     return res.status(404).json({ message: "User not found" });
   }
-  res.json({ user: UserModel.toPublic(user) });
+  res.json({ user: await UserModel.toPublic(user) });
 }
