@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 
 import { Colors } from "../../constants/Colors";
 import { Fonts } from "../../constants/Fonts";
 import { MOCK_WEEK_SCHEDULE, pickLocalized, WeekDay } from "../../constants/mockData";
 import { Type } from "../../constants/Typography";
 import { useTranslation } from "../../i18n/useTranslation";
+import { Touchable } from "../ui/Touchable";
 
 const ACADEMY_DAYS: WeekDay[] = ["sun", "mon", "tue", "wed", "thu"];
 
@@ -55,7 +56,7 @@ export function WeeklyScheduleSection() {
             // with `style={({pressed}) => ...}` renders its children but drops
             // the resolved background/layout, which is what made these pills
             // look like bare text. Matches the Profile language pills.
-            <Pressable
+            <Touchable
               key={day.day}
               onPress={() => setSelectedDay(day.day)}
               hitSlop={6}
@@ -74,7 +75,7 @@ export function WeeklyScheduleSection() {
                 {t.home.weekDays[day.day]}
               </Text>
               <Text style={[styles.dayDate, { color: dateColor }]}>{weekDates[day.day]}</Text>
-            </Pressable>
+            </Touchable>
           );
         })}
       </View>

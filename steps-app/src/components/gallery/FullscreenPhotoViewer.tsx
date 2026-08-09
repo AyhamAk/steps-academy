@@ -9,7 +9,6 @@ import {
   Modal,
   NativeScrollEvent,
   NativeSyntheticEvent,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -21,6 +20,7 @@ import { Colors } from "../../constants/Colors";
 import { Fonts } from "../../constants/Fonts";
 import { useTranslation } from "../../i18n/useTranslation";
 import { matchedTagNames, Photo, resolvePhotoUrl } from "../../services/galleryApi";
+import { Touchable } from "../ui/Touchable";
 
 type FullscreenPhotoViewerProps = {
   photos: Photo[] | null;
@@ -130,20 +130,20 @@ export function FullscreenPhotoViewer({
           }}
         >
           {photos.map((photo) => (
-            <Pressable key={photo.id} onPress={handleTap} style={{ width }}>
+            <Touchable key={photo.id} onPress={handleTap} style={{ width }}>
               <Image
                 source={{ uri: resolvePhotoUrl(photo.url) }}
                 style={styles.image}
                 resizeMode={fit}
               />
-            </Pressable>
+            </Touchable>
           ))}
         </ScrollView>
 
         <View style={styles.topBar}>
-          <Pressable style={styles.closeButton} onPress={onClose} hitSlop={8}>
+          <Touchable style={styles.closeButton} onPress={onClose} hitSlop={8}>
             <Text style={styles.closeText}>✕</Text>
-          </Pressable>
+          </Touchable>
           {photos.length > 1 ? (
             <Text style={styles.counter}>
               {safeIndex + 1} / {photos.length}
@@ -154,22 +154,22 @@ export function FullscreenPhotoViewer({
         {photos.length > 1 ? (
           <>
             {safeIndex > 0 ? (
-              <Pressable
+              <Touchable
                 style={[styles.arrow, styles.arrowLeft]}
                 onPress={() => goTo(safeIndex - 1)}
                 hitSlop={8}
               >
                 <Text style={styles.arrowText}>‹</Text>
-              </Pressable>
+              </Touchable>
             ) : null}
             {safeIndex < photos.length - 1 ? (
-              <Pressable
+              <Touchable
                 style={[styles.arrow, styles.arrowRight]}
                 onPress={() => goTo(safeIndex + 1)}
                 hitSlop={8}
               >
                 <Text style={styles.arrowText}>›</Text>
-              </Pressable>
+              </Touchable>
             ) : null}
           </>
         ) : null}
@@ -182,20 +182,20 @@ export function FullscreenPhotoViewer({
           ) : null}
 
           <View style={styles.actions}>
-            <Pressable style={styles.actionButton} onPress={handleDownload} disabled={!!busy}>
+            <Touchable style={styles.actionButton} onPress={handleDownload} disabled={!!busy}>
               {busy === "download" ? (
                 <ActivityIndicator color="#FFFFFF" />
               ) : (
                 <Text style={styles.actionText}>{t.gallery.save}</Text>
               )}
-            </Pressable>
-            <Pressable style={styles.actionButton} onPress={handleShare} disabled={!!busy}>
+            </Touchable>
+            <Touchable style={styles.actionButton} onPress={handleShare} disabled={!!busy}>
               {busy === "share" ? (
                 <ActivityIndicator color="#FFFFFF" />
               ) : (
                 <Text style={styles.actionText}>{t.gallery.share}</Text>
               )}
-            </Pressable>
+            </Touchable>
           </View>
         </View>
       </View>

@@ -1,6 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Alert, FlatList, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 
 import { EmptyState } from "../components/gallery/EmptyState";
 import { Screen } from "../components/Screen";
@@ -8,6 +16,7 @@ import { BalloonLoader } from "../components/ui/BalloonLoader";
 import { ScreenFadeIn } from "../components/ui/ScreenFadeIn";
 import { StepsButton } from "../components/ui/StepsButton";
 import { StepsHeader } from "../components/ui/StepsHeader";
+import { Touchable } from "../components/ui/Touchable";
 import { Colors } from "../constants/Colors";
 import { Fonts } from "../constants/Fonts";
 import { Type } from "../constants/Typography";
@@ -51,17 +60,22 @@ function GuardianPicker({
         <Text style={styles.muted}>{t.students.noParentsAvailable}</Text>
       ) : (
         available.map((parent) => (
-          <Pressable
+          <Touchable
             key={parent.id}
             style={styles.pickerRow}
+            disabled={link.isPending}
             onPress={() => link.mutate(parent.id)}
           >
             <View style={styles.flex}>
               <Text style={styles.pickerName}>{parent.name}</Text>
               <Text style={styles.pickerEmail}>{parent.email}</Text>
             </View>
-            <Text style={styles.linkAction}>+ {t.students.link}</Text>
-          </Pressable>
+            {link.isPending && link.variables === parent.id ? (
+              <ActivityIndicator color={Colors.forest} />
+            ) : (
+              <Text style={styles.linkAction}>+ {t.students.link}</Text>
+            )}
+          </Touchable>
         ))
       )}
       <StepsButton
@@ -107,9 +121,13 @@ function StudentCard({ student }: { student: Student }) {
               : t.students.guardianCount(student.guardians.length)}
           </Text>
         </View>
-        <Pressable onPress={confirmRemove} hitSlop={8}>
-          <Text style={styles.removeIcon}>🗑</Text>
-        </Pressable>
+        <Touchable onPress={confirmRemove} hitSlop={8} disabled={remove.isPending}>
+          {remove.isPending ? (
+            <ActivityIndicator color={Colors.clay} />
+          ) : (
+            <Text style={styles.removeIcon}>🗑</Text>
+          )}
+        </Touchable>
       </View>
 
       {student.guardians.length > 0 ? (
@@ -120,9 +138,17 @@ function StudentCard({ student }: { student: Student }) {
                 <Text style={[styles.guardianName, rtlText]}>{guardian.name}</Text>
                 <Text style={[styles.guardianEmail, rtlText]}>{guardian.email}</Text>
               </View>
-              <Pressable onPress={() => unlink.mutate(guardian.id)} hitSlop={8}>
-                <Text style={styles.unlink}>{t.students.unlink}</Text>
-              </Pressable>
+              <Touchable
+                onPress={() => unlink.mutate(guardian.id)}
+                hitSlop={8}
+                disabled={unlink.isPending}
+              >
+                {unlink.isPending && unlink.variables === guardian.id ? (
+                  <ActivityIndicator color={Colors.clay} />
+                ) : (
+                  <Text style={styles.unlink}>{t.students.unlink}</Text>
+                )}
+              </Touchable>
             </View>
           ))}
         </View>
@@ -131,9 +157,9 @@ function StudentCard({ student }: { student: Student }) {
       {isPickingGuardian ? (
         <GuardianPicker student={student} onDone={() => setIsPickingGuardian(false)} />
       ) : (
-        <Pressable style={styles.addGuardian} onPress={() => setIsPickingGuardian(true)}>
+        <Touchable style={styles.addGuardian} onPress={() => setIsPickingGuardian(true)}>
           <Text style={styles.addGuardianText}>+ {t.students.addGuardian}</Text>
-        </Pressable>
+        </Touchable>
       )}
     </View>
   );
@@ -169,13 +195,18 @@ export default function StudentsScreen() {
             returnKeyType="done"
             onSubmitEditing={() => newName.trim() && create.mutate()}
           />
-          <Pressable
+          <Touchable
             style={[styles.addButton, !newName.trim() && styles.addButtonDisabled]}
             disabled={!newName.trim() || create.isPending}
             onPress={() => create.mutate()}
+            accessibilityLabel={t.students.addStudent}
           >
-            <Text style={styles.addButtonText}>{create.isPending ? "…" : "+"}</Text>
-          </Pressable>
+            {create.isPending ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <Text style={styles.addButtonText}>+</Text>
+            )}
+          </Touchable>
         </View>
 
         {isError ? (

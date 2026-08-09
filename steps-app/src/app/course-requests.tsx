@@ -1,12 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Alert, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Alert, FlatList, StyleSheet, Text, View } from "react-native";
 
 import { EmptyState } from "../components/gallery/EmptyState";
 import { Screen } from "../components/Screen";
 import { BalloonLoader } from "../components/ui/BalloonLoader";
 import { ScreenFadeIn } from "../components/ui/ScreenFadeIn";
 import { StepsHeader } from "../components/ui/StepsHeader";
+import { Touchable } from "../components/ui/Touchable";
 import { Colors } from "../constants/Colors";
 import { Fonts } from "../constants/Fonts";
 import { Type } from "../constants/Typography";
@@ -78,20 +79,28 @@ function RequestCard({ request }: { request: EnrollmentRequest }) {
 
       {request.status === "pending" ? (
         <View style={[styles.actions, isRTL && styles.rowReverse]}>
-          <Pressable
+          <Touchable
             style={[styles.button, styles.decline]}
             disabled={decide.isPending}
             onPress={() => decide.mutate("rejected")}
           >
-            <Text style={[styles.buttonText, styles.declineText]}>{t.courses.decline}</Text>
-          </Pressable>
-          <Pressable
+            {decide.isPending && decide.variables === "rejected" ? (
+              <ActivityIndicator color={Colors.clay} />
+            ) : (
+              <Text style={[styles.buttonText, styles.declineText]}>{t.courses.decline}</Text>
+            )}
+          </Touchable>
+          <Touchable
             style={[styles.button, styles.approve]}
             disabled={decide.isPending}
             onPress={() => decide.mutate("approved")}
           >
-            <Text style={styles.buttonText}>{t.courses.approve}</Text>
-          </Pressable>
+            {decide.isPending && decide.variables === "approved" ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <Text style={styles.buttonText}>{t.courses.approve}</Text>
+            )}
+          </Touchable>
         </View>
       ) : null}
     </View>
@@ -128,7 +137,7 @@ export default function CourseRequestsScreen() {
             const isActive = item.key === filter;
             const showBadge = item.key === "pending" && (data?.pendingCount ?? 0) > 0;
             return (
-              <Pressable
+              <Touchable
                 key={item.key}
                 onPress={() => setFilter(item.key)}
                 style={[styles.filterChip, isActive && styles.filterChipActive]}
@@ -137,7 +146,7 @@ export default function CourseRequestsScreen() {
                   {item.label}
                   {showBadge ? ` (${data?.pendingCount})` : ""}
                 </Text>
-              </Pressable>
+              </Touchable>
             );
           })}
         </View>

@@ -9,7 +9,6 @@ import {
   NativeScrollEvent,
   NativeSyntheticEvent,
   Platform,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -58,6 +57,7 @@ import {
 } from "../../services/galleryApi";
 import { useAuthStore } from "../../store/authStore";
 import { formatIsoDate, parseIsoDate } from "../../utils/date";
+import { Touchable } from "../../components/ui/Touchable";
 
 type SalutationKey = "goodMorning" | "goodAfternoon" | "goodEvening" | "goodNight";
 
@@ -186,18 +186,14 @@ function HeroCarousel({
           <Text style={[styles.carouselHeadline, { textAlign, alignSelf: startAlign }]}>
             {t.home.carouselHighlight(childOrGeneric)}
           </Text>
-          <Pressable
-            style={({ pressed }) => [
-              styles.carouselCta,
-              { alignSelf: startAlign },
-              pressed && styles.carouselCtaPressed,
-            ]}
+          <Touchable
+            style={[styles.carouselCta, { alignSelf: startAlign }]}
             onPress={() => router.push("/gallery")}
           >
             <Text style={styles.carouselCtaText}>
               {t.home.carouselHighlightCta} {arrow}
             </Text>
-          </Pressable>
+          </Touchable>
         </LinearGradient>
 
         <View style={[styles.carouselSlide, { width: slideWidth, backgroundColor: Colors.forest }]}>
@@ -207,16 +203,12 @@ function HeroCarousel({
               ? t.home.carouselCountdown(nextEvent.name, daysAwayLabel)
               : t.home.carouselNoEvent}
           </Text>
-          <Pressable
-            style={({ pressed }) => [
-              styles.carouselCta,
-              { alignSelf: startAlign },
-              pressed && styles.carouselCtaPressed,
-            ]}
+          <Touchable
+            style={[styles.carouselCta, { alignSelf: startAlign }]}
             onPress={() => onToast(t.common.comingSoon)}
           >
             <Text style={styles.carouselCtaText}>{t.home.addToCalendar}</Text>
-          </Pressable>
+          </Touchable>
         </View>
 
         <LinearGradient
@@ -230,7 +222,7 @@ function HeroCarousel({
           </Text>
           <View style={styles.moodRow}>
             {["😊", "😐", "😢"].map((moodEmoji) => (
-              <Pressable
+              <Touchable
                 key={moodEmoji}
                 style={[styles.moodButton, selectedMood === moodEmoji && styles.moodButtonSelected]}
                 onPress={() => {
@@ -239,7 +231,7 @@ function HeroCarousel({
                 }}
               >
                 <Text style={styles.moodEmoji}>{moodEmoji}</Text>
-              </Pressable>
+              </Touchable>
             ))}
           </View>
         </LinearGradient>
@@ -304,9 +296,9 @@ function EventQuickAddModal({
         <View style={styles.modalSheet}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>{t.gallery.newEvent}</Text>
-            <Pressable onPress={onClose}>
+            <Touchable onPress={onClose}>
               <Text style={styles.modalClose}>✕</Text>
-            </Pressable>
+            </Touchable>
           </View>
 
           <Text style={styles.modalLabel}>{t.gallery.eventNameLabel}</Text>
@@ -382,9 +374,9 @@ function AnnouncementQuickAddModal({
         <View style={styles.modalSheet}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>{t.home.addAnnouncement}</Text>
-            <Pressable onPress={onClose}>
+            <Touchable onPress={onClose}>
               <Text style={styles.modalClose}>✕</Text>
-            </Pressable>
+            </Touchable>
           </View>
 
           <TextInput
@@ -694,12 +686,12 @@ export default function HomeScreen() {
           <View style={[styles.sectionHeaderRow, isRTL && styles.rowReverse]}>
             <Text style={[styles.sectionTitle, rtlText]}>{t.home.nextEvent}</Text>
             {isAdmin ? (
-              <Pressable
+              <Touchable
                 onPress={() => setIsEventModalVisible(true)}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               >
                 <Text style={styles.sectionAddLink}>{t.home.addEvent}</Text>
-              </Pressable>
+              </Touchable>
             ) : null}
           </View>
 
@@ -736,12 +728,12 @@ export default function HomeScreen() {
           <View style={[styles.sectionHeaderRow, isRTL && styles.rowReverse]}>
             <Text style={[styles.sectionTitle, rtlText]}>{t.home.latestAnnouncement}</Text>
             {isAdmin ? (
-              <Pressable
+              <Touchable
                 onPress={() => setIsAnnouncementModalVisible(true)}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               >
                 <Text style={styles.sectionAddLink}>{t.home.addAnnouncement}</Text>
-              </Pressable>
+              </Touchable>
             ) : null}
           </View>
 
@@ -764,14 +756,14 @@ export default function HomeScreen() {
                 expanded={isAnnouncementExpanded}
                 rtlText={rtlText}
               />
-              <Pressable
+              <Touchable
                 onPress={() => setIsAnnouncementExpanded((prev) => !prev)}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               >
                 <Text style={[styles.readMoreLink, rtlText]}>
                   {isAnnouncementExpanded ? t.common.showLess : t.common.readMore}
                 </Text>
-              </Pressable>
+              </Touchable>
               <Text style={[styles.announcementTimestamp, rtlText]}>
                 {formatRelativeTime(new Date(announcement.createdAt), t)}
               </Text>

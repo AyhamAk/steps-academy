@@ -209,6 +209,7 @@ export const en = {
   },
   students: {
     title: "Students",
+    addStudent: "Add student",
     subtitle: "Add children and link their parents",
     namePlaceholder: "Child's name",
     loading: "Loading students...",
@@ -557,6 +558,7 @@ export const ar: Translations = {
   },
   students: {
     title: "الطلاب",
+    addStudent: "إضافة طالب",
     subtitle: "أضف الأطفال واربطهم بأولياء أمورهم",
     namePlaceholder: "اسم الطفل",
     loading: "جارٍ تحميل الطلاب...",
@@ -902,6 +904,7 @@ export const he: Translations = {
   },
   students: {
     title: "תלמידים",
+    addStudent: "הוסף תלמיד",
     subtitle: "הוסף ילדים וקשר אותם להורים",
     namePlaceholder: "שם הילד",
     loading: "טוען תלמידים...",

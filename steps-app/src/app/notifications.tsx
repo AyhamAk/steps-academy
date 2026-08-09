@@ -1,12 +1,13 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, FlatList, StyleSheet, Text, View } from "react-native";
 
 import { EmptyState } from "../components/gallery/EmptyState";
 import { Screen } from "../components/Screen";
 import { ScreenFadeIn } from "../components/ui/ScreenFadeIn";
 import { StepsHeader } from "../components/ui/StepsHeader";
+import { Touchable } from "../components/ui/Touchable";
 import { Colors } from "../constants/Colors";
 import { Fonts } from "../constants/Fonts";
 import { Type } from "../constants/Typography";
@@ -76,15 +77,10 @@ export default function NotificationsScreen() {
             keyExtractor={(n) => n.id}
             contentContainerStyle={styles.list}
             renderItem={({ item }) => (
-              <Pressable
+              <Touchable
                 disabled={!item.eventId}
                 onPress={() => item.eventId && router.push(`/gallery/${item.eventId}`)}
-                style={({ pressed }) => [
-                  styles.row,
-                  isRTL && styles.rowReverse,
-                  !item.read && styles.rowUnread,
-                  pressed && item.eventId ? styles.rowPressed : null,
-                ]}
+                style={[styles.row, isRTL && styles.rowReverse, !item.read && styles.rowUnread]}
               >
                 <View style={item.read ? styles.dotSpacer : styles.unreadDot} />
                 <View style={styles.rowText}>
@@ -92,7 +88,7 @@ export default function NotificationsScreen() {
                   <Text style={[styles.rowTime, rtlText]}>{relativeTime(item.createdAt, t)}</Text>
                 </View>
                 {item.eventId ? <Text style={styles.chevron}>{isRTL ? "‹" : "›"}</Text> : null}
-              </Pressable>
+              </Touchable>
             )}
           />
         )}

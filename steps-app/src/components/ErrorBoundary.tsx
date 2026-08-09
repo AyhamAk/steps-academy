@@ -1,9 +1,10 @@
 import React from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 
 import { Colors } from "../constants/Colors";
 import { Fonts } from "../constants/Fonts";
 import { useTranslation } from "../i18n/useTranslation";
+import { Touchable } from "./ui/Touchable";
 
 function ErrorFallback({ onRetry }: { onRetry: () => void }) {
   const { t } = useTranslation();
@@ -12,12 +13,12 @@ function ErrorFallback({ onRetry }: { onRetry: () => void }) {
       <Text style={styles.emoji}>🐘</Text>
       <Text style={styles.title}>{t.common.somethingWentWrong}</Text>
       <Text style={styles.message}>{t.common.screenErrorMessage}</Text>
-      <Pressable
+      <Touchable
         onPress={onRetry}
-        style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
+        style={[styles.button]}
       >
         <Text style={styles.buttonText}>{t.common.retry}</Text>
-      </Pressable>
+      </Touchable>
     </View>
   );
 }

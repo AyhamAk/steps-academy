@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import {
+  ActivityIndicator,
   Animated,
   GestureResponderEvent,
   LayoutChangeEvent,
@@ -25,6 +26,9 @@ type StepsButtonProps = {
   style?: ViewStyle;
   /** One-time shimmer sweep across the button shortly after mount, to draw the eye to a key CTA. */
   shimmerOnMount?: boolean;
+  /** Shows a spinner in place of the label and blocks repeat taps. */
+  loading?: boolean;
+  disabled?: boolean;
 };
 
 const SIZE_STYLES: Record<Size, { paddingVertical: number; paddingHorizontal: number; fontSize: number }> = {
@@ -42,8 +46,11 @@ export function StepsButton({
   size = "md",
   style,
   shimmerOnMount = false,
+  loading = false,
+  disabled = false,
 }: StepsButtonProps) {
   const reduceMotion = useReduceMotionSetting();
+  const isInactive = loading || disabled;
   const scale = useRef(new Animated.Value(1)).current;
   const rippleId = useRef(0);
   const [ripples, setRipples] = useState<Ripple[]>([]);
@@ -87,6 +94,7 @@ export function StepsButton({
   };
 
   const handlePressIn = (e: GestureResponderEvent) => {
+    if (isInactive) return;
     if (!reduceMotion) {
       spawnRipple(e.nativeEvent.locationX, e.nativeEvent.locationY);
     }
@@ -112,6 +120,8 @@ export function StepsButton({
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         onLayout={handleLayout}
+        disabled={isInactive}
+        accessibilityState={{ disabled: isInactive, busy: loading }}
         style={[
           styles.base,
           {
@@ -122,6 +132,7 @@ export function StepsButton({
             borderColor: Colors.primary,
             shadowOpacity: isOutline ? 0 : 0.2,
           },
+          isInactive && styles.inactive,
           style,
         ]}
       >
@@ -169,9 +180,16 @@ export function StepsButton({
             />
           ))}
         </View>
-        <Text style={{ color: textColor, fontSize: sizeStyle.fontSize, fontFamily: Fonts.bold }}>
-          {label}
-        </Text>
+        {loading ? (
+          // Sized to the label's line height so the button doesn't resize mid-action.
+          <View style={{ height: sizeStyle.fontSize * 1.25, justifyContent: "center" }}>
+            <ActivityIndicator color={textColor} />
+          </View>
+        ) : (
+          <Text style={{ color: textColor, fontSize: sizeStyle.fontSize, fontFamily: Fonts.bold }}>
+            {label}
+          </Text>
+        )}
       </Pressable>
     </Animated.View>
   );
@@ -186,6 +204,9 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },
     elevation: 3,
+  },
+  inactive: {
+    opacity: 0.55,
   },
   rippleClip: {
     ...StyleSheet.absoluteFillObject,

@@ -201,8 +201,9 @@ export default function AuthScreen() {
                 <Text style={styles.error}>{formError ?? error}</Text>
               ) : null}
               <StepsButton
-                label={isLoading ? t.auth.creatingAccount : t.auth.createAccountButton}
+                label={t.auth.createAccountButton}
                 onPress={handleRegister}
+                loading={isLoading}
                 shimmerOnMount
               />
               <Text style={styles.link} onPress={() => goToMode("welcome")}>
@@ -240,8 +241,9 @@ export default function AuthScreen() {
                 <Text style={styles.error}>{formError ?? error}</Text>
               ) : null}
               <StepsButton
-                label={isLoading ? t.auth.signingIn : t.auth.signIn}
+                label={t.auth.signIn}
                 onPress={handleLogin}
+                loading={isLoading}
                 shimmerOnMount
               />
               <Text style={styles.link} onPress={() => goToMode("welcome")}>

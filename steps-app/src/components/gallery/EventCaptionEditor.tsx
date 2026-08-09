@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { Alert, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { Alert, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { Colors } from "../../constants/Colors";
 import { Fonts } from "../../constants/Fonts";
 import { useTranslation } from "../../i18n/useTranslation";
 import { updateEventCaption } from "../../services/galleryApi";
+import { Touchable } from "../ui/Touchable";
 
 const MAX_LENGTH = 300;
 
@@ -53,7 +54,7 @@ export function EventCaptionEditor({ eventId, caption, onSaved }: EventCaptionEd
         {draft.length}/{MAX_LENGTH}
       </Text>
 
-      <Pressable
+      <Touchable
         disabled={!isDirty || isSaving}
         onPress={handleSave}
         style={[styles.saveButton, (!isDirty || isSaving) && styles.saveButtonDisabled]}
@@ -61,7 +62,7 @@ export function EventCaptionEditor({ eventId, caption, onSaved }: EventCaptionEd
         <Text style={styles.saveButtonText}>
           {isSaving ? t.gallery.captionSaving : t.gallery.captionSave}
         </Text>
-      </Pressable>
+      </Touchable>
     </View>
   );
 }

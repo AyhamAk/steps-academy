@@ -1,10 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Linking, Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import { Linking, Modal, StyleSheet, Text, View } from "react-native";
 
 import { ACADEMY_CONTACT } from "../../constants/academy";
 import { Colors } from "../../constants/Colors";
 import { Fonts } from "../../constants/Fonts";
 import { useTranslation } from "../../i18n/useTranslation";
+import { Touchable } from "../ui/Touchable";
 
 type ContactAcademyModalProps = {
   visible: boolean;
@@ -61,20 +62,20 @@ export function ContactAcademyModal({ visible, onClose, onError }: ContactAcadem
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <Pressable style={styles.backdrop} onPress={onClose}>
-        <Pressable style={styles.sheet} onPress={() => {}}>
+      <Touchable style={styles.backdrop} onPress={onClose}>
+        <Touchable style={styles.sheet} onPress={() => {}}>
           <View style={styles.header}>
             <View>
               <Text style={styles.title}>{t.profile.contactTitle}</Text>
               <Text style={styles.subtitle}>{t.profile.contactSubtitle}</Text>
             </View>
-            <Pressable onPress={onClose} hitSlop={8}>
+            <Touchable onPress={onClose} hitSlop={8}>
               <Text style={styles.close}>✕</Text>
-            </Pressable>
+            </Touchable>
           </View>
 
           {options.map((option) => (
-            <Pressable key={option.key} style={styles.option} onPress={() => open(option.url)}>
+            <Touchable key={option.key} style={styles.option} onPress={() => open(option.url)}>
               <View style={[styles.optionInner, isRTL && styles.optionInnerRTL]}>
                 <View style={[styles.optionIconWrap, { backgroundColor: `${option.tint}20` }]}>
                   <Ionicons name={option.icon} size={18} color={option.tint} />
@@ -84,10 +85,10 @@ export function ContactAcademyModal({ visible, onClose, onError }: ContactAcadem
                 </Text>
                 <Text style={styles.optionChevron}>{isRTL ? "‹" : "›"}</Text>
               </View>
-            </Pressable>
+            </Touchable>
           ))}
-        </Pressable>
-      </Pressable>
+        </Touchable>
+      </Touchable>
     </Modal>
   );
 }

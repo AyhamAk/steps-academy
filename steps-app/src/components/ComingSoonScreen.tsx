@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -15,6 +15,7 @@ import { Colors } from "../constants/Colors";
 import { Fonts } from "../constants/Fonts";
 import { Type } from "../constants/Typography";
 import { useReduceMotionSetting } from "../hooks/useReduceMotionSetting";
+import { Touchable } from "./ui/Touchable";
 
 export type PreviewCard = { emoji: string; label: string };
 
@@ -72,9 +73,9 @@ export function ComingSoonScreen({
           ))}
         </View>
 
-        <Pressable style={styles.notifyButton} onPress={() => showToast(notifyToast)}>
+        <Touchable style={styles.notifyButton} onPress={() => showToast(notifyToast)}>
           <Text style={styles.notifyButtonText}>{notifyLabel}</Text>
-        </Pressable>
+        </Touchable>
       </ScreenFadeIn>
 
       <ToastBanner message={message} opacity={opacity} />

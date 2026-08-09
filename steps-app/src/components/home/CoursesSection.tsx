@@ -1,10 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { Colors } from "../../constants/Colors";
 import { Fonts } from "../../constants/Fonts";
 import { Type } from "../../constants/Typography";
 import { useTranslation } from "../../i18n/useTranslation";
+import { Touchable } from "../ui/Touchable";
 import {
   cancelEnrollment,
   Course,
@@ -80,6 +81,9 @@ export function CoursesSection() {
           const pending = course.myEnrollments.find((e) => e.status === "pending");
           const approved = course.myEnrollments.find((e) => e.status === "approved");
           const rejected = course.myEnrollments.find((e) => e.status === "rejected");
+          // Only the card being acted on spins, not every card at once.
+          const isRequestingThis = request.isPending && request.variables?.courseId === course.id;
+          const isCancellingThis = cancel.isPending && cancel.variables === pending?.id;
 
           return (
             <View key={course.id} style={styles.card}>
@@ -90,7 +94,7 @@ export function CoursesSection() {
                 ]}
               />
 
-              <Pressable
+              <Touchable
                 style={styles.cardInfo}
                 onPress={() =>
                   Alert.alert(course.name, course.description ?? "", [{ text: t.common.ok }])
@@ -126,7 +130,7 @@ export function CoursesSection() {
                         : t.courses.spotsLeft(course.spotsLeft)}
                   </Text>
                 </View>
-              </Pressable>
+              </Touchable>
 
               {approved ? (
                 <View style={[styles.action, styles.actionApproved]}>
@@ -135,7 +139,7 @@ export function CoursesSection() {
                   </Text>
                 </View>
               ) : pending ? (
-                <Pressable
+                <Touchable
                   style={[styles.action, styles.actionPending]}
                   onPress={() =>
                     Alert.alert(
@@ -152,23 +156,35 @@ export function CoursesSection() {
                     )
                   }
                 >
-                  <Text style={[styles.actionText, styles.actionTextPending]} numberOfLines={1}>
-                    {t.courses.pending}
-                  </Text>
-                </Pressable>
+                  {isCancellingThis ? (
+                    <ActivityIndicator color={Colors.bark} />
+                  ) : (
+                    <Text style={[styles.actionText, styles.actionTextPending]} numberOfLines={1}>
+                      {t.courses.pending}
+                    </Text>
+                  )}
+                </Touchable>
               ) : (
-                <Pressable
-                  disabled={isFull || request.isPending}
+                <Touchable
+                  disabled={isFull || isRequestingThis}
                   onPress={() => startRequest(course)}
                   style={[styles.action, isFull ? styles.actionFull : styles.actionRequest]}
                 >
-                  <Text
-                    style={[styles.actionText, isFull && styles.actionTextDisabled]}
-                    numberOfLines={1}
-                  >
-                    {isFull ? t.courses.full : rejected ? t.courses.requestAgain : t.courses.request}
-                  </Text>
-                </Pressable>
+                  {isRequestingThis ? (
+                    <ActivityIndicator color="#FFFFFF" />
+                  ) : (
+                    <Text
+                      style={[styles.actionText, isFull && styles.actionTextDisabled]}
+                      numberOfLines={1}
+                    >
+                      {isFull
+                        ? t.courses.full
+                        : rejected
+                          ? t.courses.requestAgain
+                          : t.courses.request}
+                    </Text>
+                  )}
+                </Touchable>
               )}
             </View>
           );

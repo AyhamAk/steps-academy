@@ -1,9 +1,10 @@
 import { router } from "expo-router";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 
 import { useTranslation } from "../../i18n/useTranslation";
 import { Colors } from "../../constants/Colors";
 import { Type } from "../../constants/Typography";
+import { Touchable } from "./Touchable";
 
 type StepsHeaderProps = {
   title: string;
@@ -17,9 +18,9 @@ export function StepsHeader({ title, subtitle, showBack }: StepsHeaderProps) {
   return (
     <View style={[styles.row, isRTL && styles.rowReverse]}>
       {showBack ? (
-        <Pressable onPress={() => router.back()} style={styles.backButton}>
+        <Touchable onPress={() => router.back()} style={styles.backButton}>
           <Text style={styles.backArrow}>{isRTL ? "→" : "←"}</Text>
-        </Pressable>
+        </Touchable>
       ) : null}
       <View style={styles.titleBlock}>
         <Text style={[styles.title, rtlText]}>{title}</Text>

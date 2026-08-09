@@ -4,7 +4,6 @@ import {
   KeyboardAvoidingView,
   Modal,
   Platform,
-  Pressable,
   StyleSheet,
   Text,
   TextInput,
@@ -16,6 +15,7 @@ import { Fonts } from "../../constants/Fonts";
 import { useTranslation } from "../../i18n/useTranslation";
 import { changePasswordRequest } from "../../services/authApi";
 import { StepsButton } from "../ui/StepsButton";
+import { Touchable } from "../ui/Touchable";
 
 type ChangePasswordModalProps = {
   visible: boolean;
@@ -80,9 +80,9 @@ export function ChangePasswordModal({ visible, onClose, onSuccess }: ChangePassw
         <View style={styles.sheet}>
           <View style={styles.header}>
             <Text style={styles.title}>{t.profile.changePasswordTitle}</Text>
-            <Pressable onPress={close} hitSlop={8}>
+            <Touchable onPress={close} hitSlop={8}>
               <Text style={styles.close}>✕</Text>
-            </Pressable>
+            </Touchable>
           </View>
 
           <Text style={[styles.label, rtlText]}>{t.profile.currentPasswordLabel}</Text>
@@ -124,8 +124,9 @@ export function ChangePasswordModal({ visible, onClose, onSuccess }: ChangePassw
           {error ? <Text style={styles.error}>{error}</Text> : null}
 
           <StepsButton
-            label={isSaving ? t.profile.updatingPassword : t.profile.updatePasswordButton}
+            label={t.profile.updatePasswordButton}
             onPress={handleSave}
+            loading={isSaving}
             style={styles.button}
           />
         </View>

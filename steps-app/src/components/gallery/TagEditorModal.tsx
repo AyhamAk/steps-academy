@@ -5,7 +5,6 @@ import {
   KeyboardAvoidingView,
   Modal,
   Platform,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -18,6 +17,7 @@ import { Fonts } from "../../constants/Fonts";
 import { useTranslation } from "../../i18n/useTranslation";
 import { addPhotoTag, Photo, removePhotoTag, resolvePhotoUrl } from "../../services/galleryApi";
 import { Student } from "../../services/studentsApi";
+import { Touchable } from "../ui/Touchable";
 
 type TagEditorModalProps = {
   photo: Photo | null;
@@ -73,18 +73,18 @@ export function TagEditorModal({ photo, suggestions, onClose, onTagsChanged }: T
         <View style={styles.sheet}>
           <View style={styles.header}>
             <Text style={styles.title}>{t.gallery.taggedKids}</Text>
-            <Pressable onPress={onClose}>
+            <Touchable onPress={onClose}>
               <Text style={styles.close}>✕</Text>
-            </Pressable>
+            </Touchable>
           </View>
 
           <Image source={{ uri: resolvePhotoUrl(photo.url) }} style={styles.preview} />
 
           <View style={styles.chipRow}>
             {photo.tags.map((tag) => (
-              <Pressable key={tag.id} style={styles.chip} onPress={() => handleRemove(tag.id)}>
+              <Touchable key={tag.id} style={styles.chip} onPress={() => handleRemove(tag.id)}>
                 <Text style={styles.chipText}>{tag.studentName} ✕</Text>
-              </Pressable>
+              </Touchable>
             ))}
             {photo.tags.length === 0 ? (
               <Text style={styles.noTags}>{t.gallery.noKidsTaggedYet}</Text>
@@ -108,13 +108,13 @@ export function TagEditorModal({ photo, suggestions, onClose, onTagsChanged }: T
               style={styles.suggestionRow}
             >
               {filteredSuggestions.map((student) => (
-                <Pressable
+                <Touchable
                   key={student.id}
                   style={styles.suggestionChip}
                   onPress={() => handleAdd(student.id)}
                 >
                   <Text style={styles.suggestionText}>+ {student.name}</Text>
-                </Pressable>
+                </Touchable>
               ))}
             </ScrollView>
           ) : (

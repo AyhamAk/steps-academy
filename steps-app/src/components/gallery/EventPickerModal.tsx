@@ -4,7 +4,6 @@ import {
   KeyboardAvoidingView,
   Modal,
   Platform,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -19,6 +18,7 @@ import { createEvent, GalleryEvent } from "../../services/galleryApi";
 import { Student } from "../../services/studentsApi";
 import { formatIsoDate } from "../../utils/date";
 import { StepsButton } from "../ui/StepsButton";
+import { Touchable } from "../ui/Touchable";
 
 type EventPickerModalProps = {
   visible: boolean;
@@ -91,18 +91,18 @@ export function EventPickerModal({
             <Text style={styles.title}>
               {mode === "list" ? t.gallery.chooseEvent : t.gallery.newEvent}
             </Text>
-            <Pressable onPress={handleClose}>
+            <Touchable onPress={handleClose}>
               <Text style={styles.close}>✕</Text>
-            </Pressable>
+            </Touchable>
           </View>
 
           {mode === "list" ? (
             <ScrollView style={styles.list}>
-              <Pressable style={styles.createRow} onPress={() => setMode("create")}>
+              <Touchable style={styles.createRow} onPress={() => setMode("create")}>
                 <Text style={styles.createRowText}>{t.gallery.createNewEvent}</Text>
-              </Pressable>
+              </Touchable>
               {events.map((event) => (
-                <Pressable
+                <Touchable
                   key={event.id}
                   style={styles.eventRow}
                   onPress={() => {
@@ -118,7 +118,7 @@ export function EventPickerModal({
                       event.attendees.length
                     )}
                   </Text>
-                </Pressable>
+                </Touchable>
               ))}
               {events.length === 0 ? (
                 <Text style={styles.emptyText}>{t.gallery.noEventsCreateFirst}</Text>
@@ -152,7 +152,7 @@ export function EventPickerModal({
                   {students.map((student) => {
                     const isSelected = attendeeIds.includes(student.id);
                     return (
-                      <Pressable
+                      <Touchable
                         key={student.id}
                         onPress={() =>
                           setAttendeeIds((prev) =>
@@ -172,7 +172,7 @@ export function EventPickerModal({
                           {isSelected ? "✓ " : ""}
                           {student.name}
                         </Text>
-                      </Pressable>
+                      </Touchable>
                     );
                   })}
                 </View>
@@ -182,16 +182,17 @@ export function EventPickerModal({
 
               <View style={styles.actions}>
                 <StepsButton
-                  label={isSaving ? t.gallery.creating : t.gallery.createEvent}
+                  label={t.gallery.createEvent}
                   onPress={handleCreate}
+                  loading={isSaving}
                 />
-                <Pressable onPress={() => setMode("list")} style={styles.backLink}>
-                  {isSaving ? (
-                    <ActivityIndicator color={Colors.primary} />
-                  ) : (
-                    <Text style={styles.backLinkText}>{t.common.back}</Text>
-                  )}
-                </Pressable>
+                <Touchable
+                  onPress={() => setMode("list")}
+                  style={styles.backLink}
+                  disabled={isSaving}
+                >
+                  <Text style={styles.backLinkText}>{t.common.back}</Text>
+                </Touchable>
               </View>
             </ScrollView>
           )}

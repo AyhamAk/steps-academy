@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { useState } from "react";
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Image, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { Colors } from "../../constants/Colors";
 import { Fonts } from "../../constants/Fonts";
@@ -18,6 +18,7 @@ import { StepsHeader } from "../ui/StepsHeader";
 import { EmptyState } from "./EmptyState";
 import { EventCaption } from "./EventCaption";
 import { FullscreenPhotoViewer } from "./FullscreenPhotoViewer";
+import { Touchable } from "../ui/Touchable";
 
 const EVENT_BORDER_COLORS = [Colors.terracotta, Colors.forest, Colors.sky, Colors.honey];
 
@@ -35,9 +36,9 @@ function TaggedThumb({
   onPress: () => void;
 }) {
   return (
-    <Pressable
+    <Touchable
       onPress={onPress}
-      style={({ pressed }) => [{ marginEnd: 8 }, pressed && styles.thumbPressed]}
+      style={[{ marginEnd: 8 }]}
     >
       <Image
         source={{ uri: resolvePhotoUrl(photo.url) }}
@@ -48,7 +49,7 @@ function TaggedThumb({
           <Text style={styles.badgeText}>🐘</Text>
         </View>
       ) : null}
-    </Pressable>
+    </Touchable>
   );
 }
 

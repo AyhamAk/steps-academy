@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { useMemo, useState } from "react";
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { ChangePasswordModal } from "../../components/profile/ChangePasswordModal";
 import { ContactAcademyModal } from "../../components/profile/ContactAcademyModal";
@@ -21,6 +21,7 @@ import { matchedTagNames, myGallery } from "../../services/galleryApi";
 import { enrollmentSummary } from "../../services/coursesApi";
 import { getNotifications } from "../../services/notificationsApi";
 import { Locale, useLocaleStore } from "../../store/localeStore";
+import { Touchable } from "../../components/ui/Touchable";
 
 const LANGUAGES: { code: Locale; label: string }[] = [
   { code: "en", label: "English" },
@@ -188,7 +189,7 @@ export default function ProfileScreen() {
               {children.map((child) => {
                 const isSelected = child.id === selectedChildId;
                 return (
-                  <Pressable
+                  <Touchable
                     key={child.id}
                     style={[styles.kidCard, isSelected && styles.kidCardSelected]}
                     onPress={() => setSelectedChildId(child.id)}
@@ -197,7 +198,7 @@ export default function ProfileScreen() {
                       <Text style={styles.kidAvatarEmoji}>🐘</Text>
                     </View>
                     <Text style={styles.kidName}>{child.name}</Text>
-                  </Pressable>
+                  </Touchable>
                 );
               })}
             </ScrollView>
@@ -229,7 +230,7 @@ export default function ProfileScreen() {
             {LANGUAGES.map(({ code, label }) => {
               const active = locale === code;
               return (
-                <Pressable
+                <Touchable
                   key={code}
                   style={[styles.languagePill, active && styles.languagePillActive]}
                   onPress={() => handleSelectLocale(code)}
@@ -237,7 +238,7 @@ export default function ProfileScreen() {
                   <Text style={[styles.languagePillText, active && styles.languagePillTextActive]}>
                     {label}
                   </Text>
-                </Pressable>
+                </Touchable>
               );
             })}
           </View>
@@ -246,9 +247,9 @@ export default function ProfileScreen() {
             🔧 {t.profile.settingsTitle}
           </Text>
           {settingsRows.map((row) => (
-            <Pressable
+            <Touchable
               key={row.key}
-              style={({ pressed }) => [styles.settingsRow, pressed && styles.settingsRowPressed]}
+              style={[styles.settingsRow]}
               onPress={row.onPress}
             >
               <View style={[styles.settingsRowInner, isRTL && styles.settingsRowInnerRTL]}>
@@ -269,7 +270,7 @@ export default function ProfileScreen() {
                 ) : null}
                 <Text style={styles.settingsChevron}>{isRTL ? "‹" : "›"}</Text>
               </View>
-            </Pressable>
+            </Touchable>
           ))}
         </View>
 

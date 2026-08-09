@@ -1,4 +1,4 @@
-import { FlatList, Image, Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import { FlatList, Image, Modal, StyleSheet, Text, View } from "react-native";
 
 import { Colors } from "../../constants/Colors";
 import { Fonts } from "../../constants/Fonts";
@@ -7,6 +7,7 @@ import { GalleryEvent, Photo, resolvePhotoUrl } from "../../services/galleryApi"
 import { EmptyState } from "./EmptyState";
 import { EventCaptionEditor } from "./EventCaptionEditor";
 import { UploadItem, UploadProgressList } from "./UploadProgressList";
+import { Touchable } from "../ui/Touchable";
 
 type ReviewGridModalProps = {
   event: GalleryEvent;
@@ -38,12 +39,12 @@ export function ReviewGridModal({
             <Text style={styles.subtitle}>{t.gallery.tapPhotoToEditTags}</Text>
           </View>
           <View style={styles.headerActions}>
-            <Pressable style={styles.addButton} onPress={onAddPhotos}>
+            <Touchable style={styles.addButton} onPress={onAddPhotos}>
               <Text style={styles.addButtonText}>{t.gallery.addPhotos}</Text>
-            </Pressable>
-            <Pressable onPress={onClose}>
+            </Touchable>
+            <Touchable onPress={onClose}>
               <Text style={styles.close}>{t.common.done}</Text>
-            </Pressable>
+            </Touchable>
           </View>
         </View>
 
@@ -76,12 +77,12 @@ export function ReviewGridModal({
               />
             }
             renderItem={({ item }) => (
-              <Pressable style={styles.tile} onPress={() => onOpenTag(item)}>
+              <Touchable style={styles.tile} onPress={() => onOpenTag(item)}>
                 <Image source={{ uri: resolvePhotoUrl(item.url) }} style={styles.image} />
                 <View style={styles.badge}>
                   <Text style={styles.badgeText}>{item.tags.length}</Text>
                 </View>
-              </Pressable>
+              </Touchable>
             )}
           />
         )}

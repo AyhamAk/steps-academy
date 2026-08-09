@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { Animated, FlatList, Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { Animated, FlatList, Image, StyleSheet, Text, View } from "react-native";
 
 import { EmptyState } from "../../../components/gallery/EmptyState";
 import { EventCaption } from "../../../components/gallery/EventCaption";
@@ -16,6 +16,7 @@ import { useTranslation } from "../../../i18n/useTranslation";
 import { isPhotoTaggedWithAny, myEventGallery, Photo, resolvePhotoUrl } from "../../../services/galleryApi";
 import { useAuthStore } from "../../../store/authStore";
 import { formatIsoDate } from "../../../utils/date";
+import { Touchable } from "../../../components/ui/Touchable";
 
 function PhotoTile({
   photo,
@@ -50,14 +51,14 @@ function PhotoTile({
 
   return (
     <Animated.View style={[styles.tile, animatedStyle]}>
-      <Pressable style={({ pressed }) => [styles.tileInner, pressed && styles.tilePressed]} onPress={onPress}>
+      <Touchable style={[styles.tileInner]} onPress={onPress}>
         <Image source={{ uri: resolvePhotoUrl(photo.url) }} style={styles.image} />
         {tagged ? (
           <View style={styles.badge}>
             <Text style={styles.badgeText}>🐘</Text>
           </View>
         ) : null}
-      </Pressable>
+      </Touchable>
     </Animated.View>
   );
 }
