@@ -17,6 +17,14 @@ enum NotificationType {
   photo
   announcement
   event
+  course
+}
+
+enum EnrollmentStatus {
+  pending
+  approved
+  rejected
+  cancelled
 }
 
 model User {
@@ -34,6 +42,57 @@ model User {
   announcements Announcement[]
   notifications Notification[]
   children      ParentStudent[]
+
+  enrollmentRequests  CourseEnrollment[] @relation("EnrollmentRequester")
+  enrollmentDecisions CourseEnrollment[] @relation("EnrollmentDecider")
+}
+
+/// A class or activity families can enrol a child in. Admin-managed.
+model Course {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  emoji       String   @default("🎓")
+  instructor  String?
+  /// Free text, e.g. "Sundays & Wednesdays".
+  schedule    String?
+  startDate   String?
+  endDate     String?
+  /// 0 means unlimited. Approved enrolments count against it.
+  capacity    Int      @default(0)
+  accentColor String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  enrollments CourseEnrollment[]
+
+  @@index([isActive])
+}
+
+/// One child's enrolment in one course, and the full record of how it was
+/// decided — who asked, who approved or rejected it, and when.
+model CourseEnrollment {
+  id        String           @id @default(uuid())
+  courseId  String
+  course    Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  studentId String
+  student   Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  status    EnrollmentStatus @default(pending)
+
+  requestedBy String
+  requester   User     @relation("EnrollmentRequester", fields: [requestedBy], references: [id])
+  requestedAt DateTime @default(now())
+
+  decidedBy String?
+  decider   User?     @relation("EnrollmentDecider", fields: [decidedBy], references: [id])
+  decidedAt DateTime?
+  /// Optional admin note stored with the decision.
+  note      String?
+
+  @@unique([courseId, studentId])
+  @@index([courseId])
+  @@index([studentId])
+  @@index([status])
 }
 
 /// A child enrolled at the academy. Created by an admin — never by a parent
@@ -47,9 +106,10 @@ model Student {
   notes     String?
   createdAt DateTime @default(now())
 
-  guardians ParentStudent[]
-  tags      PhotoTag[]
-  events    EventAttendee[]
+  guardians   ParentStudent[]
+  tags        PhotoTag[]
+  events      EventAttendee[]
+  enrollments CourseEnrollment[]
 
   @@index([name])
 }

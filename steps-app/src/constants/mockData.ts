@@ -1,7 +1,5 @@
-// No backend exists yet for child profiles, daily activities, the weekly
-// schedule, or courses — these are intentionally hardcoded until those APIs
-// exist. Event captions are NOT here: events are real backend records, so
-// captions are stored and served by the API like the rest of the event data.
+// The weekly schedule is the only thing still hardcoded here — it has no API
+// yet. Courses, events and captions are all real backend records now.
 
 import { Locale } from "../store/localeStore";
 import { Colors } from "./Colors";
@@ -168,67 +166,5 @@ export const MOCK_WEEK_SCHEDULE: DaySchedule[] = [
         accentColor: Colors.sky,
       },
     ],
-  },
-];
-
-// ── COURSES ──
-
-export type Course = {
-  id: string;
-  name: Localized;
-  emoji: string;
-  description: Localized;
-  instructor: string;
-  schedule: Localized;
-  spotsTotal: number;
-  spotsLeft: number;
-  accentColor: string;
-};
-
-export const MOCK_COURSES: Course[] = [
-  {
-    id: "c1",
-    name: { en: "Swimming Lessons", ar: "دروس السباحة", he: "שיעורי שחייה" },
-    emoji: "🏊",
-    description: {
-      en: "Fun and safe swimming lessons for toddlers aged 2–4. Small groups, certified instructors.",
-      ar: "دروس سباحة ممتعة وآمنة للأطفال من سن 2–4 سنوات. مجموعات صغيرة ومدربون معتمدون.",
-      he: "שיעורי שחייה כיפיים ובטוחים לפעוטות בגילאי 2–4. קבוצות קטנות ומדריכים מוסמכים.",
-    },
-    instructor: "Coach Rami",
-    schedule: { en: "Sundays & Wednesdays", ar: "الأحد والأربعاء", he: "ימי ראשון ורביעי" },
-    spotsTotal: 10,
-    spotsLeft: 3,
-    accentColor: Colors.sky,
-  },
-  {
-    id: "c2",
-    name: { en: "Arabic Calligraphy", ar: "الخط العربي", he: "קליגרפיה ערבית" },
-    emoji: "✍️",
-    description: {
-      en: "Introduction to Arabic letters and beautiful calligraphy for young learners.",
-      ar: "مقدمة في الحروف العربية والخط الجميل للمتعلمين الصغار.",
-      he: "היכרות עם האותיות הערביות וקליגרפיה יפה ללומדים צעירים.",
-    },
-    instructor: "Teacher Hana",
-    schedule: { en: "Mondays", ar: "الاثنين", he: "ימי שני" },
-    spotsTotal: 8,
-    spotsLeft: 5,
-    accentColor: Colors.honey,
-  },
-  {
-    id: "c3",
-    name: { en: "Little Scientists", ar: "علماء صغار", he: "מדענים קטנים" },
-    emoji: "🔬",
-    description: {
-      en: "Hands-on science experiments designed for curious toddler minds.",
-      ar: "تجارب علمية عملية مصممة للعقول الصغيرة المتفتحة.",
-      he: "ניסויים מדעיים מעשיים שתוכננו למוחות סקרנים של פעוטות.",
-    },
-    instructor: "Dr. Sami",
-    schedule: { en: "Thursdays", ar: "الخميس", he: "ימי חמישי" },
-    spotsTotal: 12,
-    spotsLeft: 0,
-    accentColor: Colors.forest,
   },
 ];

@@ -18,6 +18,7 @@ import { useAuth } from "../../hooks/useAuth";
 import { applyLocaleDirection } from "../../i18n/applyLocaleDirection";
 import { useTranslation } from "../../i18n/useTranslation";
 import { matchedTagNames, myGallery } from "../../services/galleryApi";
+import { enrollmentSummary } from "../../services/coursesApi";
 import { getNotifications } from "../../services/notificationsApi";
 import { Locale, useLocaleStore } from "../../store/localeStore";
 
@@ -87,6 +88,13 @@ export default function ProfileScreen() {
   });
   const unreadCount = notifications?.unreadCount ?? 0;
 
+  // Pending course requests, badged next to the admin's requests board.
+  const { data: pendingRequests } = useQuery({
+    queryKey: ["enrollments", "summary"],
+    queryFn: enrollmentSummary,
+    enabled: user?.role === "admin",
+  });
+
   const settingsRows: {
     key: string;
     label: string;
@@ -105,6 +113,14 @@ export default function ProfileScreen() {
             icon: "people-outline" as keyof typeof Ionicons.glyphMap,
             tint: Colors.honey,
             onPress: () => router.push("/students"),
+          },
+          {
+            key: "course-requests",
+            label: t.courses.requestsTitle,
+            icon: "clipboard-outline" as keyof typeof Ionicons.glyphMap,
+            tint: Colors.clay,
+            onPress: () => router.push("/course-requests"),
+            badge: pendingRequests,
           },
         ]
       : []),

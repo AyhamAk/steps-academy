@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 
 import { env } from "./config/env";
 import { AnnouncementModel } from "./models/announcement";
+import { CourseModel } from "./models/course";
 import { EventModel } from "./models/event";
 import { NotificationModel } from "./models/notification";
 import { PhotoModel } from "./models/photo";
@@ -79,6 +80,34 @@ export async function runDevSeed(): Promise<void> {
   await AnnouncementModel.create({
     text: "School closed next Friday for staff training. Have a wonderful long weekend! 🌟",
     createdBy: sarah.id,
+  });
+
+  await CourseModel.create({
+    name: "Swimming Lessons",
+    description: "Fun and safe swimming lessons for toddlers. Small groups, certified instructors.",
+    emoji: "🏊",
+    instructor: "Coach Rami",
+    schedule: "Sundays & Wednesdays",
+    capacity: 10,
+    accentColor: "#7B9EC4",
+  });
+  await CourseModel.create({
+    name: "Arabic Calligraphy",
+    description: "Introduction to Arabic letters and beautiful calligraphy for young learners.",
+    emoji: "✍️",
+    instructor: "Teacher Hana",
+    schedule: "Mondays",
+    capacity: 8,
+    accentColor: "#D4A843",
+  });
+  await CourseModel.create({
+    name: "Little Scientists",
+    description: "Hands-on science experiments designed for curious toddler minds.",
+    emoji: "🔬",
+    instructor: "Dr. Sami",
+    schedule: "Thursdays",
+    capacity: 12,
+    accentColor: "#5B8A5E",
   });
 
   // A few sample notifications for Sarah so the feed isn't empty on first open.

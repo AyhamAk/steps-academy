@@ -1,12 +1,13 @@
 import { NextFunction, Request, Response } from "express";
 
-import { UserModel } from "../models/user";
+import { Role, UserModel } from "../models/user";
 import { verifyToken } from "../utils/jwt";
 
 declare global {
   namespace Express {
     interface Request {
       userId?: string;
+      userRole?: Role;
     }
   }
 }
@@ -28,19 +29,21 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
     // e.g. the account was deleted. Treat that as an expired session (401) so the
     // client's 401 interceptor logs out and returns to the auth screen, instead
     // of routes returning a confusing 404.
-    if (!(await UserModel.findById(userId))) {
+    const user = await UserModel.findById(userId);
+    if (!user) {
       return res.status(401).json({ message: "Session expired. Please sign in again." });
     }
     req.userId = userId;
+    // Cached here so downstream handlers (and adminOnly) don't re-query.
+    req.userRole = user.role;
     next();
   } catch {
     res.status(401).json({ message: "Invalid or expired token" });
   }
 }
 
-export async function adminOnly(req: Request, res: Response, next: NextFunction) {
-  const user = req.userId ? await UserModel.findById(req.userId) : undefined;
-  if (!user || user.role !== "admin") {
+export function adminOnly(req: Request, res: Response, next: NextFunction) {
+  if (req.userRole !== "admin") {
     return res.status(403).json({ message: "Admin access required" });
   }
   next();
