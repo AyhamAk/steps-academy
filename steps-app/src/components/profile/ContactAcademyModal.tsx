@@ -74,11 +74,7 @@ export function ContactAcademyModal({ visible, onClose, onError }: ContactAcadem
           </View>
 
           {options.map((option) => (
-            <Pressable
-              key={option.key}
-              style={({ pressed }) => [styles.option, pressed && styles.optionPressed]}
-              onPress={() => open(option.url)}
-            >
+            <Pressable key={option.key} style={styles.option} onPress={() => open(option.url)}>
               <View style={[styles.optionInner, isRTL && styles.optionInnerRTL]}>
                 <View style={[styles.optionIconWrap, { backgroundColor: `${option.tint}20` }]}>
                   <Ionicons name={option.icon} size={18} color={option.tint} />

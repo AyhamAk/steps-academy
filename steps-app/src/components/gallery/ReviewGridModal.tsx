@@ -3,26 +3,29 @@ import { FlatList, Image, Modal, Pressable, StyleSheet, Text, View } from "react
 import { Colors } from "../../constants/Colors";
 import { Fonts } from "../../constants/Fonts";
 import { useTranslation } from "../../i18n/useTranslation";
-import { Photo, resolvePhotoUrl } from "../../services/galleryApi";
+import { GalleryEvent, Photo, resolvePhotoUrl } from "../../services/galleryApi";
 import { EmptyState } from "./EmptyState";
+import { EventCaptionEditor } from "./EventCaptionEditor";
 import { UploadItem, UploadProgressList } from "./UploadProgressList";
 
 type ReviewGridModalProps = {
-  eventName: string;
+  event: GalleryEvent;
   photos: Photo[];
   uploads: UploadItem[];
   onAddPhotos: () => void;
   onClose: () => void;
   onOpenTag: (photo: Photo) => void;
+  onCaptionSaved: (caption: string | null) => void;
 };
 
 export function ReviewGridModal({
-  eventName,
+  event,
   photos,
   uploads,
   onAddPhotos,
   onClose,
   onOpenTag,
+  onCaptionSaved,
 }: ReviewGridModalProps) {
   const { t } = useTranslation();
 
@@ -31,7 +34,7 @@ export function ReviewGridModal({
       <View style={styles.container}>
         <View style={styles.header}>
           <View style={styles.headerText}>
-            <Text style={styles.title}>{eventName}</Text>
+            <Text style={styles.title}>{event.name}</Text>
             <Text style={styles.subtitle}>{t.gallery.tapPhotoToEditTags}</Text>
           </View>
           <View style={styles.headerActions}>
@@ -47,17 +50,31 @@ export function ReviewGridModal({
         {uploads.length > 0 ? <UploadProgressList uploads={uploads} /> : null}
 
         {photos.length === 0 && uploads.length === 0 ? (
-          <EmptyState
-            emoji="🖼️"
-            title={t.gallery.noPhotosYetReview}
-            subtitle={t.gallery.tapAddToUpload}
-          />
+          <>
+            <EventCaptionEditor
+              eventId={event.id}
+              caption={event.caption}
+              onSaved={onCaptionSaved}
+            />
+            <EmptyState
+              emoji="🖼️"
+              title={t.gallery.noPhotosYetReview}
+              subtitle={t.gallery.tapAddToUpload}
+            />
+          </>
         ) : (
           <FlatList
             data={photos}
             keyExtractor={(photo) => photo.id}
             numColumns={3}
             contentContainerStyle={styles.grid}
+            ListHeaderComponent={
+              <EventCaptionEditor
+                eventId={event.id}
+                caption={event.caption}
+                onSaved={onCaptionSaved}
+              />
+            }
             renderItem={({ item }) => (
               <Pressable style={styles.tile} onPress={() => onOpenTag(item)}>
                 <Image source={{ uri: resolvePhotoUrl(item.url) }} style={styles.image} />

@@ -10,9 +10,10 @@ import {
 import { useFonts } from "expo-font";
 import { Stack, useRouter, useSegments } from "expo-router";
 import * as Notifications from "expo-notifications";
-import { useEffect } from "react";
-import { I18nManager } from "react-native";
+import { useEffect, useState } from "react";
+import { I18nManager, View } from "react-native";
 
+import { AnimatedIntro } from "../components/ui/AnimatedIntro";
 import { Colors } from "../constants/Colors";
 import { AUTH_ENABLED } from "../constants/flags";
 import { applyLocaleDirection } from "../i18n/applyLocaleDirection";
@@ -99,6 +100,9 @@ export default function RootLayout() {
   const localeHasHydrated = useLocaleStore((state) => state.hasHydrated);
   const ready = fontsLoaded && hasHydrated && localeHasHydrated;
   const token = useAuthStore((state) => state.token);
+  // State lives in the root component, which mounts once per launch — so the
+  // intro plays on every cold start but never on a resume from background.
+  const [isIntroDone, setIsIntroDone] = useState(false);
 
   useAuthGate(ready);
   useRTLReconciliation(ready);
@@ -111,12 +115,15 @@ export default function RootLayout() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          contentStyle: { backgroundColor: Colors.background },
-        }}
-      />
+      <View style={{ flex: 1 }}>
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            contentStyle: { backgroundColor: Colors.background },
+          }}
+        />
+        {isIntroDone ? null : <AnimatedIntro onDone={() => setIsIntroDone(true)} />}
+      </View>
     </QueryClientProvider>
   );
 }
