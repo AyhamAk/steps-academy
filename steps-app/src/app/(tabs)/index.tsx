@@ -48,7 +48,6 @@ import { Translations } from "../../i18n/translations";
 import { useTranslation } from "../../i18n/useTranslation";
 import { Announcement, createAnnouncement, getLatestAnnouncement } from "../../services/announcementsApi";
 import {
-  createEvent,
   getNextEvent,
   isPhotoTaggedWithAny,
   myGallery,
@@ -72,10 +71,6 @@ function getTimeOfDayGreeting(): { salutationKey: SalutationKey; emoji: string }
 function getFirstName(fullName: string | undefined): string | null {
   const first = fullName?.trim().split(/\s+/)[0];
   return first ? first : null;
-}
-
-function todayIso(): string {
-  return new Date().toISOString().slice(0, 10);
 }
 
 function getDaysAway(date: Date, t: Translations): { label: string; isToday: boolean } {
@@ -252,86 +247,6 @@ function HeroCarousel({
   );
 }
 
-function EventQuickAddModal({
-  visible,
-  onClose,
-  onCreated,
-  t,
-}: {
-  visible: boolean;
-  onClose: () => void;
-  onCreated: (event: NextEvent) => void;
-  t: Translations;
-}) {
-  const [name, setName] = useState("");
-  const [date, setDate] = useState(todayIso());
-  const [isSaving, setIsSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const handleCreate = async () => {
-    if (!name.trim() || !date.trim()) {
-      setError(t.gallery.eventNameDateRequired);
-      return;
-    }
-    setIsSaving(true);
-    setError(null);
-    try {
-      const event = await createEvent({ name: name.trim(), date: date.trim(), attendeeIds: [] });
-      onCreated(event);
-      setName("");
-      setDate(todayIso());
-    } catch {
-      setError(t.gallery.couldntCreateEvent);
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <KeyboardAvoidingView
-        style={styles.modalBackdrop}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-      >
-        <View style={styles.modalSheet}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>{t.gallery.newEvent}</Text>
-            <Touchable onPress={onClose}>
-              <Text style={styles.modalClose}>✕</Text>
-            </Touchable>
-          </View>
-
-          <Text style={styles.modalLabel}>{t.gallery.eventNameLabel}</Text>
-          <TextInput
-            value={name}
-            onChangeText={setName}
-            placeholder={t.gallery.eventNamePlaceholder}
-            placeholderTextColor={Colors.textLight}
-            style={styles.modalInput}
-          />
-
-          <Text style={styles.modalLabel}>{t.gallery.dateLabel}</Text>
-          <TextInput
-            value={date}
-            onChangeText={setDate}
-            placeholder={t.gallery.datePlaceholder}
-            placeholderTextColor={Colors.textLight}
-            style={styles.modalInput}
-          />
-
-          {error ? <Text style={styles.modalError}>{error}</Text> : null}
-
-          <StepsButton
-            label={isSaving ? t.gallery.creating : t.gallery.createEvent}
-            onPress={handleCreate}
-            style={styles.modalButton}
-          />
-        </View>
-      </KeyboardAvoidingView>
-    </Modal>
-  );
-}
-
 function AnnouncementQuickAddModal({
   visible,
   onClose,
@@ -487,7 +402,6 @@ export default function HomeScreen() {
   const reducedMotion = useReducedMotion();
   const { t, isRTL, rtlText } = useTranslation();
   const [isAnnouncementExpanded, setIsAnnouncementExpanded] = useState(false);
-  const [isEventModalVisible, setIsEventModalVisible] = useState(false);
   const [isAnnouncementModalVisible, setIsAnnouncementModalVisible] = useState(false);
   const queryClient = useQueryClient();
 
@@ -539,8 +453,6 @@ export default function HomeScreen() {
   const subtitleOpacity = useSharedValue(reducedMotion ? 1 : 0);
   const footerBreath = useSharedValue(1);
 
-  const eventOpacity = useSharedValue(reducedMotion ? 1 : 0);
-  const eventTranslateY = useSharedValue(reducedMotion ? 0 : 20);
   const announcementOpacity = useSharedValue(reducedMotion ? 1 : 0);
   const announcementTranslateY = useSharedValue(reducedMotion ? 0 : 20);
 
@@ -552,8 +464,6 @@ export default function HomeScreen() {
       subtitleOpacity.value = withDelay(450, withTiming(1, { duration: 400 }));
 
       const sectionEasing = Easing.out(Easing.ease);
-      eventOpacity.value = withDelay(200, withTiming(1, { duration: 400, easing: sectionEasing }));
-      eventTranslateY.value = withDelay(200, withTiming(0, { duration: 400, easing: sectionEasing }));
       announcementOpacity.value = withDelay(
         300,
         withTiming(1, { duration: 400, easing: sectionEasing })
@@ -585,11 +495,6 @@ export default function HomeScreen() {
 
   const footerDotsStyle = useAnimatedStyle(() => ({
     transform: [{ scale: footerBreath.value }],
-  }));
-
-  const eventSectionStyle = useAnimatedStyle(() => ({
-    opacity: eventOpacity.value,
-    transform: [{ translateY: eventTranslateY.value }],
   }));
 
   const announcementSectionStyle = useAnimatedStyle(() => ({
@@ -682,46 +587,6 @@ export default function HomeScreen() {
 
         <WeeklyScheduleSection />
 
-        <Animated.View style={[styles.section, eventSectionStyle]}>
-          <View style={[styles.sectionHeaderRow, isRTL && styles.rowReverse]}>
-            <Text style={[styles.sectionTitle, rtlText]}>{t.home.nextEvent}</Text>
-            {isAdmin ? (
-              <Touchable
-                onPress={() => setIsEventModalVisible(true)}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              >
-                <Text style={styles.sectionAddLink}>{t.home.addEvent}</Text>
-              </Touchable>
-            ) : null}
-          </View>
-
-          {nextEvent && daysAway ? (
-            <StepsCard onPress={() => {} /* TODO: navigate to events screen */} style={styles.eventCard}>
-              <View style={[styles.eventAccentBar, isRTL ? styles.accentBarRTL : styles.accentBarLTR]} />
-              <View style={[styles.eventRow, isRTL && styles.rowReverse]}>
-                <View style={styles.eventTextBlock}>
-                  <Text style={[styles.eventLabel, rtlText]}>{t.home.comingUp}</Text>
-                  <Text style={[styles.eventName, rtlText]}>{nextEvent.name}</Text>
-                  <Text style={[styles.eventDate, rtlText]}>{formatIsoDate(nextEvent.date, t)}</Text>
-                </View>
-                <View style={styles.daysBadge}>
-                  <Text
-                    style={[styles.daysBadgeText, daysAway.isToday && styles.daysBadgeTextToday]}
-                  >
-                    {daysAway.label}
-                  </Text>
-                </View>
-              </View>
-            </StepsCard>
-          ) : nextEvent === null ? (
-            <View style={styles.emptyCard}>
-              <Text style={styles.emptyCardText}>{t.home.noUpcomingEvents}</Text>
-            </View>
-          ) : (
-            <SkeletonEventCard thumbCount={0} />
-          )}
-        </Animated.View>
-
         <CoursesSection />
 
         <Animated.View style={[styles.section, announcementSectionStyle]}>
@@ -788,15 +653,6 @@ export default function HomeScreen() {
 
       {isAdmin ? (
         <>
-          <EventQuickAddModal
-            visible={isEventModalVisible}
-            onClose={() => setIsEventModalVisible(false)}
-            onCreated={(event) => {
-              queryClient.setQueryData(["home", "nextEvent"], event);
-              setIsEventModalVisible(false);
-            }}
-            t={t}
-          />
           <AnnouncementQuickAddModal
             visible={isAnnouncementModalVisible}
             onClose={() => setIsAnnouncementModalVisible(false)}
@@ -1050,17 +906,6 @@ const styles = StyleSheet.create({
     color: Colors.textLight,
     textAlign: "center",
   },
-  eventCard: {
-    borderRadius: 16,
-    minHeight: 44,
-  },
-  eventAccentBar: {
-    position: "absolute",
-    top: 0,
-    bottom: 0,
-    width: 6,
-    backgroundColor: Colors.forest,
-  },
   accentBarLTR: {
     left: 0,
     borderTopLeftRadius: 16,
@@ -1070,45 +915,6 @@ const styles = StyleSheet.create({
     right: 0,
     borderTopRightRadius: 16,
     borderBottomRightRadius: 16,
-  },
-  eventRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    gap: 12,
-  },
-  eventTextBlock: {
-    flex: 1,
-  },
-  eventLabel: {
-    ...Type.caption,
-    fontFamily: Fonts.semiBold,
-    color: Colors.textLight,
-    marginBottom: 4,
-  },
-  eventName: {
-    ...Type.body,
-    fontFamily: Fonts.bold,
-    color: Colors.bark,
-  },
-  eventDate: {
-    ...Type.caption,
-    color: Colors.textLight,
-    marginTop: 4,
-  },
-  daysBadge: {
-    backgroundColor: Colors.honey,
-    borderRadius: 14,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  daysBadgeText: {
-    fontFamily: Fonts.bold,
-    fontSize: 13,
-    color: Colors.bark,
-  },
-  daysBadgeTextToday: {
-    color: Colors.terracotta,
   },
   announcementCard: {
     borderRadius: 16,
