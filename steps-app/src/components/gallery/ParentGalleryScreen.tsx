@@ -8,7 +8,7 @@ import { Fonts } from "../../constants/Fonts";
 import { Type } from "../../constants/Typography";
 import { useTranslation } from "../../i18n/useTranslation";
 import { isPhotoTaggedWithAny, myGallery, Photo, resolvePhotoUrl } from "../../services/galleryApi";
-import { useAuthStore } from "../../store/authStore";
+import { useChildren } from "../../store/authStore";
 import { formatIsoDate } from "../../utils/date";
 import { BalloonLoader } from "../ui/BalloonLoader";
 import { ScreenFadeIn } from "../ui/ScreenFadeIn";
@@ -55,7 +55,7 @@ function TaggedThumb({
 
 export function ParentGalleryScreen() {
   const { t, isRTL, rtlText } = useTranslation();
-  const children = useAuthStore((state) => state.user?.children ?? []);
+  const children = useChildren();
   const childIds = children.map((child) => child.id);
   const [viewer, setViewer] = useState<ViewerState | null>(null);
 

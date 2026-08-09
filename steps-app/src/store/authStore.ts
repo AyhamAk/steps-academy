@@ -25,6 +25,16 @@ type AuthState = {
   setHasHydrated: (value: boolean) => void;
 };
 
+/**
+ * Stable reference for "no children".
+ *
+ * A zustand selector must not build a new value: `state.user?.children ?? []`
+ * returns a fresh array on every call, so the store looks changed on every
+ * render and React warns about an infinite getSnapshot loop. Default outside
+ * the selector, against a constant.
+ */
+const NO_CHILDREN: Child[] = [];
+
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
@@ -45,3 +55,8 @@ export const useAuthStore = create<AuthState>()(
     }
   )
 );
+
+/** The signed-in parent's children. Always the same array when there are none. */
+export function useChildren(): Child[] {
+  return useAuthStore((state) => state.user?.children) ?? NO_CHILDREN;
+}

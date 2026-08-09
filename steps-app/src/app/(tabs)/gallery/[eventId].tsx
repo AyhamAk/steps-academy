@@ -14,7 +14,7 @@ import { Colors } from "../../../constants/Colors";
 import { useReduceMotionSetting } from "../../../hooks/useReduceMotionSetting";
 import { useTranslation } from "../../../i18n/useTranslation";
 import { isPhotoTaggedWithAny, myEventGallery, Photo, resolvePhotoUrl } from "../../../services/galleryApi";
-import { useAuthStore } from "../../../store/authStore";
+import { useChildren } from "../../../store/authStore";
 import { formatIsoDate } from "../../../utils/date";
 import { Touchable } from "../../../components/ui/Touchable";
 
@@ -66,7 +66,7 @@ function PhotoTile({
 export default function EventGalleryScreen() {
   const { t } = useTranslation();
   const { eventId } = useLocalSearchParams<{ eventId: string }>();
-  const children = useAuthStore((state) => state.user?.children ?? []);
+  const children = useChildren();
   const childIds = children.map((child) => child.id);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
 

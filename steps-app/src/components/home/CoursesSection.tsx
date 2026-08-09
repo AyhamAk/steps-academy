@@ -12,11 +12,11 @@ import {
   listCourses,
   requestEnrollment,
 } from "../../services/coursesApi";
-import { useAuthStore } from "../../store/authStore";
+import { useChildren } from "../../store/authStore";
 
 export function CoursesSection() {
   const { t, isRTL, rtlText } = useTranslation();
-  const children = useAuthStore((state) => state.user?.children ?? []);
+  const children = useChildren();
   const queryClient = useQueryClient();
 
   const { data: courses } = useQuery({ queryKey: ["courses"], queryFn: listCourses });
