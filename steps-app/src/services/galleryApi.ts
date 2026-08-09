@@ -27,6 +27,8 @@ export type GalleryEvent = {
   /** Admin-written note shown to parents. Null when none has been set. */
   caption: string | null;
   photoCount: number;
+  /** A few signed thumbnails so the admin list can preview without drilling in. */
+  previewUrls: string[];
 };
 
 export type EventSummary = {

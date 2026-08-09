@@ -113,7 +113,21 @@ export async function listEvents(req: Request, res: Response) {
   const { limit, offset } = pagination(req);
   const events = await EventModel.listWithPhotoCounts(limit, offset);
   res.json({
-    events: events.map((event) => ({ ...serializeEvent(event), photoCount: event.photoCount })),
+    events: await Promise.all(
+      events.map(async (event) => ({
+        ...serializeEvent(event),
+        photoCount: event.photoCount,
+        // Signed thumbnails so the admin list can show real previews rather
+        // than a wall of text.
+        previewUrls: await Promise.all(
+          event.previewPhotos.map((photo) =>
+            photo.externalUrl
+              ? Promise.resolve(photo.externalUrl)
+              : getSignedGetUrl(photo.thumbKey ?? photo.mediumKey ?? photo.key!)
+          )
+        ),
+      }))
+    ),
   });
 }
 

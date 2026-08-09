@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import { ActivityIndicator, Alert, SectionList, StyleSheet, Text, View } from "react-native";
 
@@ -126,11 +127,18 @@ function RequestCard({ request }: { request: EnrollmentRequest }) {
 
 export default function CourseRequestsScreen() {
   const { t } = useTranslation();
+  // Arrives with a course when opened from a course card, empty from the
+  // dashboard — the same board serves both.
+  const { courseId, courseName } = useLocalSearchParams<{
+    courseId?: string;
+    courseName?: string;
+  }>();
   const [filter, setFilter] = useState<Filter>("pending");
 
   const { data, isError } = useQuery({
-    queryKey: ["enrollments", filter],
-    queryFn: () => listEnrollments(filter === "all" ? undefined : filter),
+    queryKey: ["enrollments", filter, courseId ?? "all-courses"],
+    queryFn: () =>
+      listEnrollments({ status: filter === "all" ? undefined : filter, courseId }),
   });
 
   const filters: { key: Filter; label: string }[] = [
@@ -144,8 +152,8 @@ export default function CourseRequestsScreen() {
     <Screen>
       <ScreenFadeIn style={styles.flex}>
         <StepsHeader
-          title={t.courses.requestsTitle}
-          subtitle={t.courses.requestsSubtitle}
+          title={courseName ?? t.courses.requestsTitle}
+          subtitle={courseName ? t.courses.requestsForCourse : t.courses.requestsSubtitle}
           showBack
         />
 
@@ -187,8 +195,9 @@ export default function CourseRequestsScreen() {
             sections={groupByCourse(data.enrollments)}
             keyExtractor={(request) => request.id}
             renderItem={({ item }) => <RequestCard request={item} />}
+            // Course headers are redundant when already filtered to one course.
             renderSectionHeader={({ section }) => (
-              <View style={styles.sectionHeader}>
+              <View style={[styles.sectionHeader, courseId ? styles.hidden : null]}>
                 <Text style={styles.sectionTitle} numberOfLines={1}>
                   {section.title}
                 </Text>
@@ -250,6 +259,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   sectionCountText: { fontFamily: Fonts.bold, fontSize: 12, color: Colors.textLight },
+  hidden: { height: 0, paddingVertical: 0, marginTop: 0, opacity: 0 },
   card: {
     backgroundColor: Colors.linen,
     borderRadius: 18,

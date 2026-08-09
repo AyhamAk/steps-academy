@@ -85,14 +85,30 @@ export const CourseModel = {
     return prisma.course.findUnique({ where: { id } });
   },
 
-  /** Courses with their approved-enrolment counts, for computing spots left. */
+  /**
+   * Courses with their approved and pending counts. Two aggregates rather
+   * than loading enrolments, so this stays cheap with hundreds of families.
+   */
   async listWithCounts(includeInactive = false) {
-    const courses = await prisma.course.findMany({
-      where: includeInactive ? {} : { isActive: true },
-      orderBy: { createdAt: "asc" },
-      include: { _count: { select: { enrollments: { where: { status: "approved" } } } } },
-    });
-    return courses.map((course) => ({ ...course, approvedCount: course._count.enrollments }));
+    const where = includeInactive ? {} : { isActive: true };
+    const [courses, pendingGroups] = await Promise.all([
+      prisma.course.findMany({
+        where,
+        orderBy: { createdAt: "asc" },
+        include: { _count: { select: { enrollments: { where: { status: "approved" } } } } },
+      }),
+      prisma.courseEnrollment.groupBy({
+        by: ["courseId"],
+        where: { status: "pending" },
+        _count: { _all: true },
+      }),
+    ]);
+    const pendingByCourse = new Map(pendingGroups.map((g) => [g.courseId, g._count._all]));
+    return courses.map((course) => ({
+      ...course,
+      approvedCount: course._count.enrollments,
+      pendingCount: pendingByCourse.get(course.id) ?? 0,
+    }));
   },
 
   async countApproved(courseId: string): Promise<number> {
@@ -163,9 +179,16 @@ export const EnrollmentModel = {
   },
 
   /** Admin board. Pending first, then most recently decided. */
-  async listAll(status?: EnrollmentStatus, limit = 100, offset = 0) {
+  async listAll(
+    filter: { status?: EnrollmentStatus; courseId?: string } = {},
+    limit = 100,
+    offset = 0
+  ) {
     return prisma.courseEnrollment.findMany({
-      where: status ? { status } : {},
+      where: {
+        ...(filter.status ? { status: filter.status } : {}),
+        ...(filter.courseId ? { courseId: filter.courseId } : {}),
+      },
       include: enrollmentContext,
       orderBy: [{ status: "asc" }, { requestedAt: "desc" }],
       take: limit,

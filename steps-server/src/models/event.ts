@@ -57,19 +57,28 @@ export const EventModel = {
   /**
    * Events with their photo counts, counted in the database rather than by
    * loading every photo row — the old version fetched up to 1000 photos per
-   * event just to call `.length` on the result.
+   * event just to call `.length` on the result. Also pulls a handful of
+   * photos per event so the admin list can show real thumbnails.
    */
-  async listWithPhotoCounts(limit = DEFAULT_PAGE_SIZE, offset = 0) {
+  async listWithPhotoCounts(limit = DEFAULT_PAGE_SIZE, offset = 0, previewCount = 4) {
     const events = await prisma.event.findMany({
       orderBy: { date: "desc" },
       take: limit,
       skip: offset,
-      include: { ...includeAttendees, _count: { select: { photos: true } } },
+      include: {
+        ...includeAttendees,
+        _count: { select: { photos: true } },
+        photos: { orderBy: { uploadedAt: "asc" }, take: previewCount },
+      },
     });
-    return events.map((event) => ({
-      ...withAttendees(event),
-      photoCount: event._count.photos,
-    }));
+    return events.map((event) => {
+      const { photos, ...rest } = event;
+      return {
+        ...withAttendees(rest as never),
+        photoCount: event._count.photos,
+        previewPhotos: photos,
+      };
+    });
   },
 
   async updateCaption(id: string, caption: string | null): Promise<EventWithAttendees | null> {

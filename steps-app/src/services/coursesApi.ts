@@ -22,6 +22,8 @@ export type Course = {
   accentColor: string | null;
   isActive: boolean;
   approvedCount: number;
+  /** Requests awaiting an admin decision. */
+  pendingCount: number;
   /** null means unlimited places rather than "full". */
   spotsLeft: number | null;
   /** Only ever the caller's own children. */
@@ -61,10 +63,10 @@ export async function cancelEnrollment(enrollmentId: string) {
 
 // ── Admin ──
 
-export async function listEnrollments(status?: EnrollmentStatus) {
+export async function listEnrollments(filter: { status?: EnrollmentStatus; courseId?: string } = {}) {
   const { data } = await api.get<{ enrollments: EnrollmentRequest[]; pendingCount: number }>(
     "/api/courses/enrollments",
-    { params: status ? { status } : undefined }
+    { params: filter }
   );
   return data;
 }
@@ -86,15 +88,24 @@ export async function enrollmentSummary() {
   return data.pendingCount;
 }
 
-export async function createCourse(input: {
+export type CourseInput = {
   name: string;
-  description?: string;
+  description?: string | null;
   emoji?: string;
-  instructor?: string;
-  schedule?: string;
+  instructor?: string | null;
+  schedule?: string | null;
   capacity?: number;
-}) {
+  accentColor?: string | null;
+  isActive?: boolean;
+};
+
+export async function createCourse(input: CourseInput) {
   const { data } = await api.post<{ course: Course }>("/api/courses", input);
+  return data.course;
+}
+
+export async function updateCourse(courseId: string, input: Partial<CourseInput>) {
+  const { data } = await api.patch<{ course: Course }>(`/api/courses/${courseId}`, input);
   return data.course;
 }
 

@@ -46,13 +46,21 @@ export default function AdminScreen() {
       route: "/students",
     },
     {
+      key: "courses",
+      label: t.coursesAdmin.title,
+      hint: t.admin.coursesHint,
+      icon: "school-outline",
+      tint: Colors.forest,
+      route: "/courses",
+      badge: data?.pendingRequests,
+    },
+    {
       key: "requests",
       label: t.courses.requestsTitle,
       hint: t.admin.requestsHint,
       icon: "clipboard-outline",
       tint: Colors.clay,
       route: "/course-requests",
-      badge: data?.pendingRequests,
     },
     {
       key: "gallery",

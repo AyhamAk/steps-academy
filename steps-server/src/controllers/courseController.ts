@@ -57,6 +57,7 @@ export async function listCourses(req: Request, res: Response) {
       accentColor: course.accentColor,
       isActive: course.isActive,
       approvedCount: course.approvedCount,
+      pendingCount: course.pendingCount,
       // null means unlimited rather than "full"
       spotsLeft: course.capacity > 0 ? Math.max(course.capacity - course.approvedCount, 0) : null,
       myEnrollments: myEnrollments
@@ -151,8 +152,9 @@ export async function listEnrollments(req: Request, res: Response) {
     ? (statusParam as EnrollmentStatus)
     : undefined;
 
+  const courseId = typeof req.query.courseId === "string" ? req.query.courseId : undefined;
   const [enrollments, pendingCount] = await Promise.all([
-    EnrollmentModel.listAll(status),
+    EnrollmentModel.listAll({ status, courseId }),
     EnrollmentModel.countPending(),
   ]);
 

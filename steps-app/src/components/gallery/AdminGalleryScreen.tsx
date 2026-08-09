@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import * as ImagePicker from "expo-image-picker";
 import { useState } from "react";
-import { Alert, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, Image, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { Colors } from "../../constants/Colors";
 import { Fonts } from "../../constants/Fonts";
@@ -235,6 +235,22 @@ export function AdminGalleryScreen() {
               </View>
               <Text style={styles.eventChevron}>{isRTL ? "‹" : "›"}</Text>
             </View>
+            {/* Preview strip so the admin can recognise an event at a glance
+                instead of reading a list of names. */}
+            {event.previewUrls.length > 0 ? (
+              <View style={[styles.previewRow, isRTL && styles.rowReverse]}>
+                {event.previewUrls.map((url) => (
+                  <Image key={url} source={{ uri: url }} style={styles.previewThumb} />
+                ))}
+                {event.photoCount > event.previewUrls.length ? (
+                  <View style={[styles.previewThumb, styles.previewMore]}>
+                    <Text style={styles.previewMoreText}>
+                      +{event.photoCount - event.previewUrls.length}
+                    </Text>
+                  </View>
+                ) : null}
+              </View>
+            ) : null}
           </StepsCard>
         ))
       )}
@@ -340,6 +356,27 @@ const styles = StyleSheet.create({
   },
   eventChevron: {
     fontSize: 22,
+    color: Colors.textLight,
+  },
+  previewRow: {
+    flexDirection: "row",
+    gap: 6,
+    marginTop: 12,
+  },
+  previewThumb: {
+    width: 58,
+    height: 58,
+    borderRadius: 10,
+    backgroundColor: Colors.background,
+  },
+  previewMore: {
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: Colors.border,
+  },
+  previewMoreText: {
+    fontFamily: Fonts.bold,
+    fontSize: 13,
     color: Colors.textLight,
   },
   refreshButton: {
