@@ -1,9 +1,13 @@
-import { router } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import * as Google from "expo-auth-session/providers/google";
+import { router } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import { PropsWithChildren, useEffect, useRef, useState } from "react";
 import {
   Animated,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -14,6 +18,7 @@ import {
 import { Screen } from "../components/Screen";
 import { StepsButton } from "../components/ui/StepsButton";
 import { StepsLogo } from "../components/ui/StepsLogo";
+import { Touchable } from "../components/ui/Touchable";
 import { Colors } from "../constants/Colors";
 import { Fonts } from "../constants/Fonts";
 import { useAuth } from "../hooks/useAuth";
@@ -25,7 +30,8 @@ const MIN_PASSWORD_LENGTH = 8;
 
 WebBrowser.maybeCompleteAuthSession();
 
-type Mode = "welcome" | "register" | "login";
+/** Signing in is the default; registering is the deliberate detour. */
+type Mode = "login" | "register";
 
 function AnimatedPanel({ children }: PropsWithChildren) {
   const reduceMotion = useReduceMotionSetting();
@@ -49,7 +55,7 @@ function AnimatedPanel({ children }: PropsWithChildren) {
   return <Animated.View style={{ opacity, transform: [{ translateY }] }}>{children}</Animated.View>;
 }
 
-function AuthInput(props: TextInputProps) {
+function AuthInput({ trailing, ...props }: TextInputProps & { trailing?: React.ReactNode }) {
   const { isRTL } = useTranslation();
   const focusAnim = useRef(new Animated.Value(0)).current;
 
@@ -65,8 +71,9 @@ function AuthInput(props: TextInputProps) {
           Animated.timing(focusAnim, { toValue: 0, duration: 200, useNativeDriver: false }).start();
           props.onBlur?.(e);
         }}
-        style={styles.input}
+        style={[styles.input, trailing ? styles.inputWithTrailing : null]}
       />
+      {trailing ? <View style={styles.trailing}>{trailing}</View> : null}
       <Animated.View
         style={[
           styles.inputUnderline,
@@ -80,9 +87,49 @@ function AuthInput(props: TextInputProps) {
   );
 }
 
+/** Password field with a reveal toggle — typing a password blind is the
+ *  single most common reason a correct password gets rejected. */
+function PasswordInput({
+  value,
+  onChangeText,
+  placeholder,
+}: {
+  value: string;
+  onChangeText: (value: string) => void;
+  placeholder: string;
+}) {
+  const { t } = useTranslation();
+  const [isVisible, setIsVisible] = useState(false);
+
+  return (
+    <AuthInput
+      placeholder={placeholder}
+      placeholderTextColor={Colors.textLight}
+      value={value}
+      onChangeText={onChangeText}
+      secureTextEntry={!isVisible}
+      autoCapitalize="none"
+      autoCorrect={false}
+      trailing={
+        <Touchable
+          onPress={() => setIsVisible((previous) => !previous)}
+          hitSlop={10}
+          accessibilityLabel={isVisible ? t.auth.hidePassword : t.auth.showPassword}
+        >
+          <Ionicons
+            name={isVisible ? "eye-off-outline" : "eye-outline"}
+            size={21}
+            color={Colors.textLight}
+          />
+        </Touchable>
+      }
+    />
+  );
+}
+
 export default function AuthScreen() {
   const { t } = useTranslation();
-  const [mode, setMode] = useState<Mode>("welcome");
+  const [mode, setMode] = useState<Mode>("login");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -134,140 +181,158 @@ export default function AuthScreen() {
     if (ok) router.replace("/(tabs)");
   };
 
+  const message = formError ?? error;
+
+  /** Google sits below the form as an alternative, not as the headline choice. */
+  const googleBlock = (
+    <>
+      <View style={styles.dividerRow}>
+        <View style={styles.dividerLine} />
+        <Text style={styles.dividerText}>{t.auth.or}</Text>
+        <View style={styles.dividerLine} />
+      </View>
+      <StepsButton
+        label={t.auth.continueWithGoogle}
+        onPress={() => promptAsync()}
+        variant="outline"
+      />
+    </>
+  );
+
   return (
     <Screen>
-      <View style={styles.content}>
-        <StepsLogo />
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
+        <ScrollView
+          contentContainerStyle={styles.content}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <StepsLogo />
 
-        {mode === "welcome" && (
-          <AnimatedPanel>
-            <View style={styles.stack}>
-              <StepsButton
-                label={t.auth.continueWithGoogle}
-                onPress={() => promptAsync()}
-                variant="secondary"
-              />
-              <StepsButton
-                label={t.auth.createAccount}
-                onPress={() => goToMode("register")}
-                shimmerOnMount
-              />
-              <Text style={styles.link} onPress={() => goToMode("login")}>
-                {t.auth.alreadyHaveAccount}
-              </Text>
-            </View>
-          </AnimatedPanel>
-        )}
+          {mode === "login" ? (
+            <AnimatedPanel>
+              <View style={styles.stack}>
+                <Text style={styles.heading}>{t.auth.signInHeading}</Text>
 
-        {mode === "register" && (
-          <AnimatedPanel>
-            <View style={styles.stack}>
-              <AuthInput
-                placeholder={t.auth.namePlaceholder}
-                placeholderTextColor={Colors.textLight}
-                value={name}
-                onChangeText={(v) => {
-                  setName(v);
-                  setFormError(null);
-                }}
-              />
-              <AuthInput
-                placeholder={t.auth.emailPlaceholder}
-                placeholderTextColor={Colors.textLight}
-                value={email}
-                onChangeText={(v) => {
-                  setEmail(v);
-                  setFormError(null);
-                }}
-                autoCapitalize="none"
-                keyboardType="email-address"
-              />
-              <AuthInput
-                placeholder={t.auth.passwordPlaceholder}
-                placeholderTextColor={Colors.textLight}
-                value={password}
-                onChangeText={(v) => {
-                  setPassword(v);
-                  setFormError(null);
-                }}
-                secureTextEntry
-              />
+                <AuthInput
+                  placeholder={t.auth.emailPlaceholder}
+                  placeholderTextColor={Colors.textLight}
+                  value={email}
+                  onChangeText={(v) => {
+                    setEmail(v);
+                    setFormError(null);
+                  }}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  keyboardType="email-address"
+                />
+                <PasswordInput
+                  placeholder={t.auth.passwordPlaceholder}
+                  value={password}
+                  onChangeText={(v) => {
+                    setPassword(v);
+                    setFormError(null);
+                  }}
+                />
 
-              <View style={styles.childrenBlock}>
-                <Text style={styles.childrenHint}>{t.auth.childrenLinkedByAcademy}</Text>
+                {message ? <Text style={styles.error}>{message}</Text> : null}
+
+                <StepsButton label={t.auth.signIn} onPress={handleLogin} loading={isLoading} />
+
+                {googleBlock}
+
+                <Touchable onPress={() => goToMode("register")} style={styles.linkButton}>
+                  <Text style={styles.link}>
+                    {t.auth.noAccount} <Text style={styles.linkAccent}>{t.auth.createAccount}</Text>
+                  </Text>
+                </Touchable>
               </View>
+            </AnimatedPanel>
+          ) : (
+            <AnimatedPanel>
+              <View style={styles.stack}>
+                <Text style={styles.heading}>{t.auth.createAccount}</Text>
 
-              {formError ?? error ? (
-                <Text style={styles.error}>{formError ?? error}</Text>
-              ) : null}
-              <StepsButton
-                label={t.auth.createAccountButton}
-                onPress={handleRegister}
-                loading={isLoading}
-                shimmerOnMount
-              />
-              <Text style={styles.link} onPress={() => goToMode("welcome")}>
-                {t.auth.back}
-              </Text>
-            </View>
-          </AnimatedPanel>
-        )}
+                <AuthInput
+                  placeholder={t.auth.namePlaceholder}
+                  placeholderTextColor={Colors.textLight}
+                  value={name}
+                  onChangeText={(v) => {
+                    setName(v);
+                    setFormError(null);
+                  }}
+                />
+                <AuthInput
+                  placeholder={t.auth.emailPlaceholder}
+                  placeholderTextColor={Colors.textLight}
+                  value={email}
+                  onChangeText={(v) => {
+                    setEmail(v);
+                    setFormError(null);
+                  }}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  keyboardType="email-address"
+                />
+                <PasswordInput
+                  placeholder={t.auth.passwordPlaceholder}
+                  value={password}
+                  onChangeText={(v) => {
+                    setPassword(v);
+                    setFormError(null);
+                  }}
+                />
 
-        {mode === "login" && (
-          <AnimatedPanel>
-            <View style={styles.stack}>
-              <AuthInput
-                placeholder={t.auth.emailPlaceholder}
-                placeholderTextColor={Colors.textLight}
-                value={email}
-                onChangeText={(v) => {
-                  setEmail(v);
-                  setFormError(null);
-                }}
-                autoCapitalize="none"
-                keyboardType="email-address"
-              />
-              <AuthInput
-                placeholder={t.auth.passwordPlaceholder}
-                placeholderTextColor={Colors.textLight}
-                value={password}
-                onChangeText={(v) => {
-                  setPassword(v);
-                  setFormError(null);
-                }}
-                secureTextEntry
-              />
-              {formError ?? error ? (
-                <Text style={styles.error}>{formError ?? error}</Text>
-              ) : null}
-              <StepsButton
-                label={t.auth.signIn}
-                onPress={handleLogin}
-                loading={isLoading}
-                shimmerOnMount
-              />
-              <Text style={styles.link} onPress={() => goToMode("welcome")}>
-                {t.auth.back}
-              </Text>
-            </View>
-          </AnimatedPanel>
-        )}
-      </View>
+                <Text style={styles.childrenHint}>{t.auth.childrenLinkedByAcademy}</Text>
+
+                {message ? <Text style={styles.error}>{message}</Text> : null}
+
+                <StepsButton
+                  label={t.auth.createAccountButton}
+                  onPress={handleRegister}
+                  loading={isLoading}
+                />
+
+                {googleBlock}
+
+                <Touchable onPress={() => goToMode("login")} style={styles.linkButton}>
+                  <Text style={styles.link}>
+                    {t.auth.haveAccount} <Text style={styles.linkAccent}>{t.auth.signIn}</Text>
+                  </Text>
+                </Touchable>
+              </View>
+            </AnimatedPanel>
+          )}
+        </ScrollView>
+      </KeyboardAvoidingView>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
+  flex: { flex: 1 },
   content: {
-    flex: 1,
+    flexGrow: 1,
     justifyContent: "center",
+    paddingBottom: 24,
   },
   stack: {
-    marginTop: 24,
+    marginTop: 20,
     gap: 12,
+  },
+  heading: {
+    fontFamily: Fonts.extraBold,
+    fontSize: 22,
+    color: Colors.bark,
+    textAlign: "center",
+    marginBottom: 4,
   },
   inputWrapper: {
     position: "relative",
+    justifyContent: "center",
   },
   input: {
     borderWidth: 1,
@@ -280,6 +345,14 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: Colors.text,
   },
+  // Room for the reveal toggle so long passwords never run under it.
+  inputWithTrailing: { paddingEnd: 48 },
+  trailing: {
+    position: "absolute",
+    end: 14,
+    height: "100%",
+    justifyContent: "center",
+  },
   inputUnderline: {
     position: "absolute",
     bottom: 0,
@@ -289,27 +362,35 @@ const styles = StyleSheet.create({
     borderRadius: 1,
     backgroundColor: Colors.terracotta,
   },
-  childrenBlock: {
-    marginTop: 4,
+  dividerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginTop: 6,
   },
-  childrenLabel: {
-    fontFamily: Fonts.bold,
-    fontSize: 14,
-    color: Colors.bark,
-    marginBottom: 2,
+  dividerLine: { flex: 1, height: 1, backgroundColor: Colors.border },
+  dividerText: {
+    fontFamily: Fonts.semiBold,
+    fontSize: 12,
+    color: Colors.textLight,
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
   },
   childrenHint: {
     fontFamily: Fonts.regular,
-    fontSize: 12,
+    fontSize: 12.5,
     color: Colors.textLight,
-    marginBottom: 10,
+    lineHeight: 18,
+    marginTop: 2,
   },
+  linkButton: { paddingVertical: 8, marginTop: 2 },
   link: {
     textAlign: "center",
     color: Colors.textLight,
-    fontFamily: Fonts.semiBold,
-    marginTop: 4,
+    fontFamily: Fonts.regular,
+    fontSize: 14,
   },
+  linkAccent: { color: Colors.terracotta, fontFamily: Fonts.bold },
   error: {
     textAlign: "center",
     color: Colors.clay,
