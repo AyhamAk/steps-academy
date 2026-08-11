@@ -127,24 +127,52 @@ export const CourseModel = {
 
 export const EnrollmentModel = {
   /**
-   * Re-requesting after a rejection or cancellation reopens the same row as
-   * pending, so a course/student pair keeps one auditable history rather than
-   * accumulating duplicates.
+   * Joins the course outright when there's room, and joins the waiting list
+   * when there isn't.
+   *
+   * The capacity check and the write happen in one serializable transaction:
+   * two parents tapping the last place at the same moment would otherwise
+   * both read "1 left" and both be let in. On a serialization conflict the
+   * caller retries, and a persistent failure falls back to the waiting list —
+   * erring towards an extra review rather than an over-full course.
+   *
+   * Re-joining after leaving reopens the same row, so a course/student pair
+   * keeps one auditable history rather than accumulating duplicates.
    */
-  async request(courseId: string, studentId: string, requestedBy: string) {
-    return prisma.courseEnrollment.upsert({
-      where: { courseId_studentId: { courseId, studentId } },
-      create: { courseId, studentId, requestedBy, status: "pending" },
-      update: {
-        status: "pending",
-        requestedBy,
-        requestedAt: new Date(),
-        decidedBy: null,
-        decidedAt: null,
-        note: null,
+  async join(courseId: string, studentId: string, requestedBy: string) {
+    return prisma.$transaction(
+      async (tx) => {
+        const course = await tx.course.findUnique({
+          where: { id: courseId },
+          select: { capacity: true },
+        });
+        const approved = await tx.courseEnrollment.count({
+          where: { courseId, status: "approved" },
+        });
+
+        // capacity 0 means unlimited.
+        const hasRoom = !course || course.capacity === 0 || approved < course.capacity;
+        const status: EnrollmentStatus = hasRoom ? "approved" : "pending";
+        // An automatic join has no decider — that's what distinguishes it from
+        // one an admin let in off the waiting list.
+        const decidedAt = hasRoom ? new Date() : null;
+
+        return tx.courseEnrollment.upsert({
+          where: { courseId_studentId: { courseId, studentId } },
+          create: { courseId, studentId, requestedBy, status, decidedAt },
+          update: {
+            status,
+            requestedBy,
+            requestedAt: new Date(),
+            decidedBy: null,
+            decidedAt,
+            note: null,
+          },
+          include: enrollmentContext,
+        });
       },
-      include: enrollmentContext,
-    });
+      { isolationLevel: "Serializable" }
+    );
   },
 
   async findById(id: string): Promise<EnrollmentWithContext | null> {

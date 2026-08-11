@@ -29,6 +29,8 @@ function serializeEnrollment(enrollment: EnrollmentWithContext) {
     },
     decidedAt: enrollment.decidedAt,
     decidedBy: enrollment.decider ? { id: enrollment.decider.id, name: enrollment.decider.name } : null,
+    /** Approved with no decider — the course had room and they just joined. */
+    joinedAutomatically: enrollment.status === "approved" && enrollment.decider === null,
   };
 }
 
@@ -129,7 +131,10 @@ export async function deleteCourse(req: Request, res: Response) {
   res.json({ message: "Course deleted" });
 }
 
-/** Parent asks to enrol one of their own children. Always starts as pending. */
+/**
+ * Parent enrols one of their own children. Joins outright if the course has
+ * room, otherwise joins the waiting list for an admin to decide.
+ */
 export async function requestEnrollment(req: Request, res: Response) {
   const { studentId } = req.body as { studentId?: string };
   if (!studentId) {
@@ -159,7 +164,31 @@ export async function requestEnrollment(req: Request, res: Response) {
     });
   }
 
-  const enrollment = await EnrollmentModel.request(courseId, studentId, req.userId!);
+  // One retry covers the common serialization conflict of two parents taking
+  // the last place at once; a second failure means the course really is busy.
+  let enrollment;
+  try {
+    enrollment = await EnrollmentModel.join(courseId, studentId, req.userId!);
+  } catch {
+    try {
+      enrollment = await EnrollmentModel.join(courseId, studentId, req.userId!);
+    } catch {
+      return res.status(409).json({ message: "Couldn't join right now, please try again" });
+    }
+  }
+
+  // Only the waiting list needs the academy's attention.
+  if (enrollment.status === "pending") {
+    const admins = await UserModel.listAdmins();
+    if (admins.length > 0) {
+      await sendPushToUsers(admins, {
+        title: "New waiting list request",
+        body: `${enrollment.student.name} is waiting for a place in ${enrollment.course.name}.`,
+        data: { type: "course" },
+      });
+    }
+  }
+
   res.status(201).json({ enrollment: serializeEnrollment(enrollment) });
 }
 

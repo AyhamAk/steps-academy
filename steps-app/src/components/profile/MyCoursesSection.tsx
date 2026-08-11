@@ -47,7 +47,7 @@ export function MyCoursesSection() {
       [
         { text: t.common.cancel, style: "cancel" },
         {
-          text: isApproved ? t.myCourses.leave : t.myCourses.withdraw,
+          text: isApproved ? t.myCourses.leave : t.courses.leaveWaitlist,
           style: "destructive",
           onPress: () => cancel.mutate(enrollment.id),
         },
@@ -94,7 +94,7 @@ export function MyCoursesSection() {
                     { color: isApproved ? Colors.forest : "#a2801f" },
                   ]}
                 >
-                  {isApproved ? t.myCourses.enrolled : t.myCourses.pending}
+                  {isApproved ? t.myCourses.enrolled : t.myCourses.waitlisted}
                 </Text>
               </View>
             </View>
@@ -122,7 +122,7 @@ export function MyCoursesSection() {
                 <ActivityIndicator color={Colors.clay} />
               ) : (
                 <Text style={styles.cancelText}>
-                  {isApproved ? t.myCourses.leave : t.myCourses.withdraw}
+                  {isApproved ? t.myCourses.leave : t.courses.leaveWaitlist}
                 </Text>
               )}
             </Touchable>

@@ -30,12 +30,18 @@ export function CoursesSection() {
   const request = useMutation({
     mutationFn: ({ courseId, studentId }: { courseId: string; studentId: string }) =>
       requestEnrollment(courseId, studentId),
-    onSuccess: (_data, variables) => {
+    onSuccess: (enrollment, variables) => {
       refresh();
       const course = courses?.find((c) => c.id === variables.courseId);
-      Alert.alert(t.courses.requestSentTitle, t.courses.requestSentMessage(course?.name ?? ""), [
-        { text: t.common.ok },
-      ]);
+      // Joined outright when there was room; waiting list when there wasn't.
+      const joined = enrollment.status === "approved";
+      Alert.alert(
+        joined ? t.courses.joinedTitle : t.courses.waitlistedTitle,
+        joined
+          ? t.courses.joinedMessage(enrollment.studentName, course?.name ?? "")
+          : t.courses.waitlistedMessage(enrollment.studentName, course?.name ?? ""),
+        [{ text: t.common.ok }]
+      );
     },
     onError: () => Alert.alert(t.courses.requestFailed, t.common.tryAgain, [{ text: t.common.ok }]),
   });
@@ -165,22 +171,15 @@ export function CoursesSection() {
                 </Touchable>
               ) : (
                 <Touchable
-                  disabled={isFull || isRequestingThis}
+                  disabled={isRequestingThis}
                   onPress={() => startRequest(course)}
-                  style={[styles.action, isFull ? styles.actionFull : styles.actionRequest]}
+                  style={[styles.action, isFull ? styles.actionWaitlist : styles.actionRequest]}
                 >
                   {isRequestingThis ? (
                     <ActivityIndicator color="#FFFFFF" />
                   ) : (
-                    <Text
-                      style={[styles.actionText, isFull && styles.actionTextDisabled]}
-                      numberOfLines={1}
-                    >
-                      {isFull
-                        ? t.courses.full
-                        : rejected
-                          ? t.courses.requestAgain
-                          : t.courses.request}
+                    <Text style={styles.actionText} numberOfLines={1}>
+                      {isFull ? t.courses.joinWaitlist : t.courses.join}
                     </Text>
                   )}
                 </Touchable>
@@ -264,7 +263,7 @@ const styles = StyleSheet.create({
   actionRequest: { backgroundColor: Colors.terracotta },
   actionPending: { backgroundColor: `${Colors.honey}33`, borderWidth: 1.5, borderColor: Colors.honey },
   actionApproved: { backgroundColor: Colors.forest },
-  actionFull: { backgroundColor: Colors.border },
+  actionWaitlist: { backgroundColor: Colors.honey },
   actionText: { fontFamily: Fonts.bold, fontSize: 13, color: "#FFFFFF" },
   actionTextPending: { color: Colors.bark },
   actionTextDisabled: { color: Colors.textLight },

@@ -47,6 +47,8 @@ export type EnrollmentRequest = {
   requestedBy: { id: string; name: string; email: string };
   decidedAt: string | null;
   decidedBy: { id: string; name: string } | null;
+  /** Approved with no decider — the course had room and they just joined. */
+  joinedAutomatically: boolean;
 };
 
 export async function listCourses() {

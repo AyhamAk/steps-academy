@@ -52,7 +52,6 @@ export function CourseDetailModal({
 
   const pending = course.myEnrollments.find((e) => e.status === "pending");
   const approved = course.myEnrollments.find((e) => e.status === "approved");
-  const rejected = course.myEnrollments.find((e) => e.status === "rejected");
 
   return (
     <Modal visible animationType="slide" transparent onRequestClose={onClose}>
@@ -118,7 +117,7 @@ export function CourseDetailModal({
                       <Text style={[styles.statusText, rtlText]}>
                         {enrollment.status === "approved"
                           ? t.courses.enrolled(enrollment.studentName)
-                          : t.courses.pendingFor(enrollment.studentName)}
+                          : t.courses.waitlistedFor(enrollment.studentName)}
                       </Text>
                     </View>
                   ))}
@@ -143,20 +142,15 @@ export function CourseDetailModal({
                 loading={isBusy}
                 onPress={() => onCancel(pending.id, false)}
               />
-            ) : isFull ? (
-              <View style={styles.fullPill}>
-                {isBusy ? (
-                  <ActivityIndicator color={Colors.textLight} />
-                ) : (
-                  <Text style={styles.fullText}>{t.courses.full}</Text>
-                )}
-              </View>
             ) : (
-              <StepsButton
-                label={rejected ? t.courses.requestAgain : t.courses.request}
-                loading={isBusy}
-                onPress={() => onRequest(course)}
-              />
+              <>
+                <StepsButton
+                  label={isFull ? t.courses.joinWaitlist : t.courses.join}
+                  loading={isBusy}
+                  onPress={() => onRequest(course)}
+                />
+                {isFull ? <Text style={styles.fullNote}>{t.courses.fullNote}</Text> : null}
+              </>
             )}
           </View>
         </View>
@@ -222,12 +216,11 @@ const styles = StyleSheet.create({
   statusRow: { borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10 },
   statusText: { fontFamily: Fonts.semiBold, fontSize: 13.5, color: Colors.bark },
   actions: { marginTop: 18 },
-  fullPill: {
-    backgroundColor: Colors.border,
-    borderRadius: 50,
-    paddingVertical: 14,
-    alignItems: "center",
+  fullNote: {
+    ...Type.caption,
+    color: Colors.textLight,
+    textAlign: "center",
+    marginTop: 10,
   },
-  fullText: { fontFamily: Fonts.bold, fontSize: 15, color: Colors.textLight },
   endedNote: { ...Type.caption, color: Colors.textLight, textAlign: "center", paddingVertical: 12 },
 });
