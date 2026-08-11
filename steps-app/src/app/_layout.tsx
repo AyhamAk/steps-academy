@@ -1,6 +1,6 @@
 import "../../global.css";
 
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import {
   Nunito_400Regular,
   Nunito_600SemiBold,
@@ -14,6 +14,7 @@ import { useEffect, useState } from "react";
 import { I18nManager, View } from "react-native";
 
 import { AnimatedIntro } from "../components/ui/AnimatedIntro";
+import { queryClient } from "../lib/queryClient";
 import { Colors } from "../constants/Colors";
 import { AUTH_ENABLED } from "../constants/flags";
 import { applyLocaleDirection } from "../i18n/applyLocaleDirection";
@@ -21,15 +22,6 @@ import { registerForPushNotificationsAsync } from "../services/pushNotifications
 import { updatePushTokenRequest } from "../services/authApi";
 import { useAuthStore } from "../store/authStore";
 import { isRTLLocale, useLocaleStore } from "../store/localeStore";
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 30_000,
-      retry: 1,
-    },
-  },
-});
 
 function useAuthGate(ready: boolean) {
   const token = useAuthStore((state) => state.token);

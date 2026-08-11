@@ -320,6 +320,24 @@ export const en = {
     capacityPlaceholder: "e.g. 10",
     capacityHint: "Leave empty or 0 for unlimited places.",
   },
+  adminHome: {
+    needsYouTitle: "🔔 Needs you",
+    allClearTitle: "All caught up",
+    allClearBody: "Nothing is waiting on you right now.",
+    alertRequests: (n: number) =>
+      `${n} course ${n === 1 ? "request is" : "requests are"} waiting for a decision`,
+    alertAwaitingLink: (n: number) =>
+      `${n} ${n === 1 ? "parent has" : "parents have"} signed up and need a child linked`,
+    alertUnlinked: (n: number) =>
+      `${n} ${n === 1 ? "child has" : "children have"} no parent linked yet`,
+    academyTitle: "📊 The academy",
+    statCourses: "Courses",
+    quickTitle: "⚡ Quick actions",
+    actionPhotos: "Upload photos",
+    actionStudents: "Students",
+    actionCourses: "Courses",
+    actionSchedule: "Timetable",
+  },
   admin: {
     title: "Management",
     subtitle: "Run the academy",
@@ -372,6 +390,7 @@ export const en = {
     emptySubtitle: "New photos and academy announcements will show up here.",
     markAllRead: "Mark all read",
     couldntLoad: "Couldn't load notifications",
+    unreadCount: (n: number) => `${n} unread notification${n === 1 ? "" : "s"}`,
     itemPhoto: (child: string) => `📸 New photos of ${child}`,
     itemAnnouncement: "📢 New announcement from the academy",
     itemEvent: (eventName: string) => `🎪 New event: ${eventName}`,
@@ -812,6 +831,23 @@ export const ar: Translations = {
     capacityPlaceholder: "مثال: 10",
     capacityHint: "اتركه فارغاً أو 0 لعدد أماكن غير محدود.",
   },
+  adminHome: {
+    needsYouTitle: "🔔 بحاجة إليك",
+    allClearTitle: "كل شيء منجز",
+    allClearBody: "لا يوجد ما ينتظرك الآن.",
+    alertRequests: (n: number) => `${n} ${n === 1 ? "طلب دورة ينتظر" : "طلبات دورات تنتظر"} قراراً`,
+    alertAwaitingLink: (n: number) =>
+      `${n} ${n === 1 ? "ولي أمر سجّل" : "أولياء أمور سجّلوا"} ويحتاجون ربط طفل`,
+    alertUnlinked: (n: number) =>
+      `${n} ${n === 1 ? "طفل غير مرتبط" : "أطفال غير مرتبطين"} بولي أمر بعد`,
+    academyTitle: "📊 الأكاديمية",
+    statCourses: "الدورات",
+    quickTitle: "⚡ إجراءات سريعة",
+    actionPhotos: "رفع الصور",
+    actionStudents: "الطلاب",
+    actionCourses: "الدورات",
+    actionSchedule: "الجدول",
+  },
   admin: {
     title: "الإدارة",
     subtitle: "إدارة الأكاديمية",
@@ -863,6 +899,7 @@ export const ar: Translations = {
     emptySubtitle: "ستظهر هنا الصور الجديدة وإعلانات الأكاديمية.",
     markAllRead: "تعليم الكل كمقروء",
     couldntLoad: "تعذّر تحميل الإشعارات",
+    unreadCount: (n: number) => `${n} ${n === 1 ? "إشعار غير مقروء" : "إشعارات غير مقروءة"}`,
     itemPhoto: (child: string) => `📸 صور جديدة لـ ${child}`,
     itemAnnouncement: "📢 إعلان جديد من الأكاديمية",
     itemEvent: (eventName: string) => `🎪 فعالية جديدة: ${eventName}`,
@@ -1300,6 +1337,23 @@ export const he: Translations = {
     capacityPlaceholder: "לדוגמה: 10",
     capacityHint: "השאר ריק או 0 למקומות ללא הגבלה.",
   },
+  adminHome: {
+    needsYouTitle: "🔔 דורש טיפול",
+    allClearTitle: "הכול מעודכן",
+    allClearBody: "שום דבר לא ממתין לך כרגע.",
+    alertRequests: (n: number) => `${n} ${n === 1 ? "בקשה לקורס ממתינה" : "בקשות לקורסים ממתינות"} להחלטה`,
+    alertAwaitingLink: (n: number) =>
+      `${n} ${n === 1 ? "הורה נרשם וזקוק" : "הורים נרשמו וזקוקים"} לקישור ילד`,
+    alertUnlinked: (n: number) =>
+      `${n} ${n === 1 ? "ילד אינו מקושר" : "ילדים אינם מקושרים"} להורה`,
+    academyTitle: "📊 האקדמיה",
+    statCourses: "קורסים",
+    quickTitle: "⚡ פעולות מהירות",
+    actionPhotos: "העלאת תמונות",
+    actionStudents: "תלמידים",
+    actionCourses: "קורסים",
+    actionSchedule: "לוח זמנים",
+  },
   admin: {
     title: "ניהול",
     subtitle: "ניהול האקדמיה",
@@ -1351,6 +1405,7 @@ export const he: Translations = {
     emptySubtitle: "תמונות חדשות והודעות מהאקדמיה יופיעו כאן.",
     markAllRead: "סמן הכל כנקרא",
     couldntLoad: "לא ניתן לטעון התראות",
+    unreadCount: (n: number) => `${n} ${n === 1 ? "התראה שלא נקראה" : "התראות שלא נקראו"}`,
     itemPhoto: (child: string) => `📸 תמונות חדשות של ${child}`,
     itemAnnouncement: "📢 הודעה חדשה מהאקדמיה",
     itemEvent: (eventName: string) => `🎪 אירוע חדש: ${eventName}`,

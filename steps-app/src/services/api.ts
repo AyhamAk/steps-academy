@@ -1,5 +1,6 @@
 import axios from "axios";
 
+import { resetQueryCache } from "../lib/queryClient";
 import { useAuthStore } from "../store/authStore";
 
 export const API_BASE_URL =
@@ -28,6 +29,7 @@ api.interceptors.response.use(
     const status = error?.response?.status;
     if (status === 401 && useAuthStore.getState().token) {
       useAuthStore.getState().clearSession();
+      resetQueryCache();
     }
     return Promise.reject(error);
   }

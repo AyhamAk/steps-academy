@@ -32,12 +32,14 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 
+import { AdminHomeSections } from "../../components/home/AdminHomeSections";
 import { CoursesSection } from "../../components/home/CoursesSection";
 import { WeeklyScheduleSection } from "../../components/home/WeeklyScheduleSection";
 import { Screen } from "../../components/Screen";
 import { StepsButton } from "../../components/ui/StepsButton";
 import { StepsCard } from "../../components/ui/StepsCard";
 import { SkeletonEventCard } from "../../components/ui/Skeleton";
+import { NotificationBell } from "../../components/ui/NotificationBell";
 import { StepsLogo } from "../../components/ui/StepsLogo";
 import { ToastBanner, useToast } from "../../components/ui/Toast";
 import { Colors } from "../../constants/Colors";
@@ -552,6 +554,11 @@ export default function HomeScreen() {
         contentContainerStyle={styles.scrollContent}
       >
         <View>
+        {isAdmin ? null : (
+          <View style={[styles.bellRow, isRTL && styles.rowReverse]}>
+            <NotificationBell />
+          </View>
+        )}
         <Animated.View style={fullHeaderStyle}>
           <StepsLogo />
 
@@ -572,22 +579,29 @@ export default function HomeScreen() {
             <Animated.Text style={[styles.subtitle, subtitleStyle]}>{subtitle}</Animated.Text>
           </View>
 
-          <ChildStrip children={children} />
+          {isAdmin ? null : <ChildStrip children={children} />}
         </Animated.View>
 
-        <HeroCarousel
-          t={t}
-          isRTL={isRTL}
-          childName={primaryChildName}
-          nextEvent={nextEvent}
-          daysAwayLabel={daysAway?.label ?? null}
-          heroPhotoUrl={heroPhotoUrl}
-          onToast={showToast}
-        />
+        {isAdmin ? (
+          <AdminHomeSections />
+        ) : (
+          <>
+            <HeroCarousel
+              t={t}
+              isRTL={isRTL}
+              childName={primaryChildName}
+              nextEvent={nextEvent}
+              daysAwayLabel={daysAway?.label ?? null}
+              heroPhotoUrl={heroPhotoUrl}
+              onToast={showToast}
+            />
 
+            <CoursesSection />
+          </>
+        )}
+
+        {/* The timetable matters to both — parents read it, admins check it. */}
         <WeeklyScheduleSection />
-
-        <CoursesSection />
 
         <Animated.View style={[styles.section, announcementSectionStyle]}>
           <View style={[styles.sectionHeaderRow, isRTL && styles.rowReverse]}>
@@ -726,6 +740,12 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: Colors.bark,
     flexShrink: 1,
+  },
+  bellRow: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    paddingTop: 4,
+    marginBottom: -8,
   },
   greetingBlock: {
     alignItems: "center",
