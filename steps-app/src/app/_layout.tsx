@@ -82,8 +82,15 @@ function useNotificationTapNavigation() {
   const router = useRouter();
   useEffect(() => {
     const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
-      const eventId = response.notification.request.content.data?.eventId;
-      if (typeof eventId === "string") router.push(`/gallery/${eventId}`);
+      const data = response.notification.request.content.data ?? {};
+      // Same destinations as tapping the notification inside the app.
+      if (data.type === "course") {
+        router.push("/profile");
+      } else if (typeof data.eventId === "string") {
+        router.push(`/gallery/${data.eventId}`);
+      } else if (data.type === "announcement") {
+        router.push("/");
+      }
     });
     return () => subscription.remove();
   }, [router]);

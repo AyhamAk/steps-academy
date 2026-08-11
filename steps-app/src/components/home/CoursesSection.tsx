@@ -6,6 +6,7 @@ import { Colors } from "../../constants/Colors";
 import { Fonts } from "../../constants/Fonts";
 import { Type } from "../../constants/Typography";
 import { useTranslation } from "../../i18n/useTranslation";
+import { SkeletonCourseRow } from "../ui/Skeleton";
 import { Touchable } from "../ui/Touchable";
 import {
   cancelEnrollment,
@@ -51,7 +52,16 @@ export function CoursesSection() {
     onSuccess: refresh,
   });
 
-  if (!courses || courses.length === 0) return null;
+  // Still loading — show the shape of what's coming rather than nothing.
+  if (!courses) {
+    return (
+      <View style={styles.section}>
+        <Text style={[styles.sectionTitle, rtlText]}>{t.courses.sectionTitle}</Text>
+        <SkeletonCourseRow />
+      </View>
+    );
+  }
+  if (courses.length === 0) return null;
 
   const startRequest = (course: Course) => {
     if (children.length === 0) {

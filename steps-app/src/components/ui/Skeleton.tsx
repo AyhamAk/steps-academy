@@ -79,6 +79,41 @@ export function SkeletonEventList({ count = 3 }: { count?: number }) {
   );
 }
 
+/** Course-card shaped placeholders, matching the real horizontal card strip. */
+export function SkeletonCourseRow({ count = 2 }: { count?: number }) {
+  return (
+    <View style={styles.courseRow}>
+      {Array.from({ length: count }).map((_, index) => (
+        <View key={index} style={styles.courseCard}>
+          <SkeletonBlock width={34} height={34} borderRadius={10} style={styles.courseGap} />
+          <SkeletonBlock width="80%" height={15} style={styles.courseGap} />
+          <SkeletonBlock width="60%" height={12} style={styles.courseGap} />
+          <SkeletonBlock width="45%" height={12} style={styles.courseGapWide} />
+          <SkeletonBlock width="100%" height={40} borderRadius={10} />
+        </View>
+      ))}
+    </View>
+  );
+}
+
+/** Rows inside the weekly timetable card while the schedule loads. */
+export function SkeletonScheduleRows({ count = 4 }: { count?: number }) {
+  return (
+    <View>
+      {Array.from({ length: count }).map((_, index) => (
+        <View key={index} style={styles.scheduleRow}>
+          <SkeletonBlock width={4} height={36} borderRadius={2} />
+          <SkeletonBlock width={24} height={24} borderRadius={12} />
+          <View style={styles.scheduleText}>
+            <SkeletonBlock width="55%" height={14} style={styles.courseGap} />
+            <SkeletonBlock width="35%" height={11} />
+          </View>
+        </View>
+      ))}
+    </View>
+  );
+}
+
 /** 3-column grid of square skeleton tiles, for a photo grid loading state. */
 export function SkeletonPhotoGrid({ tileSize, count = 9 }: { tileSize: number; count?: number }) {
   return (
@@ -110,6 +145,34 @@ const styles = StyleSheet.create({
   },
   thumbGap: {
     marginEnd: 8,
+  },
+  courseRow: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  courseCard: {
+    width: 176,
+    backgroundColor: Colors.card,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    padding: 16,
+  },
+  courseGap: {
+    marginBottom: 8,
+  },
+  courseGapWide: {
+    marginBottom: 16,
+  },
+  scheduleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+  },
+  scheduleText: {
+    flex: 1,
   },
   grid: {
     flexDirection: "row",

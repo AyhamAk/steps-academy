@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
@@ -17,6 +18,7 @@ import {
   AppNotification,
   getNotifications,
   markNotificationsRead,
+  NotificationType,
 } from "../services/notificationsApi";
 
 function relativeTime(iso: string, t: Translations): string {
@@ -34,9 +36,34 @@ function itemText(n: AppNotification, t: Translations): string {
       return t.notifications.itemPhoto(n.childName ?? "");
     case "event":
       return t.notifications.itemEvent(n.eventName ?? "");
+    case "course":
+      return t.notifications.itemCourse(n.childName ?? "", n.courseName ?? "");
     default:
       return t.notifications.itemAnnouncement;
   }
+}
+
+/** Icon, tint and label per type, so the kind is readable at a glance. */
+const TYPE_STYLE: Record<
+  NotificationType,
+  { icon: keyof typeof Ionicons.glyphMap; tint: string }
+> = {
+  photo: { icon: "images", tint: Colors.sky },
+  event: { icon: "calendar", tint: Colors.honey },
+  course: { icon: "school", tint: Colors.forest },
+  announcement: { icon: "megaphone", tint: Colors.terracotta },
+};
+
+function typeLabel(type: NotificationType, t: Translations): string {
+  return t.notifications.types[type];
+}
+
+/** Where tapping a notification should land. Null means it isn't tappable. */
+function destinationFor(n: AppNotification): string | null {
+  if (n.type === "course") return "/profile";
+  if (n.eventId) return `/gallery/${n.eventId}`;
+  if (n.type === "announcement") return "/";
+  return null;
 }
 
 export default function NotificationsScreen() {
@@ -76,20 +103,30 @@ export default function NotificationsScreen() {
             data={items}
             keyExtractor={(n) => n.id}
             contentContainerStyle={styles.list}
-            renderItem={({ item }) => (
-              <Touchable
-                disabled={!item.eventId}
-                onPress={() => item.eventId && router.push(`/gallery/${item.eventId}`)}
-                style={[styles.row, isRTL && styles.rowReverse, !item.read && styles.rowUnread]}
-              >
-                <View style={item.read ? styles.dotSpacer : styles.unreadDot} />
-                <View style={styles.rowText}>
-                  <Text style={[styles.rowTitle, rtlText]}>{itemText(item, t)}</Text>
-                  <Text style={[styles.rowTime, rtlText]}>{relativeTime(item.createdAt, t)}</Text>
-                </View>
-                {item.eventId ? <Text style={styles.chevron}>{isRTL ? "‹" : "›"}</Text> : null}
-              </Touchable>
-            )}
+            renderItem={({ item }) => {
+              const destination = destinationFor(item);
+              const { icon, tint } = TYPE_STYLE[item.type];
+              return (
+                <Touchable
+                  disabled={!destination}
+                  onPress={() => destination && router.push(destination as never)}
+                  style={[styles.row, isRTL && styles.rowReverse, !item.read && styles.rowUnread]}
+                >
+                  <View style={item.read ? styles.dotSpacer : styles.unreadDot} />
+                  <View style={[styles.iconWrap, { backgroundColor: `${tint}20` }]}>
+                    <Ionicons name={icon} size={18} color={tint} />
+                  </View>
+                  <View style={styles.rowText}>
+                    <Text style={[styles.typeLabel, { color: tint }, rtlText]}>
+                      {typeLabel(item.type, t)}
+                    </Text>
+                    <Text style={[styles.rowTitle, rtlText]}>{itemText(item, t)}</Text>
+                    <Text style={[styles.rowTime, rtlText]}>{relativeTime(item.createdAt, t)}</Text>
+                  </View>
+                  {destination ? <Text style={styles.chevron}>{isRTL ? "‹" : "›"}</Text> : null}
+                </Touchable>
+              );
+            }}
           />
         )}
       </ScreenFadeIn>
@@ -141,6 +178,20 @@ const styles = StyleSheet.create({
   },
   rowText: {
     flex: 1,
+  },
+  iconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 11,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  typeLabel: {
+    fontFamily: Fonts.bold,
+    fontSize: 10.5,
+    letterSpacing: 0.5,
+    textTransform: "uppercase",
+    marginBottom: 1,
   },
   rowTitle: {
     ...Type.body,

@@ -11,6 +11,8 @@ type CreateInput = {
   childName?: string;
   eventName?: string;
   eventId?: string;
+  courseId?: string;
+  courseName?: string;
 };
 
 export const NotificationModel = {
@@ -22,6 +24,8 @@ export const NotificationModel = {
         childName: input.childName,
         eventName: input.eventName,
         eventId: input.eventId,
+        courseId: input.courseId,
+        courseName: input.courseName,
       },
     });
   },

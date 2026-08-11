@@ -375,6 +375,8 @@ export const en = {
     itemPhoto: (child: string) => `📸 New photos of ${child}`,
     itemAnnouncement: "📢 New announcement from the academy",
     itemEvent: (eventName: string) => `🎪 New event: ${eventName}`,
+    itemCourse: (child: string, course: string) => `${child} — ${course}`,
+    types: { photo: "Photos", event: "Event", course: "Course", announcement: "Announcement" },
   },
   games: {
     title: "Games",
@@ -864,6 +866,8 @@ export const ar: Translations = {
     itemPhoto: (child: string) => `📸 صور جديدة لـ ${child}`,
     itemAnnouncement: "📢 إعلان جديد من الأكاديمية",
     itemEvent: (eventName: string) => `🎪 فعالية جديدة: ${eventName}`,
+    itemCourse: (child: string, course: string) => `${child} — ${course}`,
+    types: { photo: "صور", event: "فعالية", course: "دورة", announcement: "إعلان" },
   },
   games: {
     title: "ألعاب",
@@ -1350,6 +1354,8 @@ export const he: Translations = {
     itemPhoto: (child: string) => `📸 תמונות חדשות של ${child}`,
     itemAnnouncement: "📢 הודעה חדשה מהאקדמיה",
     itemEvent: (eventName: string) => `🎪 אירוע חדש: ${eventName}`,
+    itemCourse: (child: string, course: string) => `${child} — ${course}`,
+    types: { photo: "תמונות", event: "אירוע", course: "קורס", announcement: "הודעה" },
   },
   games: {
     title: "משחקים",

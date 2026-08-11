@@ -7,6 +7,7 @@ import { Fonts } from "../../constants/Fonts";
 import { Type } from "../../constants/Typography";
 import { useTranslation } from "../../i18n/useTranslation";
 import { formatTime, getWeekSchedule, WEEK_DAYS, WeekDay } from "../../services/scheduleApi";
+import { SkeletonScheduleRows } from "../ui/Skeleton";
 import { Touchable } from "../ui/Touchable";
 
 /** The academy runs Sunday–Thursday; Fri/Sat fall back to Sunday. */
@@ -82,9 +83,7 @@ export function WeeklyScheduleSection() {
 
       <View style={styles.scheduleCard}>
         {!days ? (
-          <View style={styles.placeholder}>
-            <Text style={styles.placeholderText}>{t.home.scheduleLoading}</Text>
-          </View>
+          <SkeletonScheduleRows />
         ) : !dayData || dayData.activities.length === 0 ? (
           <View style={styles.placeholder}>
             <Text style={styles.placeholderText}>{t.home.scheduleEmptyDay}</Text>

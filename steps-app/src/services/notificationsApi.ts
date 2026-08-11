@@ -1,6 +1,6 @@
 import { api } from "./api";
 
-export type NotificationType = "photo" | "announcement" | "event";
+export type NotificationType = "photo" | "announcement" | "event" | "course";
 
 export type AppNotification = {
   id: string;
@@ -8,6 +8,8 @@ export type AppNotification = {
   childName?: string;
   eventName?: string;
   eventId?: string;
+  courseId?: string;
+  courseName?: string;
   read: boolean;
   createdAt: string;
 };

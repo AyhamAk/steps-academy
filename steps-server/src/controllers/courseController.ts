@@ -276,7 +276,12 @@ export async function decideEnrollment(req: Request, res: Response) {
   if (guardians.length > 0) {
     await NotificationModel.createForUsers(
       guardians.map((guardian) => guardian.id),
-      { type: "course", childName: enrollment.student.name, eventName: enrollment.course.name }
+      {
+        type: "course",
+        childName: enrollment.student.name,
+        courseId: enrollment.courseId,
+        courseName: enrollment.course.name,
+      }
     );
     await sendPushToUsers(guardians, {
       title: status === "approved" ? "Course request approved 🎉" : "Course request declined",
@@ -284,7 +289,7 @@ export async function decideEnrollment(req: Request, res: Response) {
         status === "approved"
           ? `${enrollment.student.name} is enrolled in ${enrollment.course.name}.`
           : `${enrollment.student.name}'s request for ${enrollment.course.name} wasn't approved.`,
-      data: { type: "course" },
+      data: { type: "course", courseId: enrollment.courseId },
     });
   }
 

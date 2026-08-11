@@ -247,6 +247,9 @@ model Notification {
   childName String?
   eventName String?
   eventId   String?
+  /// Set on course notifications so tapping one opens that course.
+  courseId   String?
+  courseName String?
   read      Boolean          @default(false)
   createdAt DateTime         @default(now())
 
