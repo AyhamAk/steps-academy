@@ -94,6 +94,7 @@ export function CoursesSection() {
           // Only the card being acted on spins, not every card at once.
           const isRequestingThis = request.isPending && request.variables?.courseId === course.id;
           const isCancellingThis = cancel.isPending && cancel.variables === pending?.id;
+          const isCancellingApproved = cancel.isPending && cancel.variables === approved?.id;
 
           return (
             <View key={course.id} style={styles.card}>
@@ -138,11 +139,32 @@ export function CoursesSection() {
               </Touchable>
 
               {approved ? (
-                <View style={[styles.action, styles.actionApproved]}>
-                  <Text style={styles.actionText} numberOfLines={1}>
-                    {t.courses.enrolled(approved.studentName)}
-                  </Text>
-                </View>
+                <Touchable
+                  style={[styles.action, styles.actionApproved]}
+                  disabled={isCancellingApproved}
+                  onPress={() =>
+                    Alert.alert(
+                      t.myCourses.leaveTitle,
+                      t.myCourses.leaveMessage(approved.studentName, course.name),
+                      [
+                        { text: t.common.cancel, style: "cancel" },
+                        {
+                          text: t.myCourses.leave,
+                          style: "destructive",
+                          onPress: () => cancel.mutate(approved.id),
+                        },
+                      ]
+                    )
+                  }
+                >
+                  {isCancellingApproved ? (
+                    <ActivityIndicator color="#FFFFFF" />
+                  ) : (
+                    <Text style={styles.actionText} numberOfLines={1}>
+                      {t.courses.enrolled(approved.studentName)}
+                    </Text>
+                  )}
+                </Touchable>
               ) : pending ? (
                 <Touchable
                   style={[styles.action, styles.actionPending]}

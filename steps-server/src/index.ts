@@ -5,6 +5,7 @@ import morgan from "morgan";
 
 import { env } from "./config/env";
 import { runDevSeed } from "./devSeed";
+import { scheduleCourseCleanup } from "./lib/courseCleanup";
 import { errorHandler, notFound } from "./middleware/errorHandler";
 import announcementRoutes from "./routes/announcementRoutes";
 import authRoutes from "./routes/authRoutes";
@@ -50,4 +51,5 @@ app.use(errorHandler);
 app.listen(env.port, () => {
   console.log(`Steps API listening on port ${env.port}`);
   void runDevSeed();
+  scheduleCourseCleanup();
 });

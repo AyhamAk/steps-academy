@@ -40,7 +40,12 @@ function serializeEnrollment(enrollment: EnrollmentWithContext) {
  */
 export async function listCourses(req: Request, res: Response) {
   const isAdmin = req.userRole === "admin";
-  const courses = await CourseModel.listWithCounts(isAdmin);
+  const all = await CourseModel.listWithCounts(isAdmin);
+
+  // A course can finish between nightly sweeps — never show a parent a course
+  // that has already ended.
+  const todayIso = new Date().toISOString().slice(0, 10);
+  const courses = all.filter((course) => !course.endDate || course.endDate >= todayIso);
 
   const myStudentIds = isAdmin ? [] : await StudentModel.visibleStudentIds(req.userId!);
   const myEnrollments = await EnrollmentModel.listForStudents(myStudentIds);

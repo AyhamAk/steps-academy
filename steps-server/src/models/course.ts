@@ -123,6 +123,29 @@ export const CourseModel = {
   async countApproved(courseId: string): Promise<number> {
     return prisma.courseEnrollment.count({ where: { courseId, status: "approved" } });
   },
+
+  /** Courses whose end date has passed. */
+  async listEnded(): Promise<Course[]> {
+    const todayIso = new Date().toISOString().slice(0, 10);
+    return prisma.course.findMany({ where: { endDate: { lt: todayIso, not: null } } });
+  },
+
+  /**
+   * Deletes finished courses. Their enrolment rows go with them (cascade), so
+   * each deletion is logged with what it took — this is the only place in the
+   * app that removes records nobody asked to remove.
+   */
+  async deleteEnded(): Promise<{ name: string; enrolments: number }[]> {
+    const ended = await this.listEnded();
+    const removed: { name: string; enrolments: number }[] = [];
+
+    for (const course of ended) {
+      const enrolments = await prisma.courseEnrollment.count({ where: { courseId: course.id } });
+      await prisma.course.delete({ where: { id: course.id } });
+      removed.push({ name: course.name, enrolments });
+    }
+    return removed;
+  },
 };
 
 export const EnrollmentModel = {
