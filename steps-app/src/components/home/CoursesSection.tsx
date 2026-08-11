@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { Colors } from "../../constants/Colors";
@@ -13,11 +14,14 @@ import {
   requestEnrollment,
 } from "../../services/coursesApi";
 import { useChildren } from "../../store/authStore";
+import { formatCourseDates, formatCourseDays } from "../../utils/courseSchedule";
+import { CourseDetailModal } from "./CourseDetailModal";
 
 export function CoursesSection() {
   const { t, isRTL, rtlText } = useTranslation();
   const children = useChildren();
   const queryClient = useQueryClient();
+  const [detailId, setDetailId] = useState<string | null>(null);
 
   const { data: courses } = useQuery({ queryKey: ["courses"], queryFn: listCourses });
 
@@ -94,24 +98,19 @@ export function CoursesSection() {
                 ]}
               />
 
-              <Touchable
-                style={styles.cardInfo}
-                onPress={() =>
-                  Alert.alert(course.name, course.description ?? "", [{ text: t.common.ok }])
-                }
-              >
+              <Touchable style={styles.cardInfo} onPress={() => setDetailId(course.id)}>
                 <Text style={styles.emoji}>{course.emoji}</Text>
                 <Text style={[styles.name, rtlText]} numberOfLines={2}>
                   {course.name}
                 </Text>
-                {course.schedule ? (
+                {formatCourseDays(course, t) ? (
                   <Text style={[styles.meta, rtlText]} numberOfLines={1}>
-                    {course.schedule}
+                    🗓 {formatCourseDays(course, t)}
                   </Text>
                 ) : null}
-                {course.instructor ? (
+                {formatCourseDates(course, t) ? (
                   <Text style={[styles.meta, rtlText]} numberOfLines={1}>
-                    {t.courses.withInstructor(course.instructor)}
+                    📆 {formatCourseDates(course, t)}
                   </Text>
                 ) : null}
 
@@ -190,6 +189,37 @@ export function CoursesSection() {
           );
         })}
       </ScrollView>
+
+      <CourseDetailModal
+        course={courses.find((course) => course.id === detailId) ?? null}
+        isBusy={request.isPending || cancel.isPending}
+        onClose={() => setDetailId(null)}
+        onRequest={(course) => {
+          setDetailId(null);
+          startRequest(course);
+        }}
+        onCancel={(enrollmentId, isApproved) => {
+          const course = courses.find((c) => c.id === detailId);
+          const enrollment = course?.myEnrollments.find((e) => e.id === enrollmentId);
+          Alert.alert(
+            isApproved ? t.myCourses.leaveTitle : t.myCourses.withdrawTitle,
+            isApproved
+              ? t.myCourses.leaveMessage(enrollment?.studentName ?? "", course?.name ?? "")
+              : t.myCourses.withdrawMessage(enrollment?.studentName ?? "", course?.name ?? ""),
+            [
+              { text: t.common.cancel, style: "cancel" },
+              {
+                text: isApproved ? t.myCourses.leave : t.myCourses.withdraw,
+                style: "destructive",
+                onPress: () => {
+                  setDetailId(null);
+                  cancel.mutate(enrollmentId);
+                },
+              },
+            ]
+          );
+        }}
+      />
     </View>
   );
 }

@@ -15,6 +15,7 @@ import { Fonts } from "../../constants/Fonts";
 import { Type } from "../../constants/Typography";
 import { useTranslation } from "../../i18n/useTranslation";
 import { Course, CourseInput } from "../../services/coursesApi";
+import { WEEK_DAYS, WeekDay } from "../../services/scheduleApi";
 import { StepsButton } from "../ui/StepsButton";
 import { Touchable } from "../ui/Touchable";
 
@@ -47,7 +48,11 @@ export function CourseFormModal({
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [instructor, setInstructor] = useState("");
-  const [schedule, setSchedule] = useState("");
+  const [weekDays, setWeekDays] = useState<WeekDay[]>([]);
+  const [hour, setHour] = useState("");
+  const [minute, setMinute] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [capacity, setCapacity] = useState("");
   const [emoji, setEmoji] = useState("🎓");
   const [accentColor, setAccentColor] = useState<string>(Colors.terracotta);
@@ -59,7 +64,12 @@ export function CourseFormModal({
     setName(course?.name ?? "");
     setDescription(course?.description ?? "");
     setInstructor(course?.instructor ?? "");
-    setSchedule(course?.schedule ?? "");
+    setWeekDays(course?.weekDays ?? []);
+    const [h, m] = (course?.startTime ?? "").split(":");
+    setHour(h ?? "");
+    setMinute(m ?? "");
+    setStartDate(course?.startDate ?? "");
+    setEndDate(course?.endDate ?? "");
     setCapacity(course?.capacity ? String(course.capacity) : "");
     setEmoji(course?.emoji ?? "🎓");
     setAccentColor(course?.accentColor ?? Colors.terracotta);
@@ -76,11 +86,34 @@ export function CourseFormModal({
       setError(t.coursesAdmin.capacityInvalid);
       return;
     }
+    // A time is optional, but a half-entered one isn't.
+    const hasTime = hour.trim() !== "" || minute.trim() !== "";
+    const h = Number(hour), m = Number(minute);
+    if (hasTime && (!Number.isFinite(h) || h < 0 || h > 23 || !Number.isFinite(m) || m < 0 || m > 59)) {
+      setError(t.coursesAdmin.timeInvalid);
+      return;
+    }
+
+    const DATE = /^\d{4}-\d{2}-\d{2}$/;
+    const badDate =
+      (startDate.trim() && !DATE.test(startDate.trim())) ||
+      (endDate.trim() && !DATE.test(endDate.trim())) ||
+      (startDate.trim() && endDate.trim() && endDate.trim() < startDate.trim());
+    if (badDate) {
+      setError(t.coursesAdmin.datesInvalid);
+      return;
+    }
+
     onSubmit({
       name: name.trim(),
       description: description.trim() || null,
       instructor: instructor.trim() || null,
-      schedule: schedule.trim() || null,
+      weekDays,
+      startTime: hasTime
+        ? `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`
+        : null,
+      startDate: startDate.trim() || null,
+      endDate: endDate.trim() || null,
       capacity: parsedCapacity,
       emoji,
       accentColor,
@@ -165,14 +198,84 @@ export function CourseFormModal({
               style={[styles.input, rtlText]}
             />
 
-            <Text style={[styles.label, rtlText]}>{t.coursesAdmin.fieldSchedule}</Text>
-            <TextInput
-              value={schedule}
-              onChangeText={setSchedule}
-              placeholder={t.coursesAdmin.schedulePlaceholder}
-              placeholderTextColor={Colors.textLight}
-              style={[styles.input, rtlText]}
-            />
+            <Text style={[styles.label, rtlText]}>{t.coursesAdmin.fieldDays}</Text>
+            <View style={styles.pickRow}>
+              {WEEK_DAYS.map((day) => {
+                const isOn = weekDays.includes(day);
+                return (
+                  <Touchable
+                    key={day}
+                    onPress={() =>
+                      setWeekDays((prev) =>
+                        isOn ? prev.filter((d) => d !== day) : [...prev, day]
+                      )
+                    }
+                    style={[styles.dayTile, isOn && styles.dayTileActive]}
+                  >
+                    <Text style={[styles.dayText, isOn && styles.dayTextActive]}>
+                      {t.home.weekDays[day]}
+                    </Text>
+                  </Touchable>
+                );
+              })}
+            </View>
+
+            <Text style={[styles.label, rtlText]}>{t.coursesAdmin.fieldStartTime}</Text>
+            <View style={styles.timeRow}>
+              <TextInput
+                value={hour}
+                onChangeText={(v) => {
+                  setHour(v.replace(/[^0-9]/g, "").slice(0, 2));
+                  setError(null);
+                }}
+                keyboardType="number-pad"
+                maxLength={2}
+                placeholder="15"
+                placeholderTextColor={Colors.textLight}
+                style={[styles.input, styles.timeInput]}
+              />
+              <Text style={styles.timeColon}>:</Text>
+              <TextInput
+                value={minute}
+                onChangeText={(v) => {
+                  setMinute(v.replace(/[^0-9]/g, "").slice(0, 2));
+                  setError(null);
+                }}
+                keyboardType="number-pad"
+                maxLength={2}
+                placeholder="30"
+                placeholderTextColor={Colors.textLight}
+                style={[styles.input, styles.timeInput]}
+              />
+            </View>
+
+            <Text style={[styles.label, rtlText]}>{t.coursesAdmin.fieldDates}</Text>
+            <View style={styles.timeRow}>
+              <TextInput
+                value={startDate}
+                onChangeText={(v) => {
+                  setStartDate(v);
+                  setError(null);
+                }}
+                placeholder={t.coursesAdmin.startDatePlaceholder}
+                placeholderTextColor={Colors.textLight}
+                style={[styles.input, styles.flex]}
+                autoCapitalize="none"
+              />
+              <Text style={styles.timeColon}>→</Text>
+              <TextInput
+                value={endDate}
+                onChangeText={(v) => {
+                  setEndDate(v);
+                  setError(null);
+                }}
+                placeholder={t.coursesAdmin.endDatePlaceholder}
+                placeholderTextColor={Colors.textLight}
+                style={[styles.input, styles.flex]}
+                autoCapitalize="none"
+              />
+            </View>
+            <Text style={[styles.hint, rtlText]}>{t.coursesAdmin.datesHint}</Text>
 
             <Text style={[styles.label, rtlText]}>{t.coursesAdmin.fieldCapacity}</Text>
             <TextInput
@@ -275,6 +378,22 @@ const styles = StyleSheet.create({
     color: Colors.bark,
   },
   textArea: { minHeight: 84, textAlignVertical: "top" },
+  flex: { flex: 1 },
+  dayTile: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+    backgroundColor: Colors.linen,
+    alignItems: "center",
+  },
+  dayTileActive: { backgroundColor: Colors.terracotta, borderColor: Colors.terracotta },
+  dayText: { fontFamily: Fonts.semiBold, fontSize: 12, color: Colors.bark },
+  dayTextActive: { color: "#FFFFFF" },
+  timeRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  timeInput: { width: 64, textAlign: "center", fontFamily: Fonts.bold, fontSize: 18 },
+  timeColon: { fontFamily: Fonts.bold, fontSize: 18, color: Colors.textLight },
   hint: { ...Type.caption, color: Colors.textLight, marginTop: 6 },
   error: {
     fontFamily: Fonts.semiBold,

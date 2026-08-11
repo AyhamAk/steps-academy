@@ -1,4 +1,5 @@
 import { api } from "./api";
+import { WeekDay } from "./scheduleApi";
 
 export type EnrollmentStatus = "pending" | "approved" | "rejected" | "cancelled";
 
@@ -15,7 +16,11 @@ export type Course = {
   description: string | null;
   emoji: string;
   instructor: string | null;
-  schedule: string | null;
+  /** Days it runs on, e.g. ["sun","wed"]. Structured so it can be translated. */
+  weekDays: WeekDay[];
+  /** 24-hour "HH:MM". */
+  startTime: string | null;
+  /** Calendar range, "YYYY-MM-DD". */
   startDate: string | null;
   endDate: string | null;
   capacity: number;
@@ -93,7 +98,10 @@ export type CourseInput = {
   description?: string | null;
   emoji?: string;
   instructor?: string | null;
-  schedule?: string | null;
+  weekDays?: WeekDay[];
+  startTime?: string | null;
+  startDate?: string | null;
+  endDate?: string | null;
   capacity?: number;
   accentColor?: string | null;
   isActive?: boolean;

@@ -6,6 +6,7 @@ import { Fonts } from "../../constants/Fonts";
 import { Type } from "../../constants/Typography";
 import { useTranslation } from "../../i18n/useTranslation";
 import { cancelEnrollment, Course, listCourses, MyEnrollment } from "../../services/coursesApi";
+import { formatCourseDates, formatCourseDays } from "../../utils/courseSchedule";
 import { Touchable } from "../ui/Touchable";
 
 type Row = { course: Course; enrollment: MyEnrollment };
@@ -98,10 +99,13 @@ export function MyCoursesSection() {
               </View>
             </View>
 
-            {course.schedule || course.instructor ? (
+            {formatCourseDays(course, t) || course.instructor ? (
               <Text style={[styles.detail, rtlText]}>
-                {[course.schedule, course.instructor].filter(Boolean).join(" · ")}
+                🗓 {[formatCourseDays(course, t), course.instructor].filter(Boolean).join(" · ")}
               </Text>
+            ) : null}
+            {formatCourseDates(course, t) ? (
+              <Text style={[styles.detail, rtlText]}>📆 {formatCourseDates(course, t)}</Text>
             ) : null}
             {course.description ? (
               <Text style={[styles.detail, rtlText]} numberOfLines={2}>

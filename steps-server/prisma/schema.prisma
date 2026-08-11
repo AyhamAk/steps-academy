@@ -91,8 +91,12 @@ model Course {
   description String?
   emoji       String   @default("🎓")
   instructor  String?
-  /// Free text, e.g. "Sundays & Wednesdays".
-  schedule    String?
+  /// Which days it runs on, e.g. ["sun","wed"]. Structured rather than free
+  /// text so it can be shown in any language and sorted.
+  weekDays    WeekDay[]
+  /// 24-hour "HH:MM".
+  startTime   String?
+  /// Calendar range, "YYYY-MM-DD" — the term the course actually runs for.
   startDate   String?
   endDate     String?
   /// 0 means unlimited. Approved enrolments count against it.

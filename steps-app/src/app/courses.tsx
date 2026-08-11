@@ -15,6 +15,7 @@ import { Colors } from "../constants/Colors";
 import { Fonts } from "../constants/Fonts";
 import { Type } from "../constants/Typography";
 import { useTranslation } from "../i18n/useTranslation";
+import { formatCourseDates, formatCourseDays } from "../utils/courseSchedule";
 import {
   Course,
   CourseInput,
@@ -52,9 +53,14 @@ function CourseCard({
             {course.name}
           </Text>
           <Text style={[styles.meta, rtlText]} numberOfLines={1}>
-            {[course.schedule, course.instructor].filter(Boolean).join(" · ") ||
+            {[formatCourseDays(course, t), course.instructor].filter(Boolean).join(" · ") ||
               t.coursesAdmin.noSchedule}
           </Text>
+          {formatCourseDates(course, t) ? (
+            <Text style={[styles.meta, rtlText]} numberOfLines={1}>
+              📆 {formatCourseDates(course, t)}
+            </Text>
+          ) : null}
         </View>
         {!course.isActive ? (
           <View style={styles.hiddenPill}>

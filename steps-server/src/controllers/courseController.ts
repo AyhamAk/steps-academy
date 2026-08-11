@@ -50,7 +50,8 @@ export async function listCourses(req: Request, res: Response) {
       description: course.description,
       emoji: course.emoji,
       instructor: course.instructor,
-      schedule: course.schedule,
+      weekDays: course.weekDays,
+      startTime: course.startTime,
       startDate: course.startDate,
       endDate: course.endDate,
       capacity: course.capacity,
@@ -72,16 +73,51 @@ export async function listCourses(req: Request, res: Response) {
   });
 }
 
+const WEEK_DAYS = ["sun", "mon", "tue", "wed", "thu"];
+const TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
+const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+/** Shared by create and update; only checks fields that were actually sent. */
+function validateCourse(body: Record<string, unknown>): string | null {
+  if (body.weekDays !== undefined) {
+    if (!Array.isArray(body.weekDays) || body.weekDays.some((d) => !WEEK_DAYS.includes(d as string))) {
+      return "weekDays must be an array of sun, mon, tue, wed or thu";
+    }
+  }
+  if (body.startTime !== undefined && body.startTime !== null) {
+    if (typeof body.startTime !== "string" || !TIME_PATTERN.test(body.startTime)) {
+      return "startTime must be in 24-hour HH:MM format";
+    }
+  }
+  for (const key of ["startDate", "endDate"] as const) {
+    const value = body[key];
+    if (value !== undefined && value !== null) {
+      if (typeof value !== "string" || !DATE_PATTERN.test(value)) return `${key} must be YYYY-MM-DD`;
+    }
+  }
+  const { startDate, endDate } = body as { startDate?: string; endDate?: string };
+  if (startDate && endDate && endDate < startDate) {
+    return "endDate cannot be before startDate";
+  }
+  return null;
+}
+
 export async function createCourse(req: Request, res: Response) {
   const { name } = req.body as { name?: string };
   if (!name || !name.trim()) {
     return res.status(400).json({ message: "name is required" });
   }
+  const error = validateCourse(req.body);
+  if (error) return res.status(400).json({ message: error });
+
   const course = await CourseModel.create(req.body);
   res.status(201).json({ course });
 }
 
 export async function updateCourse(req: Request, res: Response) {
+  const error = validateCourse(req.body);
+  if (error) return res.status(400).json({ message: error });
+
   const course = await CourseModel.update(param(req, "courseId"), req.body);
   if (!course) return res.status(404).json({ message: "Course not found" });
   res.json({ course });

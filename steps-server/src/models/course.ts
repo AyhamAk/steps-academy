@@ -1,4 +1,10 @@
-import { Course as PrismaCourse, CourseEnrollment, EnrollmentStatus, Student } from "@prisma/client";
+import {
+  Course as PrismaCourse,
+  CourseEnrollment,
+  EnrollmentStatus,
+  Student,
+  WeekDay,
+} from "@prisma/client";
 
 import { prisma } from "../lib/prisma";
 
@@ -24,7 +30,8 @@ type CourseInput = {
   description?: string | null;
   emoji?: string;
   instructor?: string | null;
-  schedule?: string | null;
+  weekDays?: WeekDay[];
+  startTime?: string | null;
   startDate?: string | null;
   endDate?: string | null;
   capacity?: number;
@@ -40,7 +47,8 @@ export const CourseModel = {
         description: input.description ?? null,
         emoji: input.emoji?.trim() || "🎓",
         instructor: input.instructor ?? null,
-        schedule: input.schedule ?? null,
+        weekDays: input.weekDays ?? [],
+        startTime: input.startTime ?? null,
         startDate: input.startDate ?? null,
         endDate: input.endDate ?? null,
         capacity: input.capacity ?? 0,
@@ -59,7 +67,8 @@ export const CourseModel = {
           ...(input.description !== undefined ? { description: input.description } : {}),
           ...(input.emoji !== undefined ? { emoji: input.emoji || "🎓" } : {}),
           ...(input.instructor !== undefined ? { instructor: input.instructor } : {}),
-          ...(input.schedule !== undefined ? { schedule: input.schedule } : {}),
+          ...(input.weekDays !== undefined ? { weekDays: input.weekDays } : {}),
+          ...(input.startTime !== undefined ? { startTime: input.startTime } : {}),
           ...(input.startDate !== undefined ? { startDate: input.startDate } : {}),
           ...(input.endDate !== undefined ? { endDate: input.endDate } : {}),
           ...(input.capacity !== undefined ? { capacity: input.capacity } : {}),
