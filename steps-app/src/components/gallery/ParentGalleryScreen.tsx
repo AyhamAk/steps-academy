@@ -80,8 +80,24 @@ export function ParentGalleryScreen() {
           {/* A message the academy pins above every album. */}
           {quote ? (
             <View style={styles.quoteCard}>
-              <Text style={styles.quoteMark}>“</Text>
-              <Text style={[styles.quoteText, rtlText]}>{quote}</Text>
+              {/* Soft blobs behind the text so the card feels like part of the
+                  academy's world rather than a plain notice. */}
+              <View style={[styles.quoteBlob, styles.quoteBlobTop]} pointerEvents="none" />
+              <View style={[styles.quoteBlob, styles.quoteBlobBottom]} pointerEvents="none" />
+
+              <View style={[styles.quoteHeader, isRTL && styles.rowReverse]}>
+                <View style={styles.quoteAvatar}>
+                  <Text style={styles.quoteAvatarEmoji}>🐘</Text>
+                </View>
+                <Text style={[styles.quoteFrom, rtlText]}>{t.gallery.quoteFrom}</Text>
+              </View>
+
+              <View style={[styles.quoteBody, isRTL && styles.rowReverse]}>
+                <Text style={styles.quoteMark}>“</Text>
+                <Text style={[styles.quoteText, rtlText]}>{quote}</Text>
+              </View>
+
+              <Text style={[styles.quoteFooter, isRTL && styles.quoteFooterRTL]}>🌸 ✨ 🎈</Text>
             </View>
           ) : null}
 
@@ -216,28 +232,64 @@ const styles = StyleSheet.create({
     color: Colors.textLight,
   },
   quoteCard: {
-    backgroundColor: `${Colors.honey}1A`,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: `${Colors.honey}66`,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    backgroundColor: `${Colors.honey}1F`,
+    borderRadius: 22,
+    borderWidth: 1.5,
+    borderColor: `${Colors.honey}70`,
+    paddingHorizontal: 18,
+    paddingVertical: 16,
     marginTop: 16,
+    overflow: "hidden",
   },
+  quoteBlob: {
+    position: "absolute",
+    borderRadius: 999,
+    backgroundColor: `${Colors.terracotta}12`,
+  },
+  quoteBlobTop: { width: 120, height: 120, top: -58, end: -34 },
+  quoteBlobBottom: { width: 90, height: 90, bottom: -46, start: -28, backgroundColor: `${Colors.forest}12` },
+  quoteHeader: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 },
+  quoteAvatar: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: `${Colors.honey}45`,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  quoteAvatarEmoji: { fontSize: 15 },
+  quoteFrom: {
+    fontFamily: Fonts.bold,
+    fontSize: 11.5,
+    color: "#a2801f",
+    letterSpacing: 0.5,
+    textTransform: "uppercase",
+  },
+  quoteBody: { flexDirection: "row", alignItems: "flex-start", gap: 6 },
   quoteMark: {
     fontFamily: Fonts.extraBold,
-    fontSize: 26,
+    fontSize: 30,
     color: Colors.honey,
-    lineHeight: 26,
+    lineHeight: 32,
+    marginTop: -4,
   },
   quoteText: {
     ...Type.body,
-    fontSize: 14.5,
+    flex: 1,
+    fontSize: 15,
     color: Colors.bark,
     fontStyle: "italic",
-    lineHeight: 21,
-    marginTop: 2,
+    lineHeight: 22,
+    marginTop: 3,
   },
+  quoteFooter: {
+    fontSize: 12,
+    letterSpacing: 3,
+    marginTop: 10,
+    textAlign: "right",
+    opacity: 0.75,
+  },
+  quoteFooterRTL: { textAlign: "left" },
   refreshButton: {
     marginTop: 16,
     alignSelf: "center",

@@ -34,6 +34,7 @@ import Animated, {
 
 import { AdminHomeSections } from "../../components/home/AdminHomeSections";
 import { CoursesSection } from "../../components/home/CoursesSection";
+import { FeedbackModal } from "../../components/home/FeedbackModal";
 import { WeeklyScheduleSection } from "../../components/home/WeeklyScheduleSection";
 import { Screen } from "../../components/Screen";
 import { StepsButton } from "../../components/ui/StepsButton";
@@ -106,6 +107,7 @@ function HeroCarousel({
   daysAwayLabel,
   heroPhotoUrl,
   onToast,
+  onFeedback,
 }: {
   t: Translations;
   isRTL: boolean;
@@ -114,6 +116,7 @@ function HeroCarousel({
   daysAwayLabel: string | null;
   heroPhotoUrl: string | null;
   onToast: (message: string) => void;
+  onFeedback: () => void;
 }) {
   const { width } = useWindowDimensions();
   const slideWidth = width - 48;
@@ -194,17 +197,15 @@ function HeroCarousel({
         </LinearGradient>
 
         <View style={[styles.carouselSlide, { width: slideWidth, backgroundColor: Colors.forest }]}>
-          <Text style={[styles.carouselEmoji, { textAlign, alignSelf: startAlign }]}>🎪</Text>
+          <Text style={[styles.carouselEmoji, { textAlign, alignSelf: startAlign }]}>💬</Text>
           <Text style={[styles.carouselHeadline, { textAlign, alignSelf: startAlign }]}>
-            {nextEvent && daysAwayLabel
-              ? t.home.carouselCountdown(nextEvent.name, daysAwayLabel)
-              : t.home.carouselNoEvent}
+            {t.feedback.carouselHeadline}
           </Text>
           <Touchable
             style={[styles.carouselCta, { alignSelf: startAlign }]}
-            onPress={() => onToast(t.common.comingSoon)}
+            onPress={onFeedback}
           >
-            <Text style={styles.carouselCtaText}>{t.home.addToCalendar}</Text>
+            <Text style={styles.carouselCtaText}>{t.feedback.carouselCta}</Text>
           </Touchable>
         </View>
 
@@ -405,6 +406,7 @@ export default function HomeScreen() {
   const { t, isRTL, rtlText } = useTranslation();
   const [isAnnouncementExpanded, setIsAnnouncementExpanded] = useState(false);
   const [isAnnouncementModalVisible, setIsAnnouncementModalVisible] = useState(false);
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
   const queryClient = useQueryClient();
 
   const children = user?.children ?? [];
@@ -594,6 +596,7 @@ export default function HomeScreen() {
               daysAwayLabel={daysAway?.label ?? null}
               heroPhotoUrl={heroPhotoUrl}
               onToast={showToast}
+              onFeedback={() => setIsFeedbackOpen(true)}
             />
 
             <CoursesSection />
@@ -662,6 +665,12 @@ export default function HomeScreen() {
           <Text style={styles.footerText}>{t.home.footerTagline}</Text>
         </View>
       </Animated.ScrollView>
+
+      <FeedbackModal
+        visible={isFeedbackOpen}
+        onClose={() => setIsFeedbackOpen(false)}
+        onSent={showToast}
+      />
 
       <ToastBanner message={toastMessage} opacity={toastOpacity} />
 
@@ -853,6 +862,9 @@ const styles = StyleSheet.create({
     fontSize: 26,
   },
   childStrip: {
+    // Centred under the logo, and stays centred when there's only one child.
+    flexGrow: 1,
+    justifyContent: "center",
     gap: 10,
     paddingTop: 4,
     paddingBottom: 16,

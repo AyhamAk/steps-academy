@@ -320,6 +320,16 @@ export const en = {
     capacityPlaceholder: "e.g. 10",
     capacityHint: "Leave empty or 0 for unlimited places.",
   },
+  feedback: {
+    carouselHeadline: "How are we doing?",
+    carouselCta: "Tell us",
+    title: "Tell us what you think",
+    subtitle: "It takes a second and it helps us make Steps better for your family.",
+    placeholder: "Anything you'd like us to know? (optional)",
+    send: "Send feedback",
+    thanks: "Thank you! 💛",
+    failed: "Couldn't send that — please try again.",
+  },
   adminHome: {
     needsYouTitle: "🔔 Needs you",
     allClearTitle: "All caught up",
@@ -460,6 +470,7 @@ export const en = {
 
     tapPhotoToEditTags: "Tap a photo to edit tags",
     quoteLabel: "💬 Pinned message for families",
+    quoteFrom: "From Steps Academy",
     quotePlaceholder: "A short note shown above every album...",
     quoteSave: "Save",
     captionNoteLabel: "Note from the Academy",
@@ -831,6 +842,16 @@ export const ar: Translations = {
     capacityPlaceholder: "مثال: 10",
     capacityHint: "اتركه فارغاً أو 0 لعدد أماكن غير محدود.",
   },
+  feedback: {
+    carouselHeadline: "كيف أداؤنا؟",
+    carouselCta: "أخبرنا",
+    title: "أخبرنا برأيك",
+    subtitle: "لن يستغرق سوى لحظة، ويساعدنا على تحسين ستيبس لعائلتك.",
+    placeholder: "هل من شيء تودّ إخبارنا به؟ (اختياري)",
+    send: "إرسال الرأي",
+    thanks: "شكراً لك! 💛",
+    failed: "تعذّر الإرسال — حاول مرة أخرى.",
+  },
   adminHome: {
     needsYouTitle: "🔔 بحاجة إليك",
     allClearTitle: "كل شيء منجز",
@@ -967,6 +988,7 @@ export const ar: Translations = {
 
     tapPhotoToEditTags: "اضغط على صورة لتعديل الوسوم",
     quoteLabel: "💬 رسالة مثبّتة للعائلات",
+    quoteFrom: "من أكاديمية ستيبس",
     quotePlaceholder: "ملاحظة قصيرة تظهر فوق كل الألبومات...",
     quoteSave: "حفظ",
     captionNoteLabel: "ملاحظة من الأكاديمية",
@@ -1337,6 +1359,16 @@ export const he: Translations = {
     capacityPlaceholder: "לדוגמה: 10",
     capacityHint: "השאר ריק או 0 למקומות ללא הגבלה.",
   },
+  feedback: {
+    carouselHeadline: "איך אנחנו מסתדרים?",
+    carouselCta: "ספרו לנו",
+    title: "ספרו לנו מה דעתכם",
+    subtitle: "זה לוקח רגע ועוזר לנו לשפר את סטפס עבור המשפחה שלכם.",
+    placeholder: "משהו שתרצו שנדע? (אופציונלי)",
+    send: "שליחת משוב",
+    thanks: "תודה! 💛",
+    failed: "לא ניתן לשלוח — נסו שוב.",
+  },
   adminHome: {
     needsYouTitle: "🔔 דורש טיפול",
     allClearTitle: "הכול מעודכן",
@@ -1473,6 +1505,7 @@ export const he: Translations = {
 
     tapPhotoToEditTags: "הקש על תמונה כדי לערוך תיוגים",
     quoteLabel: "💬 הודעה מוצמדת למשפחות",
+    quoteFrom: "מאקדמיית סטפס",
     quotePlaceholder: "הערה קצרה שתופיע מעל כל האלבומים...",
     quoteSave: "שמור",
     captionNoteLabel: "הערה מהאקדמיה",

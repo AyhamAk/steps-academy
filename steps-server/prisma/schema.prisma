@@ -36,6 +36,19 @@ enum WeekDay {
   thu
 }
 
+/// A parent's rating and note about the app itself, read by the academy.
+model Feedback {
+  id        String   @id @default(uuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  /// 1–5. Kept alongside the message so trends are readable at a glance.
+  rating    Int
+  message   String?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
+
 /// Small key/value store for academy-wide settings, e.g. the gallery quote.
 model AppSetting {
   key       String   @id
@@ -80,6 +93,7 @@ model User {
   notifications Notification[]
   children      ParentStudent[]
 
+  feedback            Feedback[]
   enrollmentRequests  CourseEnrollment[] @relation("EnrollmentRequester")
   enrollmentDecisions CourseEnrollment[] @relation("EnrollmentDecider")
 }

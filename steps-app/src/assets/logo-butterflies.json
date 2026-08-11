@@ -1,0 +1,37 @@
+[
+  {
+    "name": "logo-butterfly-1.png",
+    "left": 0.63123,
+    "top": 0.16957,
+    "width": 0.12533,
+    "height": 0.22287
+  },
+  {
+    "name": "logo-butterfly-2.png",
+    "left": 0.90223,
+    "top": 0.32364,
+    "width": 0.0853,
+    "height": 0.09205
+  },
+  {
+    "name": "logo-butterfly-3.png",
+    "left": 0.70538,
+    "top": 0.04264,
+    "width": 0.05052,
+    "height": 0.07364
+  },
+  {
+    "name": "logo-butterfly-4.png",
+    "left": 0.91798,
+    "top": 0.03391,
+    "width": 0.07218,
+    "height": 0.12112
+  },
+  {
+    "name": "logo-butterfly-5.png",
+    "left": 0.98031,
+    "top": 0.23643,
+    "width": 0.01509,
+    "height": 0.02229
+  }
+]

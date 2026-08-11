@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Image, StyleSheet } from "react-native";
+import { Image, StyleSheet, View } from "react-native";
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -13,66 +13,66 @@ import Animated, {
 
 import { useReduceMotionSetting } from "../../hooks/useReduceMotionSetting";
 
-/**
- * The logo drifts, sways and breathes on a loop.
- *
- * Deliberately animated in code rather than shipped as a GIF: the artwork is
- * a 1524px PNG, so a GIF at that size would be heavy and visibly dithered
- * (GIF is limited to 256 colours), and reliable cross-platform GIF playback
- * would mean adding a native image library and rebuilding. This stays sharp
- * at any size and costs nothing.
- *
- * The three loops use different durations so they drift out of phase, which
- * reads as organic rather than mechanical.
- */
-export function StepsLogo() {
-  const reduceMotion = useReduceMotionSetting();
+const LOGO_WIDTH = 220;
+const LOGO_HEIGHT = 150;
 
-  const entrance = useSharedValue(reduceMotion ? 1 : 0.6);
-  const opacity = useSharedValue(reduceMotion ? 1 : 0);
-  const floatY = useSharedValue(0);
-  const tilt = useSharedValue(0);
-  const breathe = useSharedValue(1);
+/**
+ * The butterflies, lifted out of the artwork so they can move on their own.
+ *
+ * The logo shipped as one flat PNG, which can only ever be animated as a
+ * single block. These were separated out by colour (they're the only
+ * saturated blue in that corner of the image) and erased from the base, so
+ * each one can now flutter independently over it. Positions are fractions of
+ * the logo box, so they stay put at any size.
+ *
+ * Each has its own drift, rise and timing — matching numbers would read as a
+ * single object sliding around rather than separate butterflies.
+ */
+const BUTTERFLIES = [
+  {
+    source: require("../../assets/logo-butterfly-1.png"),
+    left: 0.6312, top: 0.1696, width: 0.1253, height: 0.2229,
+    driftX: 7, driftY: -9, tilt: 9, duration: 2600, delay: 0,
+  },
+  {
+    source: require("../../assets/logo-butterfly-2.png"),
+    left: 0.9022, top: 0.3236, width: 0.0853, height: 0.0921,
+    driftX: -6, driftY: -7, tilt: -11, duration: 3100, delay: 420,
+  },
+  {
+    source: require("../../assets/logo-butterfly-3.png"),
+    left: 0.7054, top: 0.0426, width: 0.0505, height: 0.0736,
+    driftX: 5, driftY: 6, tilt: 13, duration: 2300, delay: 900,
+  },
+  {
+    source: require("../../assets/logo-butterfly-4.png"),
+    left: 0.9180, top: 0.0339, width: 0.0722, height: 0.1211,
+    driftX: -5, driftY: 8, tilt: -8, duration: 2900, delay: 1300,
+  },
+  {
+    source: require("../../assets/logo-butterfly-5.png"),
+    left: 0.9803, top: 0.2364, width: 0.0151, height: 0.0223,
+    driftX: 4, driftY: -5, tilt: 0, duration: 2100, delay: 700,
+  },
+] as const;
+
+function Butterfly({
+  config,
+  reduceMotion,
+}: {
+  config: (typeof BUTTERFLIES)[number];
+  reduceMotion: boolean;
+}) {
+  const progress = useSharedValue(0);
 
   useEffect(() => {
     if (reduceMotion) return;
-
-    entrance.value = withSpring(1, { damping: 11, stiffness: 110 });
-    opacity.value = withTiming(1, { duration: 600 });
-
-    // Rise and fall, like the balloon is carrying it.
-    floatY.value = withDelay(
-      500,
+    progress.value = withDelay(
+      config.delay,
       withRepeat(
         withSequence(
-          withTiming(-9, { duration: 1600, easing: Easing.inOut(Easing.sin) }),
-          withTiming(0, { duration: 1600, easing: Easing.inOut(Easing.sin) })
-        ),
-        -1,
-        false
-      )
-    );
-
-    // A slow lean either side of upright.
-    tilt.value = withDelay(
-      500,
-      withRepeat(
-        withSequence(
-          withTiming(1, { duration: 2300, easing: Easing.inOut(Easing.sin) }),
-          withTiming(-1, { duration: 2300, easing: Easing.inOut(Easing.sin) })
-        ),
-        -1,
-        true
-      )
-    );
-
-    // Barely-there scale change; enough to feel alive, not enough to notice.
-    breathe.value = withDelay(
-      500,
-      withRepeat(
-        withSequence(
-          withTiming(1.025, { duration: 1900, easing: Easing.inOut(Easing.ease) }),
-          withTiming(1, { duration: 1900, easing: Easing.inOut(Easing.ease) })
+          withTiming(1, { duration: config.duration, easing: Easing.inOut(Easing.sin) }),
+          withTiming(0, { duration: config.duration, easing: Easing.inOut(Easing.sin) })
         ),
         -1,
         false
@@ -80,30 +80,87 @@ export function StepsLogo() {
     );
   }, [reduceMotion]);
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
+  const style = useAnimatedStyle(() => ({
     transform: [
-      { translateY: floatY.value },
-      { rotate: `${tilt.value * 1.6}deg` },
-      { scale: entrance.value * breathe.value },
+      { translateX: progress.value * config.driftX },
+      { translateY: progress.value * config.driftY },
+      { rotate: `${progress.value * config.tilt}deg` },
     ],
   }));
 
   return (
-    <Animated.View style={animatedStyle}>
-      <Image
-        source={require("../../assets/steps-logo.png")}
-        style={styles.logo}
-        resizeMode="contain"
-      />
+    <Animated.Image
+      source={config.source}
+      resizeMode="contain"
+      style={[
+        styles.butterfly,
+        {
+          left: config.left * LOGO_WIDTH,
+          top: config.top * LOGO_HEIGHT,
+          width: config.width * LOGO_WIDTH,
+          height: config.height * LOGO_HEIGHT,
+        },
+        style,
+      ]}
+    />
+  );
+}
+
+export function StepsLogo() {
+  const reduceMotion = useReduceMotionSetting();
+
+  const entrance = useSharedValue(reduceMotion ? 1 : 0.6);
+  const opacity = useSharedValue(reduceMotion ? 1 : 0);
+  const floatY = useSharedValue(0);
+
+  useEffect(() => {
+    if (reduceMotion) return;
+    entrance.value = withSpring(1, { damping: 11, stiffness: 110 });
+    opacity.value = withTiming(1, { duration: 600 });
+    // The logo itself only drifts now — the life comes from the butterflies.
+    floatY.value = withDelay(
+      500,
+      withRepeat(
+        withSequence(
+          withTiming(-5, { duration: 1900, easing: Easing.inOut(Easing.sin) }),
+          withTiming(0, { duration: 1900, easing: Easing.inOut(Easing.sin) })
+        ),
+        -1,
+        false
+      )
+    );
+  }, [reduceMotion]);
+
+  const containerStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [{ translateY: floatY.value }, { scale: entrance.value }],
+  }));
+
+  return (
+    <Animated.View style={[styles.container, containerStyle]}>
+      <View style={styles.stage}>
+        <Image source={require("../../assets/logo-base.png")} style={styles.base} resizeMode="contain" />
+        {BUTTERFLIES.map((config) => (
+          <Butterfly key={config.source} config={config} reduceMotion={reduceMotion} />
+        ))}
+      </View>
     </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
-  logo: {
-    width: 220,
-    height: 150,
+  container: {
     alignSelf: "center",
+  },
+  stage: {
+    width: LOGO_WIDTH,
+    height: LOGO_HEIGHT,
+  },
+  base: {
+    width: LOGO_WIDTH,
+    height: LOGO_HEIGHT,
+  },
+  butterfly: {
+    position: "absolute",
   },
 });
