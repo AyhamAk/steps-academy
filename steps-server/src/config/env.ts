@@ -11,8 +11,14 @@ if (nodeEnv === "production" && !process.env.JWT_SECRET) {
   const seen = Object.keys(process.env)
     .filter((k) => /^(NODE_ENV|PORT|JWT_|DATABASE_|DIRECT_|R2_|GOOGLE_|ADMIN_|CORS_|RAILWAY_)/.test(k))
     .sort();
+  const where = [
+    `service=${process.env.RAILWAY_SERVICE_NAME ?? "?"}`,
+    `env=${process.env.RAILWAY_ENVIRONMENT_NAME ?? "?"}`,
+    `branch=${process.env.RAILWAY_GIT_BRANCH ?? "?"}`,
+    `commit=${(process.env.RAILWAY_GIT_COMMIT_SHA ?? "?").slice(0, 7)}`,
+  ].join(" ");
   throw new Error(
-    `JWT_SECRET must be set in production. Config-related variables this process can see: ${
+    `JWT_SECRET must be set in production. Running as [${where}]. Config-related variables this process can see: ${
       seen.length ? seen.join(", ") : "(none at all)"
     }`
   );
