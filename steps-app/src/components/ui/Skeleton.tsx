@@ -125,7 +125,56 @@ export function SkeletonPhotoGrid({ tileSize, count = 9 }: { tileSize: number; c
   );
 }
 
+/**
+ * The whole Home body in placeholder form: hero, courses strip, timetable and
+ * announcement. Home holds this until every one of its queries has landed, so
+ * the page arrives in one piece instead of four sections popping in
+ * independently as each request finishes.
+ */
+export function SkeletonHomeSections({ isAdmin = false }: { isAdmin?: boolean }) {
+  return (
+    <View>
+      {isAdmin ? (
+        <View style={styles.adminBlock}>
+          <SkeletonBlock width="100%" height={58} borderRadius={16} style={styles.courseGap} />
+          <SkeletonBlock width="100%" height={58} borderRadius={16} />
+        </View>
+      ) : (
+        <>
+          <SkeletonBlock width="100%" height={190} borderRadius={20} style={styles.heroGap} />
+          <View style={styles.sectionHeader}>
+            <SkeletonBlock width="42%" height={17} />
+          </View>
+          <SkeletonCourseRow />
+        </>
+      )}
+
+      <View style={styles.sectionHeader}>
+        <SkeletonBlock width="38%" height={17} />
+      </View>
+      <View style={styles.card}>
+        <SkeletonScheduleRows count={3} />
+      </View>
+
+      <View style={styles.sectionHeader}>
+        <SkeletonBlock width="46%" height={17} />
+      </View>
+      <SkeletonEventCard thumbCount={0} />
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
+  heroGap: {
+    marginTop: 16,
+  },
+  sectionHeader: {
+    marginTop: 24,
+    marginBottom: 12,
+  },
+  adminBlock: {
+    marginTop: 16,
+  },
   card: {
     backgroundColor: Colors.card,
     borderRadius: 16,

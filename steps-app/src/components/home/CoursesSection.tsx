@@ -6,6 +6,7 @@ import { Colors } from "../../constants/Colors";
 import { Fonts } from "../../constants/Fonts";
 import { Type } from "../../constants/Typography";
 import { useTranslation } from "../../i18n/useTranslation";
+import { DataErrorState } from "../ui/DataErrorState";
 import { SkeletonCourseRow } from "../ui/Skeleton";
 import { Touchable } from "../ui/Touchable";
 import {
@@ -24,7 +25,10 @@ export function CoursesSection() {
   const queryClient = useQueryClient();
   const [detailId, setDetailId] = useState<string | null>(null);
 
-  const { data: courses } = useQuery({ queryKey: ["courses"], queryFn: listCourses });
+  const { data: courses, isPending, isError, refetch } = useQuery({
+    queryKey: ["courses"],
+    queryFn: listCourses,
+  });
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: ["courses"] });
 
@@ -53,11 +57,21 @@ export function CoursesSection() {
   });
 
   // Still loading — show the shape of what's coming rather than nothing.
-  if (!courses) {
+  if (isPending) {
     return (
       <View style={styles.section}>
         <Text style={[styles.sectionTitle, rtlText]}>{t.courses.sectionTitle}</Text>
         <SkeletonCourseRow />
+      </View>
+    );
+  }
+  // A failed request used to leave `courses` undefined, which looked exactly
+  // like loading — the skeleton shimmered forever.
+  if (isError || !courses) {
+    return (
+      <View style={styles.section}>
+        <Text style={[styles.sectionTitle, rtlText]}>{t.courses.sectionTitle}</Text>
+        <DataErrorState compact onRetry={() => void refetch()} />
       </View>
     );
   }

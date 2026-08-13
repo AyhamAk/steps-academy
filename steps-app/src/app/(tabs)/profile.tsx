@@ -10,6 +10,7 @@ import { MyCoursesSection } from "../../components/profile/MyCoursesSection";
 import { Screen } from "../../components/Screen";
 import { LanguagePicker } from "../../components/ui/LanguagePicker";
 import { ScreenFadeIn } from "../../components/ui/ScreenFadeIn";
+import { SkeletonBlock } from "../../components/ui/Skeleton";
 import { StepsButton } from "../../components/ui/StepsButton";
 import { StepsCard } from "../../components/ui/StepsCard";
 import { ToastBanner, useToast } from "../../components/ui/Toast";
@@ -38,7 +39,7 @@ export default function ProfileScreen() {
 
   // Shares its cache key with Home/ParentGalleryScreen — visiting any of the
   // three warms the others, so this rarely triggers its own fetch.
-  const { data: galleryGroups } = useQuery({
+  const { data: galleryGroups, isPending: isGalleryPending } = useQuery({
     queryKey: ["gallery", "mine"],
     queryFn: myGallery,
     enabled: children.length > 0,
@@ -190,9 +191,13 @@ export default function ProfileScreen() {
               <View style={[styles.dashCard, isRTL ? styles.dashCardAccentRTL : styles.dashCardAccentLTR]}>
                 <View style={[styles.dashRow, isRTL && styles.dashRowRTL]}>
                   <Text style={styles.dashEmoji}>📸</Text>
-                  <Text style={[styles.dashText, rtlText]}>
-                    {t.profile.photosThisMonth(photosThisMonthByChild.get(selectedChildId) ?? 0)}
-                  </Text>
+                  {isGalleryPending ? (
+                    <SkeletonBlock width="55%" height={14} />
+                  ) : (
+                    <Text style={[styles.dashText, rtlText]}>
+                      {t.profile.photosThisMonth(photosThisMonthByChild.get(selectedChildId) ?? 0)}
+                    </Text>
+                  )}
                 </View>
                 <View style={[styles.dashRow, styles.dashRowLast, isRTL && styles.dashRowRTL]}>
                   <Text style={styles.dashEmoji}>🖼️</Text>

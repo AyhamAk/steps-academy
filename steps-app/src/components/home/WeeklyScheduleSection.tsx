@@ -7,6 +7,7 @@ import { Fonts } from "../../constants/Fonts";
 import { Type } from "../../constants/Typography";
 import { useTranslation } from "../../i18n/useTranslation";
 import { formatTime, getWeekSchedule, WEEK_DAYS, WeekDay } from "../../services/scheduleApi";
+import { DataErrorState } from "../ui/DataErrorState";
 import { SkeletonScheduleRows } from "../ui/Skeleton";
 import { Touchable } from "../ui/Touchable";
 
@@ -36,7 +37,10 @@ export function WeeklyScheduleSection() {
   const weekDates = datesForThisWeek();
   const [selectedDay, setSelectedDay] = useState<WeekDay>(today);
 
-  const { data: days } = useQuery({ queryKey: ["schedule"], queryFn: getWeekSchedule });
+  const { data: days, isPending, isError, refetch } = useQuery({
+    queryKey: ["schedule"],
+    queryFn: getWeekSchedule,
+  });
 
   // Hide the whole section until the academy has set a timetable.
   if (days && days.every((day) => day.activities.length === 0)) return null;
@@ -82,8 +86,10 @@ export function WeeklyScheduleSection() {
       </View>
 
       <View style={styles.scheduleCard}>
-        {!days ? (
+        {isPending ? (
           <SkeletonScheduleRows />
+        ) : isError || !days ? (
+          <DataErrorState compact onRetry={() => void refetch()} />
         ) : !dayData || dayData.activities.length === 0 ? (
           <View style={styles.placeholder}>
             <Text style={styles.placeholderText}>{t.home.scheduleEmptyDay}</Text>

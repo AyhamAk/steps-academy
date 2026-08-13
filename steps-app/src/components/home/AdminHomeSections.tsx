@@ -8,6 +8,7 @@ import { Fonts } from "../../constants/Fonts";
 import { Type } from "../../constants/Typography";
 import { useTranslation } from "../../i18n/useTranslation";
 import { adminOverview } from "../../services/studentsApi";
+import { DataErrorState } from "../ui/DataErrorState";
 import { SkeletonBlock } from "../ui/Skeleton";
 import { Touchable } from "../ui/Touchable";
 
@@ -28,7 +29,10 @@ type Action = {
  */
 export function AdminHomeSections() {
   const { t, isRTL, rtlText } = useTranslation();
-  const { data } = useQuery({ queryKey: ["admin", "overview"], queryFn: adminOverview });
+  const { data, isPending, isError, refetch } = useQuery({
+    queryKey: ["admin", "overview"],
+    queryFn: adminOverview,
+  });
 
   const actions: Action[] = [
     {
@@ -98,11 +102,13 @@ export function AdminHomeSections() {
       <View style={styles.section}>
         <Text style={[styles.sectionTitle, rtlText]}>{t.adminHome.needsYouTitle}</Text>
 
-        {!data ? (
+        {isPending ? (
           <View style={styles.alertsLoading}>
             <SkeletonBlock width="100%" height={58} borderRadius={16} />
             <SkeletonBlock width="100%" height={58} borderRadius={16} />
           </View>
+        ) : isError || !data ? (
+          <DataErrorState compact onRetry={() => void refetch()} />
         ) : alerts.length === 0 ? (
           <View style={styles.allClear}>
             <Text style={styles.allClearEmoji}>✅</Text>

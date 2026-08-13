@@ -39,7 +39,8 @@ import { WeeklyScheduleSection } from "../../components/home/WeeklyScheduleSecti
 import { Screen } from "../../components/Screen";
 import { StepsButton } from "../../components/ui/StepsButton";
 import { StepsCard } from "../../components/ui/StepsCard";
-import { SkeletonEventCard } from "../../components/ui/Skeleton";
+import { DataErrorState } from "../../components/ui/DataErrorState";
+import { SkeletonHomeSections } from "../../components/ui/Skeleton";
 import { NotificationBell } from "../../components/ui/NotificationBell";
 import { StepsLogo } from "../../components/ui/StepsLogo";
 import { ToastBanner, useToast } from "../../components/ui/Toast";
@@ -50,6 +51,9 @@ import { useReduceMotionSetting } from "../../hooks/useReduceMotionSetting";
 import { Translations } from "../../i18n/translations";
 import { useTranslation } from "../../i18n/useTranslation";
 import { Announcement, createAnnouncement, getLatestAnnouncement } from "../../services/announcementsApi";
+import { listCourses } from "../../services/coursesApi";
+import { getWeekSchedule } from "../../services/scheduleApi";
+import { adminOverview } from "../../services/studentsApi";
 import {
   getNextEvent,
   isPhotoTaggedWithAny,
@@ -412,21 +416,53 @@ export default function HomeScreen() {
   const children = user?.children ?? [];
   const childIds = children.map((child) => child.id);
 
-  const { data: nextEvent } = useQuery({
+  const nextEventQuery = useQuery({
     queryKey: ["home", "nextEvent"],
     queryFn: getNextEvent,
   });
-  const { data: announcement } = useQuery({
+  const announcementQuery = useQuery({
     queryKey: ["home", "announcement"],
     queryFn: getLatestAnnouncement,
   });
   // Shares its cache key with ParentGalleryScreen's `myGallery` query — visiting
   // either screen warms the other, so this rarely triggers its own fetch.
-  const { data: galleryGroups } = useQuery({
+  const galleryQuery = useQuery({
     queryKey: ["gallery", "mine"],
     queryFn: myGallery,
     enabled: children.length > 0,
   });
+  // Same query keys as CoursesSection / WeeklyScheduleSection, so react-query
+  // hands back the one shared cache entry rather than fetching twice. Home only
+  // reads their status: it needs to know when *everything* has landed before it
+  // drops the skeleton, otherwise sections pop in one at a time.
+  const coursesQuery = useQuery({ queryKey: ["courses"], queryFn: listCourses });
+  const scheduleQuery = useQuery({ queryKey: ["schedule"], queryFn: getWeekSchedule });
+  const adminOverviewQuery = useQuery({
+    queryKey: ["admin", "overview"],
+    queryFn: adminOverview,
+    enabled: isAdmin,
+  });
+
+  const nextEvent = nextEventQuery.data;
+  const announcement = announcementQuery.data;
+  const galleryGroups = galleryQuery.data;
+
+  // A disabled query sits in `pending` forever, so only count the ones that
+  // actually run for this user — otherwise a childless parent or a non-admin
+  // would wait on a request that is never going to be made.
+  const sectionQueries = [
+    nextEventQuery,
+    announcementQuery,
+    scheduleQuery,
+    ...(isAdmin ? [adminOverviewQuery] : [coursesQuery]),
+    ...(children.length > 0 ? [galleryQuery] : []),
+  ];
+  const isHomeLoading = sectionQueries.some((query) => query.isPending && query.fetchStatus !== "idle");
+  const hasHomeFailed = sectionQueries.every((query) => query.isError);
+
+  const retryHome = () => {
+    for (const query of sectionQueries) void query.refetch();
+  };
   const heroPhotoUrl = useMemo(() => {
     if (!galleryGroups) return null;
     const tagged = galleryGroups
@@ -584,6 +620,12 @@ export default function HomeScreen() {
           {isAdmin ? null : <ChildStrip children={children} />}
         </Animated.View>
 
+        {isHomeLoading ? (
+          <SkeletonHomeSections isAdmin={isAdmin} />
+        ) : hasHomeFailed ? (
+          <DataErrorState onRetry={retryHome} />
+        ) : (
+          <>
         {isAdmin ? (
           <AdminHomeSections />
         ) : (
@@ -650,14 +692,14 @@ export default function HomeScreen() {
                 {formatRelativeTime(new Date(announcement.createdAt), t)}
               </Text>
             </StepsCard>
-          ) : announcement === null ? (
+          ) : (
             <View style={styles.emptyCard}>
               <Text style={styles.emptyCardText}>{t.home.noAnnouncementsYet}</Text>
             </View>
-          ) : (
-            <SkeletonEventCard thumbCount={0} />
           )}
         </Animated.View>
+          </>
+        )}
         </View>
 
         <View style={styles.footer}>
