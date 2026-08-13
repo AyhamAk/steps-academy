@@ -11,7 +11,7 @@
     "preview": {
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://REPLACE-WITH-RAILWAY-URL.up.railway.app",
+        "EXPO_PUBLIC_API_URL": "https://steps-academy-production.up.railway.app",
         "EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID": "653088358229-djr6l6lkr9sp875oji7jr1eargt63f8t.apps.googleusercontent.com",
         "EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID": "653088358229-8cs2o23b8jvtbp6ggropuo7c3hsvipb3.apps.googleusercontent.com",
         "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "653088358229-fiac1kbl1bm7kfg5lln3i36pjdltadch.apps.googleusercontent.com"
@@ -20,7 +20,7 @@
     "production": {
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://REPLACE-WITH-RAILWAY-URL.up.railway.app",
+        "EXPO_PUBLIC_API_URL": "https://steps-academy-production.up.railway.app",
         "EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID": "653088358229-djr6l6lkr9sp875oji7jr1eargt63f8t.apps.googleusercontent.com",
         "EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID": "653088358229-8cs2o23b8jvtbp6ggropuo7c3hsvipb3.apps.googleusercontent.com",
         "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "653088358229-fiac1kbl1bm7kfg5lln3i36pjdltadch.apps.googleusercontent.com"
