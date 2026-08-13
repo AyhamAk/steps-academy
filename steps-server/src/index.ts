@@ -21,6 +21,13 @@ import studentRoutes from "./routes/studentRoutes";
 
 const app = express();
 
+// Railway (and any platform proxy) terminates TLS and forwards the real client
+// IP in X-Forwarded-For. Without this, every request looks like it came from
+// the proxy, so the auth rate limiter would treat the whole academy as one
+// client and a few failed logins would lock everyone out. Trust only the
+// immediate hop — `true` would let a client forge its own IP via the header.
+app.set("trust proxy", 1);
+
 app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
 // Native mobile clients don't send an Origin header, so this mainly matters
 // if a web client is ever added. Set CORS_ORIGIN (comma-separated) once
