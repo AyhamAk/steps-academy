@@ -5,8 +5,17 @@ dotenv.config();
 const nodeEnv = process.env.NODE_ENV ?? "development";
 
 // Fail fast rather than silently issuing forgeable tokens in production.
+// Names only, never values: if the host isn't injecting variables the way we
+// expect, the message needs to say so instead of leaving us guessing.
 if (nodeEnv === "production" && !process.env.JWT_SECRET) {
-  throw new Error("JWT_SECRET must be set in production");
+  const seen = Object.keys(process.env)
+    .filter((k) => /^(NODE_ENV|PORT|JWT_|DATABASE_|DIRECT_|R2_|GOOGLE_|ADMIN_|CORS_|RAILWAY_)/.test(k))
+    .sort();
+  throw new Error(
+    `JWT_SECRET must be set in production. Config-related variables this process can see: ${
+      seen.length ? seen.join(", ") : "(none at all)"
+    }`
+  );
 }
 
 export const env = {
