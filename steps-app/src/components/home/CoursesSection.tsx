@@ -3,6 +3,7 @@ import { useState } from "react";
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { Colors } from "../../constants/Colors";
+import { Layout } from "../../constants/Layout";
 import { Fonts } from "../../constants/Fonts";
 import { Type } from "../../constants/Typography";
 import { useTranslation } from "../../i18n/useTranslation";
@@ -134,16 +135,20 @@ export function CoursesSection() {
                 <Text style={[styles.name, rtlText]} numberOfLines={2}>
                   {course.name}
                 </Text>
-                {formatCourseDays(course, t) ? (
-                  <Text style={[styles.meta, rtlText]} numberOfLines={1}>
-                    🗓 {formatCourseDays(course, t)}
-                  </Text>
-                ) : null}
-                {formatCourseDates(course, t) ? (
-                  <Text style={[styles.meta, rtlText]} numberOfLines={1}>
-                    📆 {formatCourseDates(course, t)}
-                  </Text>
-                ) : null}
+                {/* Fixed-height block: a course missing its days or dates leaves
+                    the space blank rather than shrinking the whole card. */}
+                <View style={styles.metaBlock}>
+                  {formatCourseDays(course, t) ? (
+                    <Text style={[styles.meta, rtlText]} numberOfLines={1}>
+                      🗓 {formatCourseDays(course, t)}
+                    </Text>
+                  ) : null}
+                  {formatCourseDates(course, t) ? (
+                    <Text style={[styles.meta, rtlText]} numberOfLines={1}>
+                      📆 {formatCourseDates(course, t)}
+                    </Text>
+                  ) : null}
+                </View>
 
                 <View
                   style={[
@@ -279,7 +284,8 @@ const styles = StyleSheet.create({
   },
   scroll: { gap: 12, paddingEnd: 8 },
   card: {
-    width: 176,
+    width: Layout.courseCard.width,
+    height: Layout.courseCard.height,
     backgroundColor: Colors.linen,
     borderRadius: 18,
     padding: 16,
@@ -291,17 +297,26 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     elevation: 2,
   },
-  cardInfo: { marginBottom: 12 },
+  // Absorbs the leftover space so the action button always sits on the bottom
+  // edge, level across every card in the row.
+  cardInfo: { flex: 1, marginBottom: 12 },
+  metaBlock: { height: Layout.courseCard.metaBlockHeight },
   cardAccent: { position: "absolute", top: 0, start: 0, end: 0, height: 4 },
   emoji: { fontSize: 32, marginBottom: 10 },
-  name: { fontFamily: Fonts.bold, fontSize: 15, color: Colors.bark, lineHeight: 20 },
+  name: {
+    fontFamily: Fonts.bold,
+    fontSize: 15,
+    color: Colors.bark,
+    lineHeight: 20,
+    height: Layout.courseCard.nameHeight,
+  },
   meta: { ...Type.caption, color: Colors.textLight, marginTop: 4 },
   badge: {
     borderRadius: 8,
     paddingHorizontal: 8,
     paddingVertical: 4,
     alignSelf: "flex-start",
-    marginTop: 10,
+    marginTop: "auto",
   },
   selfEnd: { alignSelf: "flex-end" },
   badgeText: { fontFamily: Fonts.bold, fontSize: 11 },

@@ -10,6 +10,7 @@ import Animated, {
 } from "react-native-reanimated";
 
 import { Colors } from "../../constants/Colors";
+import { Layout } from "../../constants/Layout";
 import { useReduceMotionSetting } from "../../hooks/useReduceMotionSetting";
 
 type SkeletonBlockProps = {
@@ -200,7 +201,10 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   courseCard: {
-    width: 176,
+    // Same fixed size as the real card, so the row doesn't resize when the
+    // skeleton is swapped out for content.
+    width: Layout.courseCard.width,
+    height: Layout.courseCard.height,
     backgroundColor: Colors.card,
     borderRadius: 18,
     borderWidth: 1,
