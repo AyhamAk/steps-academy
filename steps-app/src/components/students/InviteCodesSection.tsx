@@ -1,4 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import * as Clipboard from "expo-clipboard";
+import { useRef, useState } from "react";
 import { ActivityIndicator, Alert, Share, StyleSheet, Text, View } from "react-native";
 
 import { Colors } from "../../constants/Colors";
@@ -33,6 +35,18 @@ export function InviteCodesSection({
 }) {
   const { t, isRTL, rtlText } = useTranslation();
   const queryClient = useQueryClient();
+  // Which code just got copied, so its button can say so for a moment. A toast
+  // would have to live above the scroll view; this keeps the feedback next to
+  // the thing that was tapped.
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const copyTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const copy = async (invite: Invite) => {
+    await Clipboard.setStringAsync(invite.code);
+    if (copyTimeout.current) clearTimeout(copyTimeout.current);
+    setCopiedId(invite.id);
+    copyTimeout.current = setTimeout(() => setCopiedId(null), 1600);
+  };
 
   const {
     data: invites,
@@ -94,7 +108,9 @@ export function InviteCodesSection({
         invites.map((invite) => (
           <View key={invite.id} style={styles.row}>
             <View style={[styles.rowTop, isRTL && styles.rowReverse]}>
-              <Text style={styles.code}>{invite.code}</Text>
+              <Touchable onPress={() => copy(invite)} hitSlop={8}>
+                <Text style={styles.code}>{invite.code}</Text>
+              </Touchable>
               <View style={[styles.chip, { backgroundColor: `${STATUS_TINT[invite.status]}1F` }]}>
                 <Text style={[styles.chipText, { color: STATUS_TINT[invite.status] }]}>
                   {statusLabel(invite.status)}
@@ -105,6 +121,11 @@ export function InviteCodesSection({
             <View style={[styles.rowBottom, isRTL && styles.rowReverse]}>
               <Text style={[styles.uses, rtlText]}>{t.invite.adminUsesLeft(invite.usesLeft)}</Text>
               <View style={[styles.actions, isRTL && styles.rowReverse]}>
+                <Touchable onPress={() => copy(invite)} hitSlop={8}>
+                  <Text style={[styles.action, copiedId === invite.id && styles.copied]}>
+                    {copiedId === invite.id ? `✓ ${t.invite.adminCopied}` : t.invite.adminCopy}
+                  </Text>
+                </Touchable>
                 {invite.status === "active" ? (
                   <>
                     <Touchable onPress={() => share(invite.code)} hitSlop={8}>
@@ -188,6 +209,7 @@ const styles = StyleSheet.create({
   actions: { flexDirection: "row", gap: 16 },
   action: { fontFamily: Fonts.bold, fontSize: 13, color: Colors.terracotta },
   destructive: { color: Colors.clay },
+  copied: { color: Colors.forest },
   generate: { paddingVertical: 10, alignItems: "center" },
   generateText: { fontFamily: Fonts.bold, fontSize: 13, color: Colors.forest },
 });

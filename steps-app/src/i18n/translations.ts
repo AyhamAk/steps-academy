@@ -158,6 +158,8 @@ export const en = {
     adminNoCodes: "No codes yet for this child.",
     adminUsesLeft: (n: number) => (n === 1 ? "1 use left" : `${n} uses left`),
     adminShare: "Share",
+    adminCopy: "Copy",
+    adminCopied: "Code copied",
     adminRevoke: "Revoke",
     adminRevokeConfirm: "Revoke this code? Anyone still holding it won't be able to sign up.",
     adminShareMessage: (child: string, code: string) =>
@@ -740,6 +742,8 @@ export const ar: Translations = {
     adminNoCodes: "لا توجد رموز لهذا الطفل بعد.",
     adminUsesLeft: (n: number) => (n === 1 ? "متبقٍ استخدام واحد" : `متبقٍ ${n} استخدامات`),
     adminShare: "مشاركة",
+    adminCopy: "نسخ",
+    adminCopied: "تم نسخ الرمز",
     adminRevoke: "إلغاء",
     adminRevokeConfirm: "إلغاء هذا الرمز؟ لن يتمكن من يحمله من إنشاء حساب.",
     adminShareMessage: (child: string, code: string) =>
@@ -1312,6 +1316,8 @@ export const he: Translations = {
     adminNoCodes: "אין עדיין קודים לילד זה.",
     adminUsesLeft: (n: number) => (n === 1 ? "נותר שימוש אחד" : `נותרו ${n} שימושים`),
     adminShare: "שיתוף",
+    adminCopy: "העתק",
+    adminCopied: "הקוד הועתק",
     adminRevoke: "ביטול",
     adminRevokeConfirm: "לבטל את הקוד? מי שמחזיק בו לא יוכל להירשם.",
     adminShareMessage: (child: string, code: string) =>
