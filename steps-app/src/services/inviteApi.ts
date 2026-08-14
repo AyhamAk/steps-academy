@@ -7,7 +7,11 @@ export type Invite = {
   code: string;
   studentId: string;
   studentName: string;
+  guardianPhone: string | null;
   usesLeft: number;
+  /** How many accounts have used this code — 0 means the family hasn't signed up. */
+  redeemedCount: number;
+  sentAt: string | null;
   status: InviteStatus;
   expiresAt: string | null;
   createdAt: string;
@@ -43,4 +47,14 @@ export async function listInvites(studentId?: string) {
 
 export async function revokeInvite(inviteId: string) {
   await api.delete(`/api/invites/${inviteId}`);
+}
+
+/** One code for every child who hasn't got a usable one. Safe to run twice. */
+export async function bulkCreateInvites() {
+  const { data } = await api.post<{ createdCount: number }>("/api/invites/bulk");
+  return data.createdCount;
+}
+
+export async function markInviteSent(inviteId: string) {
+  await api.patch(`/api/invites/${inviteId}/sent`);
 }

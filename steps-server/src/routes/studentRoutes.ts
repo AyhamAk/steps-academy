@@ -2,6 +2,7 @@ import { Router } from "express";
 
 import {
   adminOverview,
+  bulkCreateStudents,
   createStudent,
   deleteStudent,
   linkGuardian,
@@ -19,6 +20,7 @@ const router = Router();
 // admin-only — a parent must never be able to create or link one.
 router.get("/", requireAuth, adminOnly, listStudents);
 router.post("/", requireAuth, adminOnly, createStudent);
+router.post("/bulk", requireAuth, adminOnly, bulkCreateStudents);
 router.patch("/:studentId", requireAuth, adminOnly, updateStudent);
 router.delete("/:studentId", requireAuth, adminOnly, deleteStudent);
 

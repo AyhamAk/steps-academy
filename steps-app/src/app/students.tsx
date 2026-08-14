@@ -1,3 +1,4 @@
+import { router } from "expo-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import {
@@ -225,6 +226,11 @@ export default function StudentsScreen() {
       <ScreenFadeIn style={styles.flex}>
         <StepsHeader title={t.students.title} subtitle={t.students.subtitle} showBack />
 
+        {/* Whole-roster action, so it belongs here rather than on a card. */}
+        <Touchable style={styles.sendCodesLink} onPress={() => router.push("/invite-send")}>
+          <Text style={styles.sendCodesText}>📨 {t.invite.sendTitle}</Text>
+        </Touchable>
+
         <View style={styles.addRow}>
           <TextInput
             value={newName}
@@ -299,6 +305,16 @@ export default function StudentsScreen() {
 }
 
 const styles = StyleSheet.create({
+  sendCodesLink: {
+    backgroundColor: `${Colors.forest}14`,
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginHorizontal: 16,
+    marginBottom: 4,
+    alignItems: "center",
+  },
+  sendCodesText: { fontFamily: Fonts.bold, fontSize: 14, color: Colors.forest },
   flex: { flex: 1 },
   rowReverse: { flexDirection: "row-reverse" },
   addRow: {

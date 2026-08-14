@@ -107,3 +107,12 @@ export async function listParents(query: PageQuery = {}) {
   );
   return data;
 }
+
+/** Paste-import a class. Names already on the roster are skipped, not errored. */
+export async function bulkCreateStudents(students: { name: string; phone: string | null }[]) {
+  const { data } = await api.post<{ createdCount: number; skippedCount: number }>(
+    "/api/students/bulk",
+    { students }
+  );
+  return data;
+}

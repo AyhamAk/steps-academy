@@ -13,12 +13,14 @@ function serializeStudent(student: {
   name: string;
   birthDate: string | null;
   notes: string | null;
+  guardianPhone?: string | null;
 }) {
   return {
     id: student.id,
     name: student.name,
     birthDate: student.birthDate,
     notes: student.notes,
+    guardianPhone: student.guardianPhone ?? null,
   };
 }
 
@@ -36,10 +38,11 @@ export async function listStudents(req: Request, res: Response) {
 }
 
 export async function createStudent(req: Request, res: Response) {
-  const { name, birthDate, notes } = req.body as {
+  const { name, birthDate, notes, guardianPhone } = req.body as {
     name?: string;
     birthDate?: string | null;
     notes?: string | null;
+    guardianPhone?: string | null;
   };
 
   if (!name || !name.trim()) {
@@ -50,6 +53,7 @@ export async function createStudent(req: Request, res: Response) {
     name,
     birthDate: birthDate?.trim() || null,
     notes: notes?.trim() || null,
+    guardianPhone: guardianPhone?.trim() || null,
   });
   res.status(201).json({ student: { ...serializeStudent(student), guardians: [] } });
 }
@@ -136,4 +140,45 @@ export async function adminOverview(_req: Request, res: Response) {
 /** Parents with no child linked yet, newest first. */
 export async function listAwaitingLink(_req: Request, res: Response) {
   res.json({ parents: await UserModel.listAwaitingLink() });
+}
+
+/**
+ * Paste-import a whole class. Entering sixty children one at a time was
+ * already the slowest part of setting up a term, and it's the prerequisite for
+ * sending sixty invite codes.
+ *
+ * Skips names already on the roster rather than erroring, so pasting the same
+ * list twice is harmless — an admin who isn't sure whether the first paste
+ * worked can simply do it again.
+ */
+export async function bulkCreateStudents(req: Request, res: Response) {
+  const { students } = req.body as {
+    students?: { name?: string; phone?: string | null }[];
+  };
+
+  if (!Array.isArray(students) || students.length === 0) {
+    return res.status(400).json({ message: "students must be a non-empty array" });
+  }
+
+  const existing = await StudentModel.existingNames();
+  const created: unknown[] = [];
+  let skipped = 0;
+
+  for (const entry of students) {
+    const name = entry?.name?.trim();
+    if (!name) continue;
+    // Guard within the batch too: a pasted list can repeat a name itself.
+    if (existing.has(name.toLowerCase())) {
+      skipped += 1;
+      continue;
+    }
+    existing.add(name.toLowerCase());
+    const student = await StudentModel.create({
+      name,
+      guardianPhone: entry.phone?.trim() || null,
+    });
+    created.push({ ...serializeStudent(student), guardians: [] });
+  }
+
+  res.status(201).json({ created, createdCount: created.length, skippedCount: skipped });
 }

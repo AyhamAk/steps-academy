@@ -78,6 +78,27 @@ export const InviteModel = {
     throw new Error("Could not generate a unique invite code");
   },
 
+  /** Students that have no usable code right now — the ones a bulk run covers. */
+  async studentIdsWithoutActiveCode(): Promise<string[]> {
+    const students = await prisma.student.findMany({
+      select: { id: true, inviteCodes: true },
+    });
+    return students
+      .filter((student) => !student.inviteCodes.some((code) => inviteStatus(code) === "active"))
+      .map((student) => student.id);
+  },
+
+  async markSent(id: string): Promise<InviteCode | null> {
+    try {
+      return await prisma.inviteCode.update({
+        where: { id },
+        data: { sentAt: new Date() },
+      });
+    } catch {
+      return null;
+    }
+  },
+
   async findByCode(raw: string) {
     return prisma.inviteCode.findUnique({
       where: { code: normaliseCode(raw) },

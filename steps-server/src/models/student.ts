@@ -8,6 +8,7 @@ type CreateStudentInput = {
   name: string;
   birthDate?: string | null;
   notes?: string | null;
+  guardianPhone?: string | null;
 };
 
 export const StudentModel = {
@@ -17,6 +18,7 @@ export const StudentModel = {
         name: input.name.trim(),
         birthDate: input.birthDate ?? null,
         notes: input.notes ?? null,
+        guardianPhone: input.guardianPhone ?? null,
       },
     });
   },
@@ -29,6 +31,7 @@ export const StudentModel = {
           ...(input.name !== undefined ? { name: input.name.trim() } : {}),
           ...(input.birthDate !== undefined ? { birthDate: input.birthDate } : {}),
           ...(input.notes !== undefined ? { notes: input.notes } : {}),
+          ...(input.guardianPhone !== undefined ? { guardianPhone: input.guardianPhone } : {}),
         },
       });
     } catch {
@@ -47,6 +50,12 @@ export const StudentModel = {
 
   async findById(id: string): Promise<Student | null> {
     return prisma.student.findUnique({ where: { id } });
+  },
+
+  /** Names already on the roster, lowercased, for de-duplicating a paste import. */
+  async existingNames(): Promise<Set<string>> {
+    const students = await prisma.student.findMany({ select: { name: true } });
+    return new Set(students.map((student) => student.name.trim().toLowerCase()));
   },
 
   async listAll(): Promise<Student[]> {

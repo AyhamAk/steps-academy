@@ -1,7 +1,9 @@
 import { Router } from "express";
 
 import {
+  bulkCreateInvites,
   createInvite,
+  markInviteSent,
   listInvites,
   redeemInvite,
   revokeInvite,
@@ -15,6 +17,8 @@ const router = Router();
 // so it sits behind the same admin-only bar as the student roster itself.
 router.post("/", requireAuth, adminOnly, createInvite);
 router.get("/", requireAuth, adminOnly, listInvites);
+router.post("/bulk", requireAuth, adminOnly, bulkCreateInvites);
+router.patch("/:inviteId/sent", requireAuth, adminOnly, markInviteSent);
 router.delete("/:inviteId", requireAuth, adminOnly, revokeInvite);
 
 // A logged-in parent adding a second child. Rate-limited like the auth routes:

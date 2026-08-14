@@ -155,13 +155,16 @@ model CourseEnrollment {
 /// A child enrolled at the academy. Created by an admin — never by a parent
 /// typing a name — because photo visibility is derived from these records.
 model Student {
-  id        String   @id @default(uuid())
-  name      String
+  id            String   @id @default(uuid())
+  name          String
   /// ISO yyyy-mm-dd. Optional, but the practical way to tell apart two
   /// children who share a first name.
-  birthDate String?
-  notes     String?
-  createdAt DateTime @default(now())
+  birthDate     String?
+  notes         String?
+  /// The family's WhatsApp/mobile number, used to send their invite code.
+  /// Not an account: parents have no record here until they register.
+  guardianPhone String?
+  createdAt     DateTime @default(now())
 
   guardians   ParentStudent[]
   tags        PhotoTag[]
@@ -293,6 +296,9 @@ model InviteCode {
   useCount  Int       @default(0)
   expiresAt DateTime?
   revokedAt DateTime?
+  /// When the admin sent this code to the family. Distinct from redemption —
+  /// the gap between the two is exactly the list worth chasing.
+  sentAt    DateTime?
   createdAt DateTime  @default(now())
 
   redemptions InviteRedemption[]

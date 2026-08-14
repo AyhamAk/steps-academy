@@ -118,7 +118,10 @@ export async function listInvites(req: Request, res: Response) {
       code: formatCode(invite.code),
       studentId: invite.studentId,
       studentName: invite.student.name,
+      guardianPhone: invite.student.guardianPhone,
       usesLeft: Math.max(0, invite.maxUses - invite.useCount),
+      redeemedCount: invite.redemptions.length,
+      sentAt: invite.sentAt,
       status: inviteStatus(invite),
       expiresAt: invite.expiresAt,
       createdAt: invite.createdAt,
@@ -132,4 +135,28 @@ export async function revokeInvite(req: Request, res: Response) {
     return res.status(404).json({ message: "Invite not found" });
   }
   res.json({ message: "Invite revoked" });
+}
+
+/**
+ * One code for every child who hasn't got a usable one. Deliberately skips
+ * children that already have an active code: two live codes for one family is
+ * exactly the confusion this is meant to remove, and it makes the button safe
+ * to press again after adding a student mid-term.
+ */
+export async function bulkCreateInvites(req: Request, res: Response) {
+  const studentIds = await InviteModel.studentIdsWithoutActiveCode();
+
+  for (const studentId of studentIds) {
+    await InviteModel.create({ studentId, createdBy: req.userId! });
+  }
+
+  res.status(201).json({ createdCount: studentIds.length });
+}
+
+export async function markInviteSent(req: Request, res: Response) {
+  const invite = await InviteModel.markSent(param(req, "inviteId"));
+  if (!invite) {
+    return res.status(404).json({ message: "Invite not found" });
+  }
+  res.json({ sentAt: invite.sentAt });
 }
