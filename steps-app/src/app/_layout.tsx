@@ -33,7 +33,9 @@ function useAuthGate(ready: boolean) {
     // The root Stack only mounts once `ready` is true (see RootLayout below) —
     // navigating any earlier throws "attempted to navigate before mounting the root layout".
     if (!ready) return;
-    const inAuthScreen = segments[0] === "auth";
+    // Onboarding is reached without a token by design — that's the whole point
+    // of an invite flow — so it counts as an auth screen for gating purposes.
+    const inAuthScreen = segments[0] === "auth" || segments[0] === "onboarding";
     if (!token && !inAuthScreen) {
       router.replace("/auth");
     } else if (token && inAuthScreen) {

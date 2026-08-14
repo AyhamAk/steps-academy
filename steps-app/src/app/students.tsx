@@ -12,6 +12,7 @@ import {
 
 import { EmptyState } from "../components/gallery/EmptyState";
 import { Screen } from "../components/Screen";
+import { InviteCodesSection } from "../components/students/InviteCodesSection";
 import { BalloonLoader } from "../components/ui/BalloonLoader";
 import { ScreenFadeIn } from "../components/ui/ScreenFadeIn";
 import { StepsButton } from "../components/ui/StepsButton";
@@ -189,6 +190,10 @@ function StudentCard({ student }: { student: Student }) {
           <Text style={styles.addGuardianText}>+ {t.students.addGuardian}</Text>
         </Touchable>
       )}
+
+      {/* Linking by hand still exists for parents who registered before invite
+          codes; for everyone new, handing over a code does the linking. */}
+      <InviteCodesSection studentId={student.id} studentName={student.name} />
     </View>
   );
 }

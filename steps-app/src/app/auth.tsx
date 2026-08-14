@@ -130,18 +130,11 @@ function PasswordInput({
 
 export default function AuthScreen() {
   const { t } = useTranslation();
-  const [mode, setMode] = useState<Mode>("login");
-  const [name, setName] = useState("");
+  const [mode] = useState<Mode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [childName, setChildName] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
-  const { isLoading, error, register, login, signInWithGoogle } = useAuth();
-
-  const goToMode = (next: Mode) => {
-    setFormError(null);
-    setMode(next);
-  };
+  const { isLoading, error, login, signInWithGoogle } = useAuth();
 
   const [, response, promptAsync] = Google.useAuthRequest({
     iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
@@ -157,23 +150,6 @@ export default function AuthScreen() {
       if (ok) router.replace("/(tabs)");
     });
   }, [response]);
-
-  const handleRegister = async () => {
-    if (!name.trim()) return setFormError(t.auth.nameRequired);
-    if (!EMAIL_REGEX.test(email.trim())) return setFormError(t.auth.emailInvalid);
-    if (password.length < MIN_PASSWORD_LENGTH) return setFormError(t.auth.passwordTooShort);
-
-    setFormError(null);
-    // Children are linked by the academy after signup — a parent typing a name
-    // must not be what grants access to that child's photos.
-    const ok = await register({
-      name: name.trim(),
-      email: email.trim(),
-      password,
-      childName: childName.trim() || undefined,
-    });
-    if (ok) router.replace("/(tabs)");
-  };
 
   const handleLogin = async () => {
     if (!EMAIL_REGEX.test(email.trim())) return setFormError(t.auth.emailInvalid);
@@ -247,74 +223,14 @@ export default function AuthScreen() {
 
                 {googleBlock}
 
-                <Touchable onPress={() => goToMode("register")} style={styles.linkButton}>
+                <Touchable onPress={() => router.push("/onboarding")} style={styles.linkButton}>
                   <Text style={styles.link}>
-                    {t.auth.noAccount} <Text style={styles.linkAccent}>{t.auth.createAccount}</Text>
+                    {t.auth.noAccount} <Text style={styles.linkAccent}>{t.invite.haveCode}</Text>
                   </Text>
                 </Touchable>
               </View>
             </AnimatedPanel>
-          ) : (
-            <AnimatedPanel>
-              <View style={styles.stack}>
-                <Text style={styles.heading}>{t.auth.createAccount}</Text>
-
-                <AuthInput
-                  placeholder={t.auth.namePlaceholder}
-                  placeholderTextColor={Colors.textLight}
-                  value={name}
-                  onChangeText={(v) => {
-                    setName(v);
-                    setFormError(null);
-                  }}
-                />
-                <AuthInput
-                  placeholder={t.auth.emailPlaceholder}
-                  placeholderTextColor={Colors.textLight}
-                  value={email}
-                  onChangeText={(v) => {
-                    setEmail(v);
-                    setFormError(null);
-                  }}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  keyboardType="email-address"
-                />
-                <PasswordInput
-                  placeholder={t.auth.passwordPlaceholder}
-                  value={password}
-                  onChangeText={(v) => {
-                    setPassword(v);
-                    setFormError(null);
-                  }}
-                />
-
-                <AuthInput
-                  placeholder={t.auth.childNamePlaceholder}
-                  placeholderTextColor={Colors.textLight}
-                  value={childName}
-                  onChangeText={setChildName}
-                />
-                <Text style={styles.childrenHint}>{t.auth.childrenLinkedByAcademy}</Text>
-
-                {message ? <Text style={styles.error}>{message}</Text> : null}
-
-                <StepsButton
-                  label={t.auth.createAccountButton}
-                  onPress={handleRegister}
-                  loading={isLoading}
-                />
-
-                {googleBlock}
-
-                <Touchable onPress={() => goToMode("login")} style={styles.linkButton}>
-                  <Text style={styles.link}>
-                    {t.auth.haveAccount} <Text style={styles.linkAccent}>{t.auth.signIn}</Text>
-                  </Text>
-                </Touchable>
-              </View>
-            </AnimatedPanel>
-          )}
+          ) : null}
           <View style={styles.languageBlock}>
             <LanguagePicker compact />
           </View>

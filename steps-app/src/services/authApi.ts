@@ -10,8 +10,8 @@ export async function registerRequest(input: {
   email: string;
   name: string;
   password: string;
-  /** A claim for the academy to act on — it grants no access on its own. */
-  childName?: string;
+  /** Required. Proves the academy invited them, and says which child they belong to. */
+  inviteCode: string;
 }) {
   const { data } = await api.post<AuthResponse>("/api/auth/register", input);
   return data;
@@ -22,8 +22,9 @@ export async function loginRequest(input: { email: string; password: string }) {
   return data;
 }
 
-export async function googleAuthRequest(idToken: string) {
-  const { data } = await api.post<AuthResponse>("/api/auth/google", { idToken });
+/** `inviteCode` is only needed the first time a given Google account signs in. */
+export async function googleAuthRequest(idToken: string, inviteCode?: string) {
+  const { data } = await api.post<AuthResponse>("/api/auth/google", { idToken, inviteCode });
   return data;
 }
 

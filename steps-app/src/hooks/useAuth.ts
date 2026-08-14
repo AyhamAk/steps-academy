@@ -50,7 +50,7 @@ export function useAuth() {
   );
 
   const register = useCallback(
-    (input: { email: string; name: string; password: string; childName?: string }) =>
+    (input: { email: string; name: string; password: string; inviteCode: string }) =>
       run(() => registerRequest(input)),
     [run]
   );
