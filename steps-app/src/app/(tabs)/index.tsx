@@ -171,7 +171,7 @@ function HeroCarousel({
         style={{ width: slideWidth }}
       >
         <LinearGradient
-          colors={[Colors.terracotta, Colors.clay]}
+          colors={[Colors.terracottaDeep, Colors.terracotta]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={[styles.carouselSlide, { width: slideWidth }]}
@@ -200,7 +200,12 @@ function HeroCarousel({
           </Touchable>
         </LinearGradient>
 
-        <View style={[styles.carouselSlide, { width: slideWidth, backgroundColor: Colors.forest }]}>
+        <LinearGradient
+          colors={[Colors.forestDeep, Colors.forest]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={[styles.carouselSlide, { width: slideWidth }]}
+        >
           <Text style={[styles.carouselEmoji, { textAlign, alignSelf: startAlign }]}>💬</Text>
           <Text style={[styles.carouselHeadline, { textAlign, alignSelf: startAlign }]}>
             {t.feedback.carouselHeadline}
@@ -211,10 +216,10 @@ function HeroCarousel({
           >
             <Text style={styles.carouselCtaText}>{t.feedback.carouselCta}</Text>
           </Touchable>
-        </View>
+        </LinearGradient>
 
         <LinearGradient
-          colors={[Colors.sky, Colors.forest]}
+          colors={[Colors.skyDeep, Colors.sky]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={[styles.carouselSlide, { width: slideWidth }]}
@@ -838,7 +843,9 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   heroOverlay: {
-    backgroundColor: "rgba(224,122,58,0.75)",
+    // Deep terracotta, not the base tone — white headlines have to stay
+    // readable over whatever photo happens to be behind them.
+    backgroundColor: "rgba(184,92,40,0.78)",
   },
   carouselEmoji: {
     fontSize: 34,

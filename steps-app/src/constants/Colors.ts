@@ -8,6 +8,14 @@ export const Colors = {
   sky: "#7B9EC4",
   clay: "#C4756A",
 
+  // Deeper partners for the base hues, used as the far end of a tonal gradient.
+  // Staying inside one hue family keeps a gradient clean — mixing across
+  // families (the old sky → forest) turns muddy through the middle.
+  terracottaDeep: "#B85C28",
+  forestDeep: "#476C49",
+  skyDeep: "#607B99",
+  honeyDeep: "#B08A2E",
+
   primary: "#E07A3A",
   secondary: "#C4756A",
   accent1: "#5B8A5E",
