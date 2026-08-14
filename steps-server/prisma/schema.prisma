@@ -58,13 +58,13 @@ model AppSetting {
 
 /// One activity in the recurring weekly timetable shown on Home.
 model ScheduleActivity {
-  id    String  @id @default(uuid())
-  day   WeekDay
-  name  String
-  emoji String  @default("🌟")
+  id              String   @id @default(uuid())
+  day             WeekDay
+  name            String
+  emoji           String   @default("🌟")
   /// 24-hour "HH:MM" so the day sorts correctly; formatted for display client-side.
   startTime       String
-  durationMinutes Int     @default(30)
+  durationMinutes Int      @default(30)
   accentColor     String?
   createdAt       DateTime @default(now())
 
@@ -72,20 +72,20 @@ model ScheduleActivity {
 }
 
 model User {
-  id           String   @id @default(uuid())
-  email        String   @unique
-  name         String
-  passwordHash String?
-  googleId     String?
-  role         Role     @default(parent)
-  pushToken    String?
+  id               String   @id @default(uuid())
+  email            String   @unique
+  name             String
+  passwordHash     String?
+  googleId         String?
+  role             Role     @default(parent)
+  pushToken        String?
   /**
    * What the parent said their child is called at sign-up. A claim only —
    * it grants nothing. An admin reads it to know who to link, then links a
    * real Student record. Never used to resolve photo visibility.
    */
   claimedChildName String?
-  createdAt    DateTime @default(now())
+  createdAt        DateTime @default(now())
 
   events        Event[]
   photos        Photo[]
@@ -96,14 +96,16 @@ model User {
   feedback            Feedback[]
   enrollmentRequests  CourseEnrollment[] @relation("EnrollmentRequester")
   enrollmentDecisions CourseEnrollment[] @relation("EnrollmentDecider")
+  invitesCreated      InviteCode[]       @relation("InvitesCreated")
+  inviteRedemptions   InviteRedemption[]
 }
 
 /// A class or activity families can enrol a child in. Admin-managed.
 model Course {
-  id          String   @id @default(uuid())
+  id          String    @id @default(uuid())
   name        String
   description String?
-  emoji       String   @default("🎓")
+  emoji       String    @default("🎓")
   instructor  String?
   /// Which days it runs on, e.g. ["sun","wed"]. Structured rather than free
   /// text so it can be shown in any language and sorted.
@@ -114,10 +116,10 @@ model Course {
   startDate   String?
   endDate     String?
   /// 0 means unlimited. Approved enrolments count against it.
-  capacity    Int      @default(0)
+  capacity    Int       @default(0)
   accentColor String?
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
 
   enrollments CourseEnrollment[]
 
@@ -165,6 +167,7 @@ model Student {
   tags        PhotoTag[]
   events      EventAttendee[]
   enrollments CourseEnrollment[]
+  inviteCodes InviteCode[]
 
   @@index([name])
 }
@@ -210,16 +213,16 @@ model EventAttendee {
 }
 
 model Photo {
-  id     String @id @default(uuid())
+  id      String @id @default(uuid())
   eventId String
   event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
   filename String
 
   // R2 object keys — null for real uploads only if externalUrl is used instead (dev-seed placeholders)
-  key       String?
-  thumbKey  String?
-  mediumKey String?
+  key         String?
+  thumbKey    String?
+  mediumKey   String?
   // Set only for dev-seed placeholder photos (e.g. picsum.photos) that bypass R2 entirely
   externalUrl String?
 
@@ -254,19 +257,59 @@ model Announcement {
 }
 
 model Notification {
-  id        String           @id @default(uuid())
-  userId    String
-  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  type      NotificationType
-  childName String?
-  eventName String?
-  eventId   String?
+  id         String           @id @default(uuid())
+  userId     String
+  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type       NotificationType
+  childName  String?
+  eventName  String?
+  eventId    String?
   /// Set on course notifications so tapping one opens that course.
   courseId   String?
   courseName String?
-  read      Boolean          @default(false)
-  createdAt DateTime         @default(now())
+  read       Boolean          @default(false)
+  createdAt  DateTime         @default(now())
 
   @@index([userId])
   @@index([userId, read])
+}
+
+/// An invite an admin hands to a family so they can create an account. The code
+/// IS the proof of relationship: redeeming it links the new parent to this
+/// student, which is why sign-up no longer has to ask who someone's child is.
+///
+/// Two uses by default, so both guardians can join off one code; after that it
+/// is spent. Never hard-deleted — revoking sets `revokedAt` so the audit trail
+/// survives the question "how did this person get access?".
+model InviteCode {
+  id        String    @id @default(uuid())
+  /// Normalised: uppercase, no dashes or spaces. Displayed as XXXX-XXXX.
+  code      String    @unique
+  studentId String
+  student   Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  createdBy String
+  creator   User      @relation("InvitesCreated", fields: [createdBy], references: [id])
+  maxUses   Int       @default(2)
+  useCount  Int       @default(0)
+  expiresAt DateTime?
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  redemptions InviteRedemption[]
+
+  @@index([studentId])
+}
+
+/// Which account used which code, and when.
+model InviteRedemption {
+  id         String     @id @default(uuid())
+  codeId     String
+  code       InviteCode @relation(fields: [codeId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  redeemedAt DateTime   @default(now())
+
+  /// One account can never consume the same code twice.
+  @@unique([codeId, userId])
+  @@index([userId])
 }

@@ -3,21 +3,33 @@ import { Request, Response } from "express";
 import { OAuth2Client } from "google-auth-library";
 
 import { env } from "../config/env";
+import { InviteModel } from "../models/invite";
 import { UserModel } from "../models/user";
+import { validateInviteCode } from "./inviteController";
 import { signToken } from "../utils/jwt";
 
 const googleClient = new OAuth2Client(env.googleClientId);
 
 export async function register(req: Request, res: Response) {
-  const { email, name, password, childName } = req.body as {
+  const { email, name, password, inviteCode } = req.body as {
     email?: string;
     name?: string;
     password?: string;
-    childName?: string;
+    inviteCode?: string;
   };
 
   if (!email || !name || !password) {
     return res.status(400).json({ message: "email, name and password are required" });
+  }
+
+  // Accounts are by invitation only. The code also says which child this
+  // parent belongs to, so sign-up never has to ask — and never has to trust
+  // the answer.
+  const invite = await validateInviteCode(inviteCode);
+  if (!invite) {
+    return res
+      .status(403)
+      .json({ message: "That code isn't valid. Please check it with the academy." });
   }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
     return res.status(400).json({ message: "Please enter a valid email address" });
@@ -31,17 +43,11 @@ export async function register(req: Request, res: Response) {
 
   const passwordHash = await bcrypt.hash(password, 10);
   const role = env.adminEmails.includes(email.toLowerCase()) ? "admin" : "parent";
-  // The child's name is recorded as a claim so the academy knows who this
-  // account belongs to — it grants no access. Only an admin linking a real
-  // Student record does that, otherwise anyone typing "Sara" would reach
-  // every Sara's photos.
-  const user = await UserModel.create({
-    email,
-    name,
-    passwordHash,
-    role,
-    claimedChildName: childName?.trim() || null,
-  });
+  const user = await UserModel.create({ email, name, passwordHash, role });
+  // Spending the code and creating the link happen together; a new account
+  // that isn't linked to its child is the exact state this replaces.
+  await InviteModel.redeem(invite.id, user.id, invite.studentId);
+
   const token = signToken({ userId: user.id });
 
   res.status(201).json({ token, user: await UserModel.toPublic(user) });
@@ -69,7 +75,7 @@ export async function login(req: Request, res: Response) {
 }
 
 export async function googleAuth(req: Request, res: Response) {
-  const { idToken } = req.body as { idToken?: string };
+  const { idToken, inviteCode } = req.body as { idToken?: string; inviteCode?: string };
 
   if (!idToken) {
     return res.status(400).json({ message: "idToken is required" });
@@ -87,6 +93,16 @@ export async function googleAuth(req: Request, res: Response) {
 
     let user = await UserModel.findByEmail(payload.email);
     if (!user) {
+      // Signing in with Google used to create an account for anyone who asked.
+      // A first-time Google user is a registration, so it needs an invite just
+      // like the email flow does.
+      const invite = await validateInviteCode(inviteCode);
+      if (!invite) {
+        return res
+          .status(403)
+          .json({ message: "That code isn't valid. Please check it with the academy." });
+      }
+
       const role = env.adminEmails.includes(payload.email.toLowerCase()) ? "admin" : "parent";
       user = await UserModel.create({
         email: payload.email,
@@ -94,6 +110,7 @@ export async function googleAuth(req: Request, res: Response) {
         googleId: payload.sub,
         role,
       });
+      await InviteModel.redeem(invite.id, user.id, invite.studentId);
     }
 
     const token = signToken({ userId: user.id });
