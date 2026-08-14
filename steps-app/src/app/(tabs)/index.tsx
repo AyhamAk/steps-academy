@@ -103,13 +103,66 @@ function formatRelativeTime(date: Date, t: Translations): string {
 
 const CAROUSEL_SLIDE_COUNT = 3;
 
+/**
+ * A carousel slide's background: the child's own photo when there is one,
+ * otherwise the slide's colour.
+ *
+ * Photos are the point of this app, so the Home screen leads with them rather
+ * than with decoration. Legibility over an unknown photo is the hard part —
+ * a bright sky or a white wall will destroy white text — so the content sits
+ * on a warm scrim that deepens toward the bottom, plus a translucent panel
+ * behind the text itself. No real blur: that needs expo-blur, a native module,
+ * which would mean rebuilding the dev client.
+ */
+function SlideBackground({
+  photoUrl,
+  colors,
+  children,
+}: {
+  photoUrl: string | null;
+  colors: readonly [string, string];
+  children: React.ReactNode;
+}) {
+  const { width } = useWindowDimensions();
+  const slideWidth = width - 48;
+
+  if (!photoUrl) {
+    return (
+      <LinearGradient
+        colors={colors}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={[styles.carouselSlide, { width: slideWidth }]}
+      >
+        {children}
+      </LinearGradient>
+    );
+  }
+
+  return (
+    <View style={[styles.carouselSlide, { width: slideWidth }]}>
+      <Image source={{ uri: photoUrl }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+      {/* Warm bark-toned scrim: transparent at the top so the photo reads,
+          opaque at the bottom where the words are. */}
+      <LinearGradient
+        colors={["rgba(44,36,22,0.05)", "rgba(44,36,22,0.45)", "rgba(44,36,22,0.88)"]}
+        locations={[0, 0.45, 1]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        style={StyleSheet.absoluteFill}
+      />
+      <View style={styles.glassPanel}>{children}</View>
+    </View>
+  );
+}
+
 function HeroCarousel({
   t,
   isRTL,
   childName,
   nextEvent,
   daysAwayLabel,
-  heroPhotoUrl,
+  heroPhotoUrls,
   onToast,
   onFeedback,
 }: {
@@ -118,7 +171,7 @@ function HeroCarousel({
   childName: string | null;
   nextEvent: NextEvent | null | undefined;
   daysAwayLabel: string | null;
-  heroPhotoUrl: string | null;
+  heroPhotoUrls: string[];
   onToast: (message: string) => void;
   onFeedback: () => void;
 }) {
@@ -170,22 +223,10 @@ function HeroCarousel({
         onMomentumScrollEnd={handleMomentumEnd}
         style={{ width: slideWidth }}
       >
-        <LinearGradient
+        <SlideBackground
+          photoUrl={heroPhotoUrls[0] ?? null}
           colors={[Colors.terracottaDeep, Colors.terracotta]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={[styles.carouselSlide, { width: slideWidth }]}
         >
-          {heroPhotoUrl ? (
-            <>
-              <Image
-                source={{ uri: heroPhotoUrl }}
-                style={StyleSheet.absoluteFill}
-                resizeMode="cover"
-              />
-              <View style={[StyleSheet.absoluteFill, styles.heroOverlay]} />
-            </>
-          ) : null}
           <Text style={[styles.carouselEmoji, { textAlign, alignSelf: startAlign }]}>🎨</Text>
           <Text style={[styles.carouselHeadline, { textAlign, alignSelf: startAlign }]}>
             {t.home.carouselHighlight(childOrGeneric)}
@@ -198,13 +239,11 @@ function HeroCarousel({
               {t.home.carouselHighlightCta} {arrow}
             </Text>
           </Touchable>
-        </LinearGradient>
+        </SlideBackground>
 
-        <LinearGradient
+        <SlideBackground
+          photoUrl={heroPhotoUrls[1] ?? null}
           colors={[Colors.forestDeep, Colors.forest]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={[styles.carouselSlide, { width: slideWidth }]}
         >
           <Text style={[styles.carouselEmoji, { textAlign, alignSelf: startAlign }]}>💬</Text>
           <Text style={[styles.carouselHeadline, { textAlign, alignSelf: startAlign }]}>
@@ -216,13 +255,11 @@ function HeroCarousel({
           >
             <Text style={styles.carouselCtaText}>{t.feedback.carouselCta}</Text>
           </Touchable>
-        </LinearGradient>
+        </SlideBackground>
 
-        <LinearGradient
+        <SlideBackground
+          photoUrl={heroPhotoUrls[2] ?? null}
           colors={[Colors.skyDeep, Colors.sky]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={[styles.carouselSlide, { width: slideWidth }]}
         >
           <Text style={[styles.carouselHeadline, { textAlign, alignSelf: startAlign }]}>
             {t.home.moodCheckinQuestion(childOrGeneric)}
@@ -241,7 +278,7 @@ function HeroCarousel({
               </Touchable>
             ))}
           </View>
-        </LinearGradient>
+        </SlideBackground>
       </ScrollView>
 
       <View style={styles.carouselDots}>
@@ -468,12 +505,15 @@ export default function HomeScreen() {
   const retryHome = () => {
     for (const query of sectionQueries) void query.refetch();
   };
-  const heroPhotoUrl = useMemo(() => {
-    if (!galleryGroups) return null;
-    const tagged = galleryGroups
+  // One photo per slide rather than the same face three times. Newest first,
+  // so the carousel reflects what actually happened this week.
+  const heroPhotoUrls = useMemo(() => {
+    if (!galleryGroups) return [];
+    return galleryGroups
       .flatMap((group) => group.photos)
-      .find((photo) => isPhotoTaggedWithAny(photo, childIds));
-    return tagged ? resolvePhotoUrl(tagged.url) : null;
+      .filter((photo) => isPhotoTaggedWithAny(photo, childIds))
+      .slice(0, CAROUSEL_SLIDE_COUNT)
+      .map((photo) => resolvePhotoUrl(photo.url));
   }, [galleryGroups, childIds.join(",")]);
 
   const { message: toastMessage, opacity: toastOpacity, showToast } = useToast();
@@ -641,7 +681,7 @@ export default function HomeScreen() {
               childName={primaryChildName}
               nextEvent={nextEvent}
               daysAwayLabel={daysAway?.label ?? null}
-              heroPhotoUrl={heroPhotoUrl}
+              heroPhotoUrls={heroPhotoUrls}
               onToast={showToast}
               onFeedback={() => setIsFeedbackOpen(true)}
             />
@@ -842,10 +882,16 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     overflow: "hidden",
   },
-  heroOverlay: {
-    // Deep terracotta, not the base tone — white headlines have to stay
-    // readable over whatever photo happens to be behind them.
-    backgroundColor: "rgba(184,92,40,0.78)",
+  // The "glass" the text sits on when there's a photo behind it. A light
+  // translucent fill with a brighter hairline edge reads as a pane of frosted
+  // glass without needing a real blur.
+  glassPanel: {
+    backgroundColor: "rgba(255,255,255,0.13)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.22)",
+    borderRadius: 18,
+    padding: 14,
+    marginTop: "auto",
   },
   carouselEmoji: {
     fontSize: 34,
