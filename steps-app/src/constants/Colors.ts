@@ -16,6 +16,12 @@ export const Colors = {
   skyDeep: "#607B99",
   honeyDeep: "#B08A2E",
 
+  // Lighter partners, used as the third stop so a slide gradient has somewhere
+  // to travel to. Two stops read as a flat block; three give it depth.
+  terracottaLight: "#F2A268",
+  forestLight: "#86B089",
+  skyLight: "#A8C3E0",
+
   primary: "#E07A3A",
   secondary: "#C4756A",
   accent1: "#5B8A5E",

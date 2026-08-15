@@ -18,14 +18,45 @@ import { UserModel } from "./models/user";
  * placeholders, not real uploads.
  *
  * Log in as: sarah@steps.local / steps1234  (parent of "Layla")
+ *          or admin@steps.local / steps1234  (admin)
  *
  * Idempotent: skips entirely if Sarah already exists, and never runs in prod.
  */
+const ADMIN_EMAIL = "admin@steps.local";
+const DEV_PASSWORD = "steps1234";
+
+/**
+ * A dev admin to test the admin-only screens with.
+ *
+ * Kept separate from the main seed and guarded on its own, so it still appears
+ * on a database that was seeded before this existed — the main seed bails early
+ * once Sarah is there. Registering an admin through the normal flow isn't an
+ * option any more: sign-up needs an invite code, and a code binds the account
+ * to a child.
+ *
+ * `role` is set directly rather than through ADMIN_EMAILS, so the account is an
+ * admin even if that env var is unset — but the email matches the one in
+ * `.env.example` so the two agree.
+ */
+async function seedAdmin(): Promise<void> {
+  if (await UserModel.findByEmail(ADMIN_EMAIL)) return;
+
+  await UserModel.create({
+    email: ADMIN_EMAIL,
+    name: "Steps Admin",
+    passwordHash: await bcrypt.hash(DEV_PASSWORD, 10),
+    role: "admin",
+  });
+}
+
 export async function runDevSeed(): Promise<void> {
   if (env.nodeEnv === "production") return;
+
+  await seedAdmin();
+
   if (await UserModel.findByEmail("sarah@steps.local")) return;
 
-  const passwordHash = await bcrypt.hash("steps1234", 10);
+  const passwordHash = await bcrypt.hash(DEV_PASSWORD, 10);
   const sarah = await UserModel.create({
     email: "sarah@steps.local",
     name: "Sarah",

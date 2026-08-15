@@ -1,5 +1,4 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -33,6 +32,7 @@ import Animated, {
 } from "react-native-reanimated";
 
 import { AdminHomeSections } from "../../components/home/AdminHomeSections";
+import { SlideBackdrop, SlideVariant } from "../../components/home/SlideBackdrop";
 import { CoursesSection } from "../../components/home/CoursesSection";
 import { FeedbackModal } from "../../components/home/FeedbackModal";
 import { WeeklyScheduleSection } from "../../components/home/WeeklyScheduleSection";
@@ -102,57 +102,30 @@ function formatRelativeTime(date: Date, t: Translations): string {
 }
 
 const CAROUSEL_SLIDE_COUNT = 3;
+/** Thumbnails in the first slide's photo strip. Four fits the narrowest phone. */
+const HERO_PHOTO_COUNT = 4;
 
-/**
- * A carousel slide's background: the child's own photo when there is one,
- * otherwise the slide's colour.
- *
- * Photos are the point of this app, so the Home screen leads with them rather
- * than with decoration. Legibility over an unknown photo is the hard part —
- * a bright sky or a white wall will destroy white text — so the content sits
- * on a warm scrim that deepens toward the bottom, plus a translucent panel
- * behind the text itself. No real blur: that needs expo-blur, a native module,
- * which would mean rebuilding the dev client.
- */
+/** A carousel slide: its own layered backdrop, sized to the viewport. */
 function SlideBackground({
-  photoUrl,
-  colors,
+  variant,
+  isRTL,
   children,
 }: {
-  photoUrl: string | null;
-  colors: readonly [string, string];
+  variant: SlideVariant;
+  isRTL: boolean;
   children: React.ReactNode;
 }) {
   const { width } = useWindowDimensions();
   const slideWidth = width - 48;
 
-  if (!photoUrl) {
-    return (
-      <LinearGradient
-        colors={colors}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={[styles.carouselSlide, { width: slideWidth }]}
-      >
-        {children}
-      </LinearGradient>
-    );
-  }
-
   return (
-    <View style={[styles.carouselSlide, { width: slideWidth }]}>
-      <Image source={{ uri: photoUrl }} style={StyleSheet.absoluteFill} resizeMode="cover" />
-      {/* Warm bark-toned scrim: transparent at the top so the photo reads,
-          opaque at the bottom where the words are. */}
-      <LinearGradient
-        colors={["rgba(44,36,22,0.05)", "rgba(44,36,22,0.45)", "rgba(44,36,22,0.88)"]}
-        locations={[0, 0.45, 1]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
-        style={StyleSheet.absoluteFill}
-      />
-      <View style={styles.glassPanel}>{children}</View>
-    </View>
+    <SlideBackdrop
+      variant={variant}
+      isRTL={isRTL}
+      style={[styles.carouselSlide, { width: slideWidth }]}
+    >
+      {children}
+    </SlideBackdrop>
   );
 }
 
@@ -223,28 +196,46 @@ function HeroCarousel({
         onMomentumScrollEnd={handleMomentumEnd}
         style={{ width: slideWidth }}
       >
-        <SlideBackground
-          photoUrl={heroPhotoUrls[0] ?? null}
-          colors={[Colors.terracottaDeep, Colors.terracotta]}
-        >
-          <Text style={[styles.carouselEmoji, { textAlign, alignSelf: startAlign }]}>🎨</Text>
-          <Text style={[styles.carouselHeadline, { textAlign, alignSelf: startAlign }]}>
-            {t.home.carouselHighlight(childOrGeneric)}
-          </Text>
-          <Touchable
-            style={[styles.carouselCta, { alignSelf: startAlign }]}
-            onPress={() => router.push("/gallery")}
-          >
-            <Text style={styles.carouselCtaText}>
-              {t.home.carouselHighlightCta} {arrow}
-            </Text>
-          </Touchable>
+        <SlideBackground variant="terracotta" isRTL={isRTL}>
+          {/* With thumbnails there is no room for the emoji too — the strip is
+              the picture, so the emoji only stands in when there are no photos. */}
+          {heroPhotoUrls.length > 0 ? (
+            <>
+              <Text
+                style={[styles.carouselHeadline, styles.headlineTight, { textAlign, alignSelf: startAlign }]}
+              >
+                {t.home.carouselHighlight(childOrGeneric)}
+              </Text>
+              <Touchable
+                style={[styles.photoStrip, isRTL && styles.rowReverse, { alignSelf: startAlign }]}
+                onPress={() => router.push("/gallery")}
+                accessibilityLabel={t.home.carouselHighlightCta}
+              >
+                {heroPhotoUrls.map((url) => (
+                  <Image key={url} source={{ uri: url }} style={styles.photoThumb} resizeMode="cover" />
+                ))}
+                <Text style={styles.photoStripArrow}>{arrow}</Text>
+              </Touchable>
+            </>
+          ) : (
+            <>
+              <Text style={[styles.carouselEmoji, { textAlign, alignSelf: startAlign }]}>🎨</Text>
+              <Text style={[styles.carouselHeadline, { textAlign, alignSelf: startAlign }]}>
+                {t.home.carouselHighlight(childOrGeneric)}
+              </Text>
+              <Touchable
+                style={[styles.carouselCta, { alignSelf: startAlign }]}
+                onPress={() => router.push("/gallery")}
+              >
+                <Text style={styles.carouselCtaText}>
+                  {t.home.carouselHighlightCta} {arrow}
+                </Text>
+              </Touchable>
+            </>
+          )}
         </SlideBackground>
 
-        <SlideBackground
-          photoUrl={heroPhotoUrls[1] ?? null}
-          colors={[Colors.forestDeep, Colors.forest]}
-        >
+        <SlideBackground variant="forest" isRTL={isRTL}>
           <Text style={[styles.carouselEmoji, { textAlign, alignSelf: startAlign }]}>💬</Text>
           <Text style={[styles.carouselHeadline, { textAlign, alignSelf: startAlign }]}>
             {t.feedback.carouselHeadline}
@@ -257,10 +248,7 @@ function HeroCarousel({
           </Touchable>
         </SlideBackground>
 
-        <SlideBackground
-          photoUrl={heroPhotoUrls[2] ?? null}
-          colors={[Colors.skyDeep, Colors.sky]}
-        >
+        <SlideBackground variant="sky" isRTL={isRTL}>
           <Text style={[styles.carouselHeadline, { textAlign, alignSelf: startAlign }]}>
             {t.home.moodCheckinQuestion(childOrGeneric)}
           </Text>
@@ -505,14 +493,14 @@ export default function HomeScreen() {
   const retryHome = () => {
     for (const query of sectionQueries) void query.refetch();
   };
-  // One photo per slide rather than the same face three times. Newest first,
-  // so the carousel reflects what actually happened this week.
+  // Thumbnails for the first slide's strip. Groups arrive newest-event-first,
+  // so taking from the front means the strip shows the most recent day out.
   const heroPhotoUrls = useMemo(() => {
     if (!galleryGroups) return [];
     return galleryGroups
       .flatMap((group) => group.photos)
       .filter((photo) => isPhotoTaggedWithAny(photo, childIds))
-      .slice(0, CAROUSEL_SLIDE_COUNT)
+      .slice(0, HERO_PHOTO_COUNT)
       .map((photo) => resolvePhotoUrl(photo.url));
   }, [galleryGroups, childIds.join(",")]);
 
@@ -882,16 +870,30 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     overflow: "hidden",
   },
-  // The "glass" the text sits on when there's a photo behind it. A light
-  // translucent fill with a brighter hairline edge reads as a pane of frosted
-  // glass without needing a real blur.
-  glassPanel: {
-    backgroundColor: "rgba(255,255,255,0.13)",
+  // The child's recent photos, inside the slide rather than behind it — text
+  // keeps a flat gradient underneath it, so legibility never depends on what
+  // happens to be in the picture.
+  photoStrip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  photoThumb: {
+    width: 56,
+    height: 56,
+    borderRadius: 12,
+    backgroundColor: "rgba(255,255,255,0.2)",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.22)",
-    borderRadius: 18,
-    padding: 14,
-    marginTop: "auto",
+    borderColor: "rgba(255,255,255,0.35)",
+  },
+  photoStripArrow: {
+    fontFamily: Fonts.bold,
+    fontSize: 18,
+    color: "#FFFFFF",
+    marginHorizontal: 2,
+  },
+  headlineTight: {
+    marginBottom: 10,
   },
   carouselEmoji: {
     fontSize: 34,
