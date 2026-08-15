@@ -44,7 +44,8 @@ export type EnrollmentRequest = {
   status: EnrollmentStatus;
   note: string | null;
   requestedAt: string;
-  requestedBy: { id: string; name: string; email: string };
+  /** Null once the requesting guardian has deleted their account. */
+  requestedBy: { id: string; name: string; email: string } | null;
   decidedAt: string | null;
   decidedBy: { id: string; name: string } | null;
   /** Approved with no decider — the course had room and they just joined. */

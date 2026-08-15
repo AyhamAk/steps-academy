@@ -139,12 +139,14 @@ model CourseEnrollment {
   student   Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
   status    EnrollmentStatus @default(pending)
 
-  requestedBy String
-  requester   User     @relation("EnrollmentRequester", fields: [requestedBy], references: [id])
+  /// Nullable so a parent can delete their account without taking their
+  /// child's place in the course with it — the enrolment outlives the account.
+  requestedBy String?
+  requester   User?    @relation("EnrollmentRequester", fields: [requestedBy], references: [id], onDelete: SetNull)
   requestedAt DateTime @default(now())
 
   decidedBy String?
-  decider   User?     @relation("EnrollmentDecider", fields: [decidedBy], references: [id])
+  decider   User?     @relation("EnrollmentDecider", fields: [decidedBy], references: [id], onDelete: SetNull)
   decidedAt DateTime?
   /// Optional admin note stored with the decision.
   note      String?

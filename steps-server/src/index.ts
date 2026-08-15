@@ -17,6 +17,7 @@ import gamesRoutes from "./routes/gamesRoutes";
 import notificationRoutes from "./routes/notificationRoutes";
 import scheduleRoutes from "./routes/scheduleRoutes";
 import profileRoutes from "./routes/profileRoutes";
+import legalRoutes from "./routes/legalRoutes";
 import shopRoutes from "./routes/shopRoutes";
 import studentRoutes from "./routes/studentRoutes";
 
@@ -42,6 +43,9 @@ app.use(express.json());
 app.get("/health", (_req, res) => {
   res.json({ status: "ok", app: "Steps API" });
 });
+
+// Public web pages the app stores require. No auth, no data.
+app.use("/", legalRoutes);
 
 app.use("/api/auth", authRoutes);
 app.use("/api/games", gamesRoutes);

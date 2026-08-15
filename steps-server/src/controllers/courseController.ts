@@ -22,11 +22,14 @@ function serializeEnrollment(enrollment: EnrollmentWithContext) {
     status: enrollment.status,
     note: enrollment.note,
     requestedAt: enrollment.requestedAt,
-    requestedBy: {
-      id: enrollment.requester.id,
-      name: enrollment.requester.name,
-      email: enrollment.requester.email,
-    },
+    // Null once the requesting parent has deleted their account.
+    requestedBy: enrollment.requester
+      ? {
+          id: enrollment.requester.id,
+          name: enrollment.requester.name,
+          email: enrollment.requester.email,
+        }
+      : null,
     decidedAt: enrollment.decidedAt,
     decidedBy: enrollment.decider ? { id: enrollment.decider.id, name: enrollment.decider.name } : null,
     /** Approved with no decider — the course had room and they just joined. */

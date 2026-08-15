@@ -92,7 +92,7 @@ function RequestCard({ request }: { request: EnrollmentRequest }) {
       </View>
 
       <Text style={[styles.meta, rtlText]}>
-        {t.courses.requestedBy(request.requestedBy.name)} ·{" "}
+        {t.courses.requestedBy(request.requestedBy?.name ?? t.adminFeedback.deletedAccount)} ·{" "}
         {new Date(request.requestedAt).toLocaleDateString()}
       </Text>
       {request.decidedBy && decidedDate ? (

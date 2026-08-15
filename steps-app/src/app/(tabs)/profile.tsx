@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { useMemo, useState } from "react";
-import { Alert, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, Linking, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { ChangePasswordModal } from "../../components/profile/ChangePasswordModal";
@@ -16,6 +16,7 @@ import { SkeletonBlock } from "../../components/ui/Skeleton";
 import { StepsButton } from "../../components/ui/StepsButton";
 import { StepsCard } from "../../components/ui/StepsCard";
 import { ToastBanner, useToast } from "../../components/ui/Toast";
+import { API_BASE_URL } from "../../services/api";
 import { Colors } from "../../constants/Colors";
 import { Fonts } from "../../constants/Fonts";
 import { Type } from "../../constants/Typography";
@@ -29,7 +30,7 @@ import { Locale, useLocaleStore } from "../../store/localeStore";
 import { Touchable } from "../../components/ui/Touchable";
 
 export default function ProfileScreen() {
-  const { user, logout, isLoading } = useAuth();
+  const { user, logout, deleteAccount, isLoading } = useAuth();
   const insets = useSafeAreaInsets();
   const { t, isRTL, rtlText } = useTranslation();
   const locale = useLocaleStore((state) => state.locale);
@@ -67,6 +68,33 @@ export default function ProfileScreen() {
     }
     return counts;
   }, [galleryGroups, childIds.join(",")]);
+
+  const confirmDeleteAccount = () =>
+    Alert.alert(t.profile.deleteAccountTitle, t.profile.deleteAccountMessage, [
+      { text: t.common.cancel, style: "cancel" },
+      {
+        text: t.profile.deleteAccountConfirm,
+        style: "destructive",
+        onPress: () =>
+          Alert.alert(t.profile.deleteAccountFinalTitle, t.profile.deleteAccountFinalMessage, [
+            { text: t.common.cancel, style: "cancel" },
+            {
+              text: t.profile.deleteAccountConfirm,
+              style: "destructive",
+              onPress: async () => {
+                try {
+                  await deleteAccount();
+                } catch (error) {
+                  const message =
+                    (error as { response?: { data?: { message?: string } } })?.response?.data
+                      ?.message ?? t.common.tryAgain;
+                  Alert.alert(t.profile.deleteAccountFailed, message, [{ text: t.common.ok }]);
+                }
+              },
+            },
+          ]),
+      },
+    ]);
 
   const confirmLogout = () => {
     Alert.alert(t.profile.logoutConfirmTitle, t.profile.logoutConfirmMessage, [
@@ -266,6 +294,21 @@ export default function ProfileScreen() {
           onPress={confirmLogout}
           style={styles.logoutButton}
         />
+
+        {/* Both required by the app stores: a reachable policy, and a way to
+            delete the account from inside the app. */}
+        <View style={styles.legalRow}>
+          <Touchable
+            onPress={() => Linking.openURL(`${API_BASE_URL}/privacy`)}
+            style={styles.legalButton}
+          >
+            <Text style={styles.legalText}>{t.profile.privacyPolicy}</Text>
+          </Touchable>
+          <Text style={styles.legalSeparator}>·</Text>
+          <Touchable onPress={confirmDeleteAccount} style={styles.legalButton}>
+            <Text style={styles.deleteAccountText}>{t.profile.deleteAccount}</Text>
+          </Touchable>
+        </View>
 
         <View style={styles.mascotFooter}>
           <Text style={styles.mascotEmoji}>🐘</Text>
@@ -539,6 +582,21 @@ const styles = StyleSheet.create({
     height: 54,
     justifyContent: "center",
   },
+  legalRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    marginTop: 16,
+  },
+  legalButton: {
+    minHeight: 44,
+    justifyContent: "center",
+    paddingHorizontal: 4,
+  },
+  legalText: { fontFamily: Fonts.regular, fontSize: 13, color: Colors.textLight },
+  legalSeparator: { fontFamily: Fonts.regular, fontSize: 13, color: Colors.textLight },
+  deleteAccountText: { fontFamily: Fonts.regular, fontSize: 13, color: Colors.clay },
   mascotFooter: {
     alignItems: "center",
     marginTop: 28,

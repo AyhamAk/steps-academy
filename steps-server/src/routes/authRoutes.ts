@@ -2,6 +2,7 @@ import { Router } from "express";
 
 import {
   changePassword,
+  deleteAccount,
   googleAuth,
   login,
   logout,
@@ -24,6 +25,7 @@ router.post("/login", authRateLimit, login);
 router.post("/google", authRateLimit, googleAuth);
 router.get("/me", requireAuth, me);
 router.patch("/me", requireAuth, updateMe);
+router.delete("/me", requireAuth, deleteAccount);
 router.patch("/password", requireAuth, changePassword);
 router.patch("/push-token", requireAuth, updatePushToken);
 router.post("/logout", requireAuth, logout);

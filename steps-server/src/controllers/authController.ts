@@ -134,6 +134,45 @@ export async function logout(req: Request, res: Response) {
   res.json({ message: "Logged out" });
 }
 
+/**
+ * Permanent account deletion, required by both app stores.
+ *
+ * What goes: the account, its parent-child links, its notifications and its
+ * invite redemptions (all cascade in the schema).
+ * What stays: the children themselves, their photos and their course places —
+ * those belong to the academy, not to one guardian, and a second guardian may
+ * still be using them. Feedback and enrolments keep their rows with the author
+ * nulled out.
+ */
+export async function deleteAccount(req: Request, res: Response) {
+  const user = await UserModel.findById(req.userId!);
+  if (!user) {
+    return res.status(404).json({ message: "User not found" });
+  }
+
+  // An academy that deletes its last admin can never manage anything again.
+  if (user.role === "admin") {
+    const admins = await UserModel.listAdmins();
+    if (admins.length <= 1) {
+      return res.status(409).json({
+        message: "This is the only admin account. Make someone else an admin first.",
+      });
+    }
+  }
+
+  try {
+    await UserModel.remove(user.id);
+  } catch {
+    // Admins own events, photos and announcements, which are deliberately
+    // protected from cascade deletion.
+    return res.status(409).json({
+      message: "This account still owns academy content. Please contact the academy.",
+    });
+  }
+
+  res.json({ message: "Account deleted" });
+}
+
 export async function updatePushToken(req: Request, res: Response) {
   const { pushToken } = req.body as { pushToken?: string };
   if (!pushToken || typeof pushToken !== "string") {

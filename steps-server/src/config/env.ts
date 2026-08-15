@@ -45,6 +45,9 @@ export const env = {
     .map((email) => email.trim().toLowerCase())
     .filter(Boolean),
   corsOrigin: process.env.CORS_ORIGIN,
+  // Shown on the public privacy and deletion pages, and the address families
+  // are told to write to. Set ACADEMY_EMAIL in the environment.
+  academyEmail: process.env.ACADEMY_EMAIL ?? "hello@stepsacademy.example",
   r2: {
     accountId: process.env.R2_ACCOUNT_ID ?? "",
     accessKeyId: process.env.R2_ACCESS_KEY_ID ?? "",

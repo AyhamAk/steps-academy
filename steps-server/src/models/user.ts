@@ -70,6 +70,11 @@ export const UserModel = {
     return prisma.user.findMany({ where: { role: "parent" } });
   },
 
+  /** Hard delete. Cascades are declared in the schema, not here. */
+  async remove(id: string): Promise<void> {
+    await prisma.user.delete({ where: { id } });
+  },
+
   async listAdmins(): Promise<User[]> {
     return prisma.user.findMany({ where: { role: "admin" } });
   },

@@ -41,6 +41,11 @@ export async function meRequest() {
   return data.user;
 }
 
+/** Permanent, immediate, and required by both app stores. */
+export async function deleteAccountRequest() {
+  await api.delete("/api/auth/me");
+}
+
 export async function logoutRequest() {
   await api.post("/api/auth/logout");
 }

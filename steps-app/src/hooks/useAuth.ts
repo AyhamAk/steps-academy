@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 import {
   googleAuthRequest,
   loginRequest,
+  deleteAccountRequest,
   logoutRequest,
   registerRequest,
 } from "../services/authApi";
@@ -78,6 +79,19 @@ export function useAuth() {
     }
   }, [clearSession]);
 
+  // The session is cleared only when the server confirms the deletion, so a
+  // failure leaves the user signed in and able to try again or contact us.
+  const deleteAccount = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      await deleteAccountRequest();
+      clearSession();
+      resetQueryCache();
+    } finally {
+      setIsLoading(false);
+    }
+  }, [clearSession]);
+
   return {
     token,
     user,
@@ -88,5 +102,6 @@ export function useAuth() {
     login,
     signInWithGoogle,
     logout,
+    deleteAccount,
   };
 }

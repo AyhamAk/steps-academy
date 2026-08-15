@@ -14,7 +14,7 @@ export type { EnrollmentStatus };
 export type EnrollmentWithContext = CourseEnrollment & {
   course: Course;
   student: Student;
-  requester: { id: string; name: string; email: string };
+  requester: { id: string; name: string; email: string } | null;
   decider: { id: string; name: string } | null;
 };
 
