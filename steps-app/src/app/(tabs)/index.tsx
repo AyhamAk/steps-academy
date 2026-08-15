@@ -625,7 +625,12 @@ export default function HomeScreen() {
 
           <View style={styles.greetingBlock}>
             <Animated.View style={[styles.greetingRow, greetingStyle]}>
-              <Text style={styles.greetingText} numberOfLines={1} adjustsFontSizeToFit>
+              <Text
+                style={styles.greetingText}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.7}
+              >
                 {firstName ? (
                   <>
                     {salutation}
@@ -833,9 +838,17 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   greetingText: {
-    ...Type.display,
+    // Not Type.display (32): "Good afternoon, <name>" and the longer Arabic
+    // greetings run past the screen at that size. adjustsFontSizeToFit can't
+    // rescue it either — Android ignores it once the Text has a nested child,
+    // which this one has for the coloured name. flexShrink lets it give way
+    // to the emoji beside it instead of pushing past the edge.
+    fontFamily: Fonts.extraBold,
+    fontSize: 26,
+    lineHeight: 32,
     color: Colors.bark,
     textAlign: "center",
+    flexShrink: 1,
   },
   greetingName: {
     color: Colors.terracotta,
