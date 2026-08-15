@@ -1,11 +1,11 @@
-import { useEffect } from "react";
-import { StyleSheet, View, ViewStyle } from "react-native";
+import { useEffect, useState } from "react";
+import { LayoutChangeEvent, StyleSheet, View, ViewStyle } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import Animated, {
   Easing,
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
-  withSequence,
   withTiming,
 } from "react-native-reanimated";
 
@@ -20,35 +20,62 @@ type SkeletonBlockProps = {
   style?: ViewStyle;
 };
 
-/** A single shimmering linen-colored placeholder rectangle. */
+/**
+ * A single linen placeholder with a light band sweeping across it.
+ *
+ * The previous version only breathed its opacity, which on a warm palette was
+ * easy to mistake for a rendered-but-empty box. A travelling highlight reads as
+ * "working on it" at a glance, which is the whole job of a skeleton.
+ *
+ * The sweep needs a real pixel width to travel across, so it stays idle until
+ * onLayout reports one — percentage widths would otherwise animate nothing.
+ */
 export function SkeletonBlock({ width, height, borderRadius = 8, style }: SkeletonBlockProps) {
   const reduceMotion = useReduceMotionSetting();
-  const opacity = useSharedValue(0.55);
+  const [measuredWidth, setMeasuredWidth] = useState(0);
+  const progress = useSharedValue(0);
 
   useEffect(() => {
-    if (reduceMotion) return;
-    opacity.value = withRepeat(
-      withSequence(
-        withTiming(1, { duration: 700, easing: Easing.inOut(Easing.ease) }),
-        withTiming(0.55, { duration: 700, easing: Easing.inOut(Easing.ease) })
-      ),
+    if (reduceMotion || measuredWidth === 0) return;
+    progress.value = 0;
+    progress.value = withRepeat(
+      withTiming(1, { duration: 1400, easing: Easing.inOut(Easing.ease) }),
       -1,
-      true
+      false
     );
-  }, [reduceMotion]);
+  }, [reduceMotion, measuredWidth]);
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    opacity: reduceMotion ? 0.75 : opacity.value,
+  const sweepStyle = useAnimatedStyle(() => ({
+    // Starts fully off the leading edge and ends fully off the trailing one.
+    transform: [{ translateX: -measuredWidth + progress.value * (measuredWidth * 2) }],
   }));
 
+  const onLayout = (event: LayoutChangeEvent) => {
+    const next = Math.round(event.nativeEvent.layout.width);
+    if (next !== measuredWidth) setMeasuredWidth(next);
+  };
+
   return (
-    <Animated.View
+    <View
+      onLayout={onLayout}
       style={[
+        styles.block,
         { width, height, borderRadius, backgroundColor: Colors.linen },
-        animatedStyle,
+        reduceMotion && styles.blockStill,
         style,
       ]}
-    />
+    >
+      {reduceMotion || measuredWidth === 0 ? null : (
+        <Animated.View style={[StyleSheet.absoluteFill, sweepStyle]}>
+          <LinearGradient
+            colors={["rgba(255,255,255,0)", "rgba(255,255,255,0.75)", "rgba(255,255,255,0)"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={StyleSheet.absoluteFill}
+          />
+        </Animated.View>
+      )}
+    </View>
   );
 }
 
@@ -127,6 +154,29 @@ export function SkeletonPhotoGrid({ tileSize, count = 9 }: { tileSize: number; c
 }
 
 /**
+ * A stack of card-shaped placeholders, sized to whatever the screen's own cards
+ * are. Screens used to show a generic loader here, which told you something was
+ * happening but not what was coming; this holds the page's shape while it does.
+ */
+export function SkeletonCardList({
+  count = 4,
+  height = 76,
+  borderRadius = 16,
+}: {
+  count?: number;
+  height?: number;
+  borderRadius?: number;
+}) {
+  return (
+    <View style={styles.cardList}>
+      {Array.from({ length: count }).map((_, index) => (
+        <SkeletonBlock key={index} width="100%" height={height} borderRadius={borderRadius} />
+      ))}
+    </View>
+  );
+}
+
+/**
  * The whole Home body in placeholder form: hero, courses strip, timetable and
  * announcement. Home holds this until every one of its queries has landed, so
  * the page arrives in one piece instead of four sections popping in
@@ -166,6 +216,16 @@ export function SkeletonHomeSections({ isAdmin = false }: { isAdmin?: boolean })
 }
 
 const styles = StyleSheet.create({
+  cardList: {
+    gap: 12,
+    paddingTop: 12,
+  },
+  block: {
+    overflow: "hidden",
+  },
+  blockStill: {
+    opacity: 0.75,
+  },
   heroGap: {
     marginTop: 16,
   },

@@ -9,7 +9,7 @@ import { CourseFormModal } from "../components/admin/CourseFormModal";
 import IconTile from "../components/admin/IconTile";
 import { EmptyState } from "../components/gallery/EmptyState";
 import { Screen } from "../components/Screen";
-import { BalloonLoader } from "../components/ui/BalloonLoader";
+import { SkeletonCardList } from "../components/ui/Skeleton";
 import { ScreenFadeIn } from "../components/ui/ScreenFadeIn";
 import { StepsButton } from "../components/ui/StepsButton";
 import { Touchable } from "../components/ui/Touchable";
@@ -201,7 +201,7 @@ export default function CoursesAdminScreen() {
         {isError ? (
           <EmptyState emoji="⚠️" title={t.coursesAdmin.couldntLoad} subtitle={t.common.tryAgain} />
         ) : !courses ? (
-          <BalloonLoader label={t.coursesAdmin.loading} />
+          <SkeletonCardList count={3} height={214} />
         ) : courses.length === 0 ? (
           <EmptyState
             emoji="🎓"

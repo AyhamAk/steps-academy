@@ -8,7 +8,7 @@ import AdminHeader from "../components/admin/AdminHeader";
 import IconTile from "../components/admin/IconTile";
 import { EmptyState } from "../components/gallery/EmptyState";
 import { Screen } from "../components/Screen";
-import { BalloonLoader } from "../components/ui/BalloonLoader";
+import { SkeletonCardList } from "../components/ui/Skeleton";
 import { ScreenFadeIn } from "../components/ui/ScreenFadeIn";
 import { StepsButton } from "../components/ui/StepsButton";
 import { Touchable } from "../components/ui/Touchable";
@@ -112,7 +112,7 @@ export default function ScheduleAdminScreen() {
         {isError ? (
           <EmptyState emoji="⚠️" title={t.scheduleAdmin.couldntLoad} subtitle={t.common.tryAgain} />
         ) : !days ? (
-          <BalloonLoader label={t.scheduleAdmin.loading} />
+          <SkeletonCardList count={5} height={68} />
         ) : !dayData || dayData.activities.length === 0 ? (
           <EmptyState
             emoji="🗓"

@@ -17,7 +17,7 @@ import SectionLabel from "../components/admin/SectionLabel";
 import { EmptyState } from "../components/gallery/EmptyState";
 import { Screen } from "../components/Screen";
 import { InviteCodesSection } from "../components/students/InviteCodesSection";
-import { BalloonLoader } from "../components/ui/BalloonLoader";
+import { SkeletonCardList } from "../components/ui/Skeleton";
 import { ScreenFadeIn } from "../components/ui/ScreenFadeIn";
 import { StepsButton } from "../components/ui/StepsButton";
 import { Touchable } from "../components/ui/Touchable";
@@ -306,7 +306,7 @@ export default function StudentsScreen() {
         {isError ? (
           <EmptyState emoji="⚠️" title={t.students.couldntLoad} subtitle={t.common.tryAgain} />
         ) : !students ? (
-          <BalloonLoader label={t.students.loading} />
+          <SkeletonCardList count={5} height={76} />
         ) : students.length === 0 ? (
           <EmptyState
             emoji={debouncedSearch ? "🔍" : "👶"}

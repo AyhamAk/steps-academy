@@ -1,13 +1,21 @@
 import { useQuery } from "@tanstack/react-query";
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { Animated, FlatList, Image, StyleSheet, Text, View } from "react-native";
+import {
+  Animated,
+  FlatList,
+  Image,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from "react-native";
 
 import { EmptyState } from "../../../components/gallery/EmptyState";
 import { EventCaption } from "../../../components/gallery/EventCaption";
 import { FullscreenPhotoViewer } from "../../../components/gallery/FullscreenPhotoViewer";
 import { Screen } from "../../../components/Screen";
-import { BalloonLoader } from "../../../components/ui/BalloonLoader";
+import { SkeletonPhotoGrid } from "../../../components/ui/Skeleton";
 import { ScreenFadeIn } from "../../../components/ui/ScreenFadeIn";
 import { StepsHeader } from "../../../components/ui/StepsHeader";
 import { Colors } from "../../../constants/Colors";
@@ -64,6 +72,10 @@ function PhotoTile({
 }
 
 export default function EventGalleryScreen() {
+  // Matches the real grid: three columns inside the screen's 24pt padding,
+  // less each tile's 4pt margin on both sides.
+  const { width } = useWindowDimensions();
+  const photoTileSize = (width - 48) / 3 - 8;
   const { t } = useTranslation();
   const { eventId } = useLocalSearchParams<{ eventId: string }>();
   const children = useChildren();
@@ -95,7 +107,7 @@ export default function EventGalleryScreen() {
             subtitle={t.gallery.pleaseTryAgain}
           />
         ) : photos === null ? (
-          <BalloonLoader label={t.gallery.loadingPhotos} />
+          <SkeletonPhotoGrid tileSize={photoTileSize} />
         ) : photos.length === 0 ? (
           <EmptyState title={t.gallery.noPhotosInEvent} />
         ) : (

@@ -16,7 +16,7 @@ import {
 } from "../../services/galleryApi";
 import { useChildren } from "../../store/authStore";
 import { formatIsoDate } from "../../utils/date";
-import { BalloonLoader } from "../ui/BalloonLoader";
+import { SkeletonEventList } from "../ui/Skeleton";
 import { ScreenFadeIn } from "../ui/ScreenFadeIn";
 import { StepsButton } from "../ui/StepsButton";
 import { StepsCard } from "../ui/StepsCard";
@@ -116,7 +116,7 @@ export function ParentGalleryScreen() {
               />
             </>
           ) : !groups ? (
-            <BalloonLoader label={t.gallery.loadingPhotos} />
+            <SkeletonEventList count={3} />
           ) : (
             <>
               {groups.length === 0 ? (

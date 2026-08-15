@@ -14,7 +14,7 @@ import {
 import AdminHeader from "../components/admin/AdminHeader";
 import { EmptyState } from "../components/gallery/EmptyState";
 import { Screen } from "../components/Screen";
-import { BalloonLoader } from "../components/ui/BalloonLoader";
+import { SkeletonCardList } from "../components/ui/Skeleton";
 import { ScreenFadeIn } from "../components/ui/ScreenFadeIn";
 import { Touchable } from "../components/ui/Touchable";
 import { Colors } from "../constants/Colors";
@@ -194,7 +194,7 @@ export default function CourseRequestsScreen() {
             subtitle={t.common.tryAgain}
           />
         ) : !data ? (
-          <BalloonLoader label={t.courses.requestsLoading} />
+          <SkeletonCardList count={4} height={132} />
         ) : data.enrollments.length === 0 ? (
           <View style={styles.empty}>
             <Text style={styles.emptyText}>
