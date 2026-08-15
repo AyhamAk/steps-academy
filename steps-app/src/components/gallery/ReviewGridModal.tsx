@@ -1,4 +1,4 @@
-import { FlatList, Image, Modal, StyleSheet, Text, View } from "react-native";
+import { Alert, FlatList, Image, Modal, StyleSheet, Text, View } from "react-native";
 
 import { Colors } from "../../constants/Colors";
 import { Fonts } from "../../constants/Fonts";
@@ -17,6 +17,7 @@ type ReviewGridModalProps = {
   onClose: () => void;
   onOpenTag: (photo: Photo) => void;
   onCaptionSaved: (caption: string | null) => void;
+  onDeletePhoto: (photo: Photo) => void;
 };
 
 export function ReviewGridModal({
@@ -27,6 +28,7 @@ export function ReviewGridModal({
   onClose,
   onOpenTag,
   onCaptionSaved,
+  onDeletePhoto,
 }: ReviewGridModalProps) {
   const { t } = useTranslation();
 
@@ -36,7 +38,7 @@ export function ReviewGridModal({
         <View style={styles.header}>
           <View style={styles.headerText}>
             <Text style={styles.title}>{event.name}</Text>
-            <Text style={styles.subtitle}>{t.gallery.tapPhotoToEditTags}</Text>
+            <Text style={styles.subtitle}>{t.gallery.tapPhotoHint}</Text>
           </View>
           <View style={styles.headerActions}>
             <Touchable style={styles.addButton} onPress={onAddPhotos}>
@@ -77,7 +79,20 @@ export function ReviewGridModal({
               />
             }
             renderItem={({ item }) => (
-              <Touchable style={styles.tile} onPress={() => onOpenTag(item)}>
+              <Touchable
+                style={styles.tile}
+                onPress={() => onOpenTag(item)}
+                onLongPress={() =>
+                  Alert.alert(t.gallery.deletePhotoTitle, t.gallery.deletePhotoMessage, [
+                    { text: t.common.cancel, style: "cancel" },
+                    {
+                      text: t.gallery.deletePhoto,
+                      style: "destructive",
+                      onPress: () => onDeletePhoto(item),
+                    },
+                  ])
+                }
+              >
                 <Image source={{ uri: resolvePhotoUrl(item.url) }} style={styles.image} />
                 <View style={styles.badge}>
                   <Text style={styles.badgeText}>{item.tags.length}</Text>

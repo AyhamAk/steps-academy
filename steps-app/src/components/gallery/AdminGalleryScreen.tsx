@@ -17,6 +17,7 @@ import { Fonts } from "../../constants/Fonts";
 import { Type } from "../../constants/Typography";
 import { useTranslation } from "../../i18n/useTranslation";
 import {
+  deletePhoto,
   GalleryEvent,
   getGalleryQuote,
   listEventPhotosAdmin,
@@ -33,7 +34,10 @@ import { StepsButton } from "../ui/StepsButton";
 import { StepsCard } from "../ui/StepsCard";
 import { StepsHeader } from "../ui/StepsHeader";
 import { Touchable } from "../ui/Touchable";
+import { Ionicons } from "@expo/vector-icons";
+
 import { EmptyState } from "./EmptyState";
+import { EventEditModal } from "./EventEditModal";
 import { EventPickerModal } from "./EventPickerModal";
 import { ReviewGridModal } from "./ReviewGridModal";
 import { TagEditorModal } from "./TagEditorModal";
@@ -51,6 +55,7 @@ export function AdminGalleryScreen() {
   const [reviewPhotos, setReviewPhotos] = useState<Photo[]>([]);
   const [uploads, setUploads] = useState<UploadItem[]>([]);
   const [tagEditorPhoto, setTagEditorPhoto] = useState<Photo | null>(null);
+  const [editingEvent, setEditingEvent] = useState<GalleryEvent | null>(null);
 
   const {
     data,
@@ -139,6 +144,19 @@ export function AdminGalleryScreen() {
           }
         : old
     );
+  };
+
+  // Drop it from the open grid immediately; the list query refetches behind it.
+  const handleDeletePhoto = async (photo: Photo) => {
+    setReviewPhotos((previous) => previous.filter((item) => item.id !== photo.id));
+    try {
+      await deletePhoto(photo.id);
+      queryClient.invalidateQueries({ queryKey: ["gallery"] });
+    } catch {
+      Alert.alert(t.gallery.couldntDeletePhoto, t.common.tryAgain, [{ text: t.common.ok }]);
+      const refreshed = await listEventPhotosAdmin(photo.eventId);
+      setReviewPhotos(refreshed.photos);
+    }
   };
 
   const handleTagsChanged = (updated: Photo) => {
@@ -291,6 +309,13 @@ export function AdminGalleryScreen() {
                   </Text>
                 )}
               </View>
+              <Touchable
+                onPress={() => setEditingEvent(event)}
+                style={styles.eventEditButton}
+                accessibilityLabel={t.gallery.editAlbum}
+              >
+                <Ionicons name="create-outline" size={20} color={Colors.textLight} />
+              </Touchable>
               <Text style={styles.eventChevron}>{isRTL ? "‹" : "›"}</Text>
             </View>
             {/* Preview strip so the admin can recognise an event at a glance
@@ -338,8 +363,21 @@ export function AdminGalleryScreen() {
           onClose={closeReview}
           onOpenTag={setTagEditorPhoto}
           onCaptionSaved={handleCaptionSaved}
+          onDeletePhoto={handleDeletePhoto}
         />
       ) : null}
+
+      <EventEditModal
+        event={editingEvent}
+        students={students}
+        onClose={() => setEditingEvent(null)}
+        onSaved={() => queryClient.invalidateQueries({ queryKey: ["gallery"] })}
+        onDeleted={(eventId) => {
+          // The album may be the one open behind this sheet.
+          if (reviewEvent?.id === eventId) setReviewEvent(null);
+          queryClient.invalidateQueries({ queryKey: ["gallery"] });
+        }}
+      />
 
       <TagEditorModal
         photo={tagEditorPhoto}
@@ -411,6 +449,12 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
     color: Colors.textLight,
     marginTop: 2,
+  },
+  eventEditButton: {
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
   },
   eventChevron: {
     fontSize: 22,

@@ -151,6 +151,34 @@ export async function updateEventCaption(req: Request, res: Response) {
   res.json({ event: serializeEvent(event) });
 }
 
+/** Admin: rename an album or change its date. */
+export async function updateEvent(req: Request, res: Response) {
+  const { name, date } = req.body as { name?: unknown; date?: unknown };
+
+  if (name !== undefined && (typeof name !== "string" || !name.trim())) {
+    return res.status(400).json({ message: "name must be a non-empty string" });
+  }
+  if (name !== undefined && typeof name === "string" && name.trim().length > 100) {
+    return res.status(400).json({ message: "name must be 100 characters or fewer" });
+  }
+  // Same shape the app sends on create, and what the date index sorts on.
+  if (date !== undefined && (typeof date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(date))) {
+    return res.status(400).json({ message: "date must be an ISO date (YYYY-MM-DD)" });
+  }
+  if (name === undefined && date === undefined) {
+    return res.status(400).json({ message: "nothing to update" });
+  }
+
+  const event = await EventModel.updateDetails(param(req, "eventId"), {
+    ...(typeof name === "string" ? { name: name.trim() } : {}),
+    ...(typeof date === "string" ? { date } : {}),
+  });
+  if (!event) {
+    return res.status(404).json({ message: "Event not found" });
+  }
+  res.json({ event: serializeEvent(event) });
+}
+
 export async function updateEventAttendees(req: Request, res: Response) {
   const { attendeeIds } = req.body as { attendeeIds?: unknown };
   if (!Array.isArray(attendeeIds)) {

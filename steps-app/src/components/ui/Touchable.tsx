@@ -3,6 +3,7 @@ import { Insets, StyleProp, TouchableOpacity, ViewStyle } from "react-native";
 
 type TouchableProps = PropsWithChildren<{
   onPress?: () => void;
+  onLongPress?: () => void;
   disabled?: boolean;
   style?: StyleProp<ViewStyle>;
   hitSlop?: number | Insets;
@@ -21,6 +22,7 @@ type TouchableProps = PropsWithChildren<{
  */
 export function Touchable({
   onPress,
+  onLongPress,
   disabled = false,
   style,
   hitSlop,
@@ -30,6 +32,7 @@ export function Touchable({
   return (
     <TouchableOpacity
       onPress={onPress}
+      onLongPress={onLongPress}
       disabled={disabled}
       activeOpacity={0.65}
       accessibilityRole="button"

@@ -94,6 +94,24 @@ export const EventModel = {
     }
   },
 
+  /** Rename an album or move it to another date. Caption and attendees have
+   *  their own endpoints, so this deliberately touches neither. */
+  async updateDetails(
+    id: string,
+    data: { name?: string; date?: string }
+  ): Promise<EventWithAttendees | null> {
+    try {
+      const event = await prisma.event.update({
+        where: { id },
+        data,
+        include: includeAttendees,
+      });
+      return withAttendees(event);
+    } catch {
+      return null;
+    }
+  },
+
   async setAttendees(id: string, attendeeIds: string[]): Promise<EventWithAttendees | null> {
     try {
       const event = await prisma.event.update({

@@ -68,6 +68,15 @@ export async function createEvent(input: { name: string; date: string; attendeeI
   return data.event;
 }
 
+/** Admin: rename an album or move it to another date. */
+export async function updateEvent(eventId: string, input: { name?: string; date?: string }) {
+  const { data } = await api.patch<{ event: GalleryEvent }>(
+    `/api/gallery/events/${eventId}`,
+    input
+  );
+  return data.event;
+}
+
 export async function updateEventAttendees(eventId: string, attendeeIds: string[]) {
   const { data } = await api.patch<{ event: GalleryEvent }>(
     `/api/gallery/events/${eventId}/attendees`,

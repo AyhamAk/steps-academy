@@ -13,6 +13,7 @@ import {
   myGallery,
   removeTag,
   setGalleryQuote,
+  updateEvent,
   updateEventAttendees,
   updateEventCaption,
   uploadPhotos,
@@ -29,6 +30,7 @@ router.put("/quote", requireAuth, adminOnly, setGalleryQuote);
 router.post("/events", requireAuth, adminOnly, createEvent);
 router.get("/events", requireAuth, listEvents);
 router.get("/events/next", requireAuth, getNextEvent);
+router.patch("/events/:eventId", requireAuth, adminOnly, updateEvent);
 router.delete("/events/:eventId", requireAuth, adminOnly, deleteEvent);
 router.post(
   "/events/:eventId/photos",
