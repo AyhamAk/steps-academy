@@ -44,6 +44,9 @@ model Feedback {
   /// 1–5. Kept alongside the message so trends are readable at a glance.
   rating    Int
   message   String?
+  /// Null until an admin has opened the feedback screen. Drives the "new
+  /// feedback" alert on the admin home, the same way Notification.read does.
+  readAt    DateTime?
   createdAt DateTime @default(now())
 
   @@index([createdAt])

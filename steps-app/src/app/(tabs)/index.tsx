@@ -62,7 +62,7 @@ import {
   resolvePhotoUrl,
 } from "../../services/galleryApi";
 import { useAuthStore } from "../../store/authStore";
-import { formatIsoDate, parseIsoDate } from "../../utils/date";
+import { formatIsoDate, formatRelativeTime, parseIsoDate } from "../../utils/date";
 import { Touchable } from "../../components/ui/Touchable";
 
 type SalutationKey = "goodMorning" | "goodAfternoon" | "goodEvening" | "goodNight";
@@ -89,16 +89,6 @@ function getDaysAway(date: Date, t: Translations): { label: string; isToday: boo
   );
   if (diffDays <= 0) return { label: t.home.today, isToday: true };
   return { label: t.home.daysAway(diffDays), isToday: false };
-}
-
-function formatRelativeTime(date: Date, t: Translations): string {
-  const diffMinutes = Math.round((Date.now() - date.getTime()) / (1000 * 60));
-  if (diffMinutes < 1) return t.home.timeAgo.justNow;
-  if (diffMinutes < 60) return t.home.timeAgo.minutes(diffMinutes);
-  const diffHours = Math.round(diffMinutes / 60);
-  if (diffHours < 24) return t.home.timeAgo.hours(diffHours);
-  const diffDays = Math.round(diffHours / 24);
-  return t.home.timeAgo.days(diffDays);
 }
 
 const CAROUSEL_SLIDE_COUNT = 3;

@@ -11,20 +11,13 @@ import {
 } from "react-native";
 
 import { Colors } from "../../constants/Colors";
+import { FEEDBACK_FACES } from "../../constants/FeedbackFaces";
 import { Fonts } from "../../constants/Fonts";
 import { Type } from "../../constants/Typography";
 import { useTranslation } from "../../i18n/useTranslation";
 import { submitFeedback } from "../../services/feedbackApi";
 import { StepsButton } from "../ui/StepsButton";
 import { Touchable } from "../ui/Touchable";
-
-const FACES = [
-  { rating: 1, emoji: "😞" },
-  { rating: 2, emoji: "😕" },
-  { rating: 3, emoji: "🙂" },
-  { rating: 4, emoji: "😊" },
-  { rating: 5, emoji: "🤩" },
-] as const;
 
 /**
  * A face to tap and an optional note. Rating alone is one tap, which is what
@@ -74,7 +67,7 @@ export function FeedbackModal({
           <Text style={[styles.subtitle, rtlText]}>{t.feedback.subtitle}</Text>
 
           <View style={styles.faces}>
-            {FACES.map((face) => (
+            {FEEDBACK_FACES.map((face) => (
               <Touchable
                 key={face.rating}
                 onPress={() => setRating(face.rating)}

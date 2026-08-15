@@ -15,3 +15,18 @@ export function formatEventDate(date: Date, t: Translations): string {
 export function formatIsoDate(iso: string, t: Translations): string {
   return formatEventDate(parseIsoDate(iso), t);
 }
+
+/**
+ * "3 hours ago" against now, in the active language. Lives here rather than in
+ * a screen because both Home's announcement card and the admin feedback list
+ * date things the same way.
+ */
+export function formatRelativeTime(date: Date, t: Translations): string {
+  const diffMinutes = Math.round((Date.now() - date.getTime()) / (1000 * 60));
+  if (diffMinutes < 1) return t.home.timeAgo.justNow;
+  if (diffMinutes < 60) return t.home.timeAgo.minutes(diffMinutes);
+  const diffHours = Math.round(diffMinutes / 60);
+  if (diffHours < 24) return t.home.timeAgo.hours(diffHours);
+  const diffDays = Math.round(diffHours / 24);
+  return t.home.timeAgo.days(diffDays);
+}

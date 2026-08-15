@@ -25,3 +25,9 @@ export async function listFeedback() {
   }>("/api/feedback");
   return data;
 }
+
+/** Admin: everything unread becomes read, clearing the home alert. */
+export async function markFeedbackRead() {
+  const { data } = await api.patch<{ marked: number }>("/api/feedback/read");
+  return data.marked;
+}

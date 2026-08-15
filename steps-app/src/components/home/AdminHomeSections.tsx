@@ -63,6 +63,13 @@ export function AdminHomeSections() {
       tint: Colors.clay,
       route: "/schedule",
     },
+    {
+      key: "feedback",
+      label: t.adminHome.actionFeedback,
+      icon: "chatbubble",
+      tint: Colors.terracotta,
+      route: "/feedback",
+    },
   ];
 
   // Only the things genuinely waiting on the academy. An empty list is good
@@ -84,6 +91,15 @@ export function AdminHomeSections() {
           text: t.adminHome.alertAwaitingLink(data.parentsAwaitingLink),
           route: "/students",
           tint: Colors.honey,
+        }
+      : null,
+    data && data.unreadFeedback > 0
+      ? {
+          key: "feedback",
+          emoji: "💬",
+          text: t.adminHome.alertFeedback(data.unreadFeedback),
+          route: "/feedback",
+          tint: Colors.forest,
         }
       : null,
     data && data.unlinkedStudents > 0

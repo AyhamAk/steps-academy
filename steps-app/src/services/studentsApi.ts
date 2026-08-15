@@ -40,6 +40,8 @@ export type AdminOverview = {
   /** Parents who signed up but have no child linked yet. */
   parentsAwaitingLink: number;
   courses: number;
+  /** Feedback no admin has opened yet. */
+  unreadFeedback: number;
 };
 
 type PageQuery = { search?: string; limit?: number; offset?: number };

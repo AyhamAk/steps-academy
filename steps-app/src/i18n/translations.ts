@@ -401,6 +401,8 @@ Download the app and enter this code to set up your account.`,
       `${n} ${n === 1 ? "parent has" : "parents have"} signed up and need a child linked`,
     alertUnlinked: (n: number) =>
       `${n} ${n === 1 ? "child has" : "children have"} no parent linked yet`,
+    alertFeedback: (n: number) =>
+      `${n} new ${n === 1 ? "message" : "messages"} from parents`,
     academyTitle: "📊 The academy",
     statCourses: "Courses",
     quickTitle: "⚡ Quick actions",
@@ -408,6 +410,17 @@ Download the app and enter this code to set up your account.`,
     actionStudents: "Students",
     actionCourses: "Courses",
     actionSchedule: "Timetable",
+    actionFeedback: "Feedback",
+  },
+  adminFeedback: {
+    title: "Feedback",
+    subtitle: "What parents are telling you",
+    averageLabel: "Average",
+    totalLabel: "Responses",
+    ratingOnly: "Rating only, no message",
+    deletedAccount: "Deleted account",
+    emptyTitle: "Nothing yet",
+    emptyBody: "When a parent rates the app, it will show up here.",
   },
   admin: {
     title: "Management",
@@ -983,6 +996,8 @@ export const ar: Translations = {
       `${n} ${n === 1 ? "ولي أمر سجّل" : "أولياء أمور سجّلوا"} ويحتاجون ربط طفل`,
     alertUnlinked: (n: number) =>
       `${n} ${n === 1 ? "طفل غير مرتبط" : "أطفال غير مرتبطين"} بولي أمر بعد`,
+    alertFeedback: (n: number) =>
+      `${n} ${n === 1 ? "رسالة جديدة" : "رسائل جديدة"} من الأهالي`,
     academyTitle: "📊 الأكاديمية",
     statCourses: "الدورات",
     quickTitle: "⚡ إجراءات سريعة",
@@ -990,6 +1005,17 @@ export const ar: Translations = {
     actionStudents: "الطلاب",
     actionCourses: "الدورات",
     actionSchedule: "الجدول",
+    actionFeedback: "الملاحظات",
+  },
+  adminFeedback: {
+    title: "الملاحظات",
+    subtitle: "ما يقوله الأهالي لكم",
+    averageLabel: "المعدل",
+    totalLabel: "الردود",
+    ratingOnly: "تقييم فقط، بدون رسالة",
+    deletedAccount: "حساب محذوف",
+    emptyTitle: "لا شيء بعد",
+    emptyBody: "عندما يقيّم أحد الأهالي التطبيق، ستظهر ملاحظته هنا.",
   },
   admin: {
     title: "الإدارة",
@@ -1561,6 +1587,8 @@ export const he: Translations = {
       `${n} ${n === 1 ? "הורה נרשם וזקוק" : "הורים נרשמו וזקוקים"} לקישור ילד`,
     alertUnlinked: (n: number) =>
       `${n} ${n === 1 ? "ילד אינו מקושר" : "ילדים אינם מקושרים"} להורה`,
+    alertFeedback: (n: number) =>
+      `${n} ${n === 1 ? "הודעה חדשה" : "הודעות חדשות"} מהורים`,
     academyTitle: "📊 האקדמיה",
     statCourses: "קורסים",
     quickTitle: "⚡ פעולות מהירות",
@@ -1568,6 +1596,17 @@ export const he: Translations = {
     actionStudents: "תלמידים",
     actionCourses: "קורסים",
     actionSchedule: "לוח זמנים",
+    actionFeedback: "משוב",
+  },
+  adminFeedback: {
+    title: "משוב",
+    subtitle: "מה ההורים אומרים לכם",
+    averageLabel: "ממוצע",
+    totalLabel: "תגובות",
+    ratingOnly: "דירוג בלבד, ללא הודעה",
+    deletedAccount: "חשבון שנמחק",
+    emptyTitle: "עדיין אין כלום",
+    emptyBody: "כשהורה ידרג את האפליקציה, המשוב יופיע כאן.",
   },
   admin: {
     title: "ניהול",

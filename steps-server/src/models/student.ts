@@ -145,8 +145,16 @@ export const StudentModel = {
 
   /** Dashboard counters. All COUNT queries — nothing is loaded into memory. */
   async adminCounts() {
-    const [students, parents, unlinkedStudents, events, photos, pendingRequests, courses] =
-      await Promise.all([
+    const [
+      students,
+      parents,
+      unlinkedStudents,
+      events,
+      photos,
+      pendingRequests,
+      courses,
+      unreadFeedback,
+    ] = await Promise.all([
         prisma.student.count(),
         prisma.user.count({ where: { role: "parent" } }),
         prisma.student.count({ where: { guardians: { none: {} } } }),
@@ -154,8 +162,18 @@ export const StudentModel = {
         prisma.photo.count(),
         prisma.courseEnrollment.count({ where: { status: "pending" } }),
         prisma.course.count({ where: { isActive: true } }),
+        prisma.feedback.count({ where: { readAt: null } }),
       ]);
-    return { students, parents, unlinkedStudents, events, photos, pendingRequests, courses };
+    return {
+      students,
+      parents,
+      unlinkedStudents,
+      events,
+      photos,
+      pendingRequests,
+      courses,
+      unreadFeedback,
+    };
   },
 
   /** Student ids this parent may see photos of — the core visibility rule. */
