@@ -1,18 +1,19 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { ActivityFormModal } from "../components/admin/ActivityFormModal";
+import AdminHeader from "../components/admin/AdminHeader";
+import IconTile from "../components/admin/IconTile";
 import { EmptyState } from "../components/gallery/EmptyState";
 import { Screen } from "../components/Screen";
 import { BalloonLoader } from "../components/ui/BalloonLoader";
 import { ScreenFadeIn } from "../components/ui/ScreenFadeIn";
 import { StepsButton } from "../components/ui/StepsButton";
-import { StepsHeader } from "../components/ui/StepsHeader";
 import { Touchable } from "../components/ui/Touchable";
 import { Colors } from "../constants/Colors";
 import { Fonts } from "../constants/Fonts";
-import { Type } from "../constants/Typography";
 import { useTranslation } from "../i18n/useTranslation";
 import {
   ActivityInput,
@@ -68,7 +69,7 @@ export default function ScheduleAdminScreen() {
   return (
     <Screen>
       <ScreenFadeIn style={styles.flex}>
-        <StepsHeader title={t.scheduleAdmin.title} subtitle={t.scheduleAdmin.subtitle} showBack />
+        <AdminHeader title={t.scheduleAdmin.title} subtitle={t.scheduleAdmin.subtitle} />
 
         {/* Same day-tab pattern parents see, so the admin edits what they'll get. */}
         <View style={[styles.dayTabs, isRTL && styles.rowReverse]}>
@@ -82,18 +83,18 @@ export default function ScheduleAdminScreen() {
                 style={[styles.dayTab, isSelected && styles.dayTabActive]}
               >
                 <Text
-                  style={[styles.dayName, { color: isSelected ? "#FFFFFF" : Colors.textLight }]}
+                  style={[styles.dayLabel, isSelected && styles.dayLabelActive]}
                   numberOfLines={1}
                   adjustsFontSizeToFit
                   minimumFontScale={0.7}
                 >
                   {t.home.weekDays[day]}
                 </Text>
-                <Text
-                  style={[styles.dayCount, { color: isSelected ? "#FFFFFF" : Colors.bark }]}
-                >
-                  {count}
-                </Text>
+                {count > 0 ? (
+                  <View style={[styles.dayDot, isSelected && styles.dayDotActive]} />
+                ) : (
+                  <View style={styles.dayDotSpacer} />
+                )}
               </Touchable>
             );
           })}
@@ -129,7 +130,9 @@ export default function ScheduleAdminScreen() {
                   ]}
                 />
                 <View style={[styles.cardRow, isRTL && styles.rowReverse]}>
-                  <Text style={styles.emoji}>{activity.emoji}</Text>
+                  <IconTile tint={activity.accentColor ?? Colors.honey} size={40}>
+                    <Text style={styles.emoji}>{activity.emoji}</Text>
+                  </IconTile>
                   <View style={styles.flex}>
                     <Text style={[styles.name, rtlText]} numberOfLines={1}>
                       {activity.name}
@@ -144,21 +147,21 @@ export default function ScheduleAdminScreen() {
                       setEditing(activity);
                       setIsFormOpen(true);
                     }}
-                    hitSlop={6}
                     style={styles.iconAction}
+                    accessibilityLabel={t.scheduleAdmin.edit}
                   >
-                    <Text style={styles.editText}>{t.scheduleAdmin.edit}</Text>
+                    <Ionicons name="pencil-outline" size={20} color={Colors.terracotta} />
                   </Touchable>
                   <Touchable
                     onPress={() => confirmDelete(activity)}
-                    hitSlop={6}
                     disabled={remove.isPending}
                     style={styles.iconAction}
+                    accessibilityLabel={t.scheduleAdmin.delete}
                   >
                     {remove.isPending && remove.variables === activity.id ? (
                       <ActivityIndicator color={Colors.clay} />
                     ) : (
-                      <Text style={styles.deleteText}>🗑</Text>
+                      <Ionicons name="trash-outline" size={20} color={Colors.textLight} />
                     )}
                   </Touchable>
                 </View>
@@ -186,40 +189,59 @@ export default function ScheduleAdminScreen() {
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   rowReverse: { flexDirection: "row-reverse" },
-  dayTabs: { flexDirection: "row", gap: 8, marginTop: 16 },
+  dayTabs: { flexDirection: "row", gap: 8, marginTop: 8 },
   dayTab: {
     flex: 1,
-    paddingVertical: 10,
-    paddingHorizontal: 4,
-    borderRadius: 16,
-    borderWidth: 1.5,
+    height: 56,
+    borderRadius: 14,
+    borderWidth: 1,
     borderColor: Colors.border,
     backgroundColor: Colors.linen,
     alignItems: "center",
     justifyContent: "center",
-    minHeight: 62,
-    gap: 3,
   },
   dayTabActive: { backgroundColor: Colors.terracotta, borderColor: Colors.terracotta },
-  dayName: { fontFamily: Fonts.semiBold, fontSize: 12 },
-  dayCount: { fontFamily: Fonts.bold, fontSize: 17 },
-  addButton: { marginTop: 14, marginBottom: 4 },
-  list: { paddingTop: 12, paddingBottom: 32, gap: 10 },
+  dayLabel: { fontSize: 14, fontFamily: Fonts.semiBold, color: Colors.textLight },
+  dayLabelActive: { color: Colors.cream },
+  dayDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginTop: 6,
+    backgroundColor: Colors.terracotta,
+  },
+  dayDotActive: { backgroundColor: Colors.cream },
+  dayDotSpacer: { width: 6, height: 6, marginTop: 6 },
+  addButton: { marginTop: 12, marginBottom: 4, height: 48, borderRadius: 14 },
+  list: { paddingTop: 12, paddingBottom: 32, gap: 12 },
   card: {
     backgroundColor: Colors.linen,
     borderRadius: 16,
     borderWidth: 1,
     borderColor: Colors.border,
-    padding: 14,
-    paddingStart: 18,
+    padding: 12,
+    paddingStart: 16,
+    minHeight: 68,
+    justifyContent: "center",
     overflow: "hidden",
   },
-  accent: { position: "absolute", top: 0, bottom: 0, start: 0, width: 5 },
+  accent: {
+    position: "absolute",
+    top: 0,
+    bottom: 0,
+    start: 0,
+    width: 4,
+    borderTopEndRadius: 2,
+    borderBottomEndRadius: 2,
+  },
   cardRow: { flexDirection: "row", alignItems: "center", gap: 12 },
-  emoji: { fontSize: 24, width: 30, textAlign: "center" },
-  name: { ...Type.body, fontFamily: Fonts.semiBold, color: Colors.bark },
-  meta: { ...Type.caption, color: Colors.textLight, marginTop: 2 },
-  iconAction: { paddingHorizontal: 6, paddingVertical: 4 },
-  editText: { fontFamily: Fonts.semiBold, fontSize: 13, color: Colors.terracotta },
-  deleteText: { fontSize: 17 },
+  emoji: { fontSize: 20 },
+  name: { fontFamily: Fonts.semiBold, fontSize: 16, lineHeight: 22, color: Colors.bark },
+  meta: { fontFamily: Fonts.regular, fontSize: 13, lineHeight: 18, color: Colors.textLight, marginTop: 2 },
+  iconAction: {
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+  },
 });

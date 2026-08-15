@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
@@ -11,17 +12,17 @@ import {
   View,
 } from "react-native";
 
+import AdminHeader from "../components/admin/AdminHeader";
+import SectionLabel from "../components/admin/SectionLabel";
 import { EmptyState } from "../components/gallery/EmptyState";
 import { Screen } from "../components/Screen";
 import { InviteCodesSection } from "../components/students/InviteCodesSection";
 import { BalloonLoader } from "../components/ui/BalloonLoader";
 import { ScreenFadeIn } from "../components/ui/ScreenFadeIn";
 import { StepsButton } from "../components/ui/StepsButton";
-import { StepsHeader } from "../components/ui/StepsHeader";
 import { Touchable } from "../components/ui/Touchable";
 import { Colors } from "../constants/Colors";
 import { Fonts } from "../constants/Fonts";
-import { Type } from "../constants/Typography";
 import { useTranslation } from "../i18n/useTranslation";
 import {
   createStudent,
@@ -43,13 +44,7 @@ function useDebounced(value: string, delay: number) {
   return debounced;
 }
 
-function GuardianPicker({
-  student,
-  onDone,
-}: {
-  student: Student;
-  onDone: () => void;
-}) {
+function GuardianPicker({ student, onDone }: { student: Student; onDone: () => void }) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [parentSearch, setParentSearch] = useState("");
@@ -116,9 +111,15 @@ function GuardianPicker({
   );
 }
 
+/**
+ * Collapsed to a header row by default. Expanded, every child ran to nearly a
+ * full screen, so a class of five was five screens of scrolling before you
+ * could see the fifth name. Local state only — nothing is persisted.
+ */
 function StudentCard({ student }: { student: Student }) {
   const { t, isRTL, rtlText } = useTranslation();
   const queryClient = useQueryClient();
+  const [isExpanded, setIsExpanded] = useState(false);
   const [isPickingGuardian, setIsPickingGuardian] = useState(false);
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: ["students"] });
@@ -137,70 +138,89 @@ function StudentCard({ student }: { student: Student }) {
 
   return (
     <View style={styles.card}>
-      <View style={[styles.cardHeader, isRTL && styles.rowReverse]}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarEmoji}>🐘</Text>
+      <Touchable onPress={() => setIsExpanded((previous) => !previous)}>
+        <View style={[styles.cardHeader, isRTL && styles.rowReverse]}>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarEmoji}>🐘</Text>
+          </View>
+          <View style={styles.flex}>
+            <Text style={[styles.name, rtlText]}>{student.name}</Text>
+            <Text style={[styles.meta, rtlText]}>
+              {student.guardians.length === 0
+                ? t.students.noGuardians
+                : t.students.guardianCount(student.guardians.length)}
+              {" · "}
+              {t.students.photoCount(student.photoCount)}
+            </Text>
+          </View>
+          <Ionicons
+            name={isExpanded ? "chevron-up" : isRTL ? "chevron-back" : "chevron-forward"}
+            size={18}
+            color={Colors.textLight}
+          />
         </View>
-        <View style={styles.flex}>
-          <Text style={[styles.name, rtlText]}>{student.name}</Text>
-          <Text style={[styles.meta, rtlText]}>
-            {student.guardians.length === 0
-              ? t.students.noGuardians
-              : t.students.guardianCount(student.guardians.length)}
-            {" · "}
-            {t.students.photoCount(student.photoCount)}
-          </Text>
-        </View>
-        <Touchable onPress={confirmRemove} hitSlop={8} disabled={remove.isPending}>
-          {remove.isPending ? (
-            <ActivityIndicator color={Colors.clay} />
-          ) : (
-            <Text style={styles.removeIcon}>🗑</Text>
-          )}
-        </Touchable>
-      </View>
+      </Touchable>
 
-      {student.guardians.length > 0 ? (
-        <View style={styles.guardianList}>
-          {student.guardians.map((guardian) => (
-            <View key={guardian.id} style={[styles.guardianRow, isRTL && styles.rowReverse]}>
-              <View style={styles.flex}>
-                <Text style={[styles.guardianName, rtlText]}>{guardian.name}</Text>
-                <Text style={[styles.guardianEmail, rtlText]}>{guardian.email}</Text>
-              </View>
-              <Touchable
-                onPress={() => unlink.mutate(guardian.id)}
-                hitSlop={8}
-                disabled={unlink.isPending}
-              >
-                {unlink.isPending && unlink.variables === guardian.id ? (
-                  <ActivityIndicator color={Colors.clay} />
-                ) : (
-                  <Text style={styles.unlink}>{t.students.unlink}</Text>
-                )}
-              </Touchable>
+      {isExpanded ? (
+        <>
+          {student.guardians.length > 0 ? (
+            <View style={styles.guardianList}>
+              {student.guardians.map((guardian) => (
+                <View key={guardian.id} style={[styles.guardianRow, isRTL && styles.rowReverse]}>
+                  <View style={styles.flex}>
+                    <Text style={[styles.guardianName, rtlText]}>{guardian.name}</Text>
+                    <Text style={[styles.guardianEmail, rtlText]}>{guardian.email}</Text>
+                  </View>
+                  <Touchable
+                    onPress={() => unlink.mutate(guardian.id)}
+                    hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                    disabled={unlink.isPending}
+                  >
+                    {unlink.isPending && unlink.variables === guardian.id ? (
+                      <ActivityIndicator color={Colors.clay} />
+                    ) : (
+                      <Text style={styles.unlink}>{t.students.unlink}</Text>
+                    )}
+                  </Touchable>
+                </View>
+              ))}
             </View>
-          ))}
-        </View>
+          ) : null}
+
+          {isPickingGuardian ? (
+            <GuardianPicker student={student} onDone={() => setIsPickingGuardian(false)} />
+          ) : (
+            <Touchable style={styles.addGuardian} onPress={() => setIsPickingGuardian(true)}>
+              <Text style={styles.addGuardianText}>+ {t.students.addGuardian}</Text>
+            </Touchable>
+          )}
+
+          {/* Linking by hand still exists for parents who registered before invite
+              codes; for everyone new, handing over a code does the linking. */}
+          <InviteCodesSection studentId={student.id} studentName={student.name} />
+
+          <View style={[styles.cardFooter, isRTL && styles.rowReverse]}>
+            <Touchable
+              onPress={confirmRemove}
+              disabled={remove.isPending}
+              style={styles.iconButton}
+              accessibilityLabel={t.students.delete}
+            >
+              {remove.isPending ? (
+                <ActivityIndicator color={Colors.clay} />
+              ) : (
+                <Ionicons name="trash-outline" size={20} color={Colors.textLight} />
+              )}
+            </Touchable>
+          </View>
+        </>
       ) : null}
-
-      {isPickingGuardian ? (
-        <GuardianPicker student={student} onDone={() => setIsPickingGuardian(false)} />
-      ) : (
-        <Touchable style={styles.addGuardian} onPress={() => setIsPickingGuardian(true)}>
-          <Text style={styles.addGuardianText}>+ {t.students.addGuardian}</Text>
-        </Touchable>
-      )}
-
-      {/* Linking by hand still exists for parents who registered before invite
-          codes; for everyone new, handing over a code does the linking. */}
-      <InviteCodesSection studentId={student.id} studentName={student.name} />
     </View>
   );
 }
 
 export default function StudentsScreen() {
-  const { t, rtlText } = useTranslation();
+  const { t, isRTL, rtlText } = useTranslation();
   const queryClient = useQueryClient();
   const [newName, setNewName] = useState("");
   const [search, setSearch] = useState("");
@@ -224,55 +244,63 @@ export default function StudentsScreen() {
   return (
     <Screen>
       <ScreenFadeIn style={styles.flex}>
-        <StepsHeader title={t.students.title} subtitle={t.students.subtitle} showBack />
+        <AdminHeader title={t.students.title} subtitle={t.students.subtitle} />
 
-        {/* Whole-roster action, so it belongs here rather than on a card. */}
-        <Touchable style={styles.sendCodesLink} onPress={() => router.push("/invite-send")}>
-          <Text style={styles.sendCodesText}>📨 {t.invite.sendTitle}</Text>
-        </Touchable>
-
-        <View style={styles.addRow}>
-          <TextInput
-            value={newName}
-            onChangeText={setNewName}
-            placeholder={t.students.namePlaceholder}
-            placeholderTextColor={Colors.textLight}
-            style={[styles.input, rtlText]}
-            returnKeyType="done"
-            onSubmitEditing={() => newName.trim() && create.mutate()}
-          />
-          <Touchable
-            style={[styles.addButton, !newName.trim() && styles.addButtonDisabled]}
-            disabled={!newName.trim() || create.isPending}
-            onPress={() => create.mutate()}
-            accessibilityLabel={t.students.addStudent}
-          >
-            {create.isPending ? (
-              <ActivityIndicator color="#FFFFFF" />
-            ) : (
-              <Text style={styles.addButtonText}>+</Text>
-            )}
-          </Touchable>
+        {/* Boxed and labelled, so it doesn't read as a second search field. */}
+        <View style={styles.addCard}>
+          <Text style={[styles.addCardLabel, rtlText]}>{t.students.addSectionLabel}</Text>
+          <View style={[styles.addRow, isRTL && styles.rowReverse]}>
+            <TextInput
+              value={newName}
+              onChangeText={setNewName}
+              placeholder={t.students.namePlaceholder}
+              placeholderTextColor={Colors.textLight}
+              style={[styles.input, rtlText]}
+              returnKeyType="done"
+              onSubmitEditing={() => newName.trim() && create.mutate()}
+            />
+            <Touchable
+              style={[styles.addButton, !newName.trim() && styles.addButtonDisabled]}
+              disabled={!newName.trim() || create.isPending}
+              onPress={() => create.mutate()}
+              accessibilityLabel={t.students.addStudent}
+            >
+              {create.isPending ? (
+                <ActivityIndicator color={Colors.cream} />
+              ) : (
+                <Ionicons name="add" size={24} color={Colors.cream} />
+              )}
+            </Touchable>
+          </View>
         </View>
 
-        <View style={styles.searchRow}>
+        <View style={[styles.searchRow, isRTL && styles.rowReverse]}>
+          <Ionicons name="search" size={18} color={Colors.textLight} />
           <TextInput
             value={search}
             onChangeText={setSearch}
             placeholder={t.students.searchPlaceholder}
             placeholderTextColor={Colors.textLight}
-            style={[styles.input, rtlText]}
+            style={[styles.searchInput, rtlText]}
             autoCorrect={false}
           />
           {isFetching ? <ActivityIndicator color={Colors.textLight} /> : null}
         </View>
 
+        {/* Whole-roster action, so it sits below the roster controls rather
+            than above the form for adding one child. */}
+        <Touchable style={styles.sendCodesButton} onPress={() => router.push("/invite-send")}>
+          <Text style={styles.sendCodesText}>{t.invite.sendTitle}</Text>
+        </Touchable>
+
         {data ? (
-          <Text style={[styles.count, rtlText]}>
-            {debouncedSearch
-              ? t.students.searchResults(students?.length ?? 0, data.total)
-              : t.students.totalCount(data.total)}
-          </Text>
+          <SectionLabel
+            label={
+              debouncedSearch
+                ? t.students.searchResults(students?.length ?? 0, data.total)
+                : t.students.totalCount(data.total)
+            }
+          />
         ) : null}
 
         {isError ? (
@@ -305,38 +333,42 @@ export default function StudentsScreen() {
 }
 
 const styles = StyleSheet.create({
-  sendCodesLink: {
-    backgroundColor: `${Colors.forest}14`,
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    marginHorizontal: 16,
-    marginBottom: 4,
-    alignItems: "center",
-  },
-  sendCodesText: { fontFamily: Fonts.bold, fontSize: 14, color: Colors.forest },
   flex: { flex: 1 },
   rowReverse: { flexDirection: "row-reverse" },
+  addCard: {
+    backgroundColor: Colors.linen,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    padding: 16,
+  },
+  addCardLabel: {
+    fontFamily: Fonts.semiBold,
+    fontSize: 12,
+    lineHeight: 16,
+    letterSpacing: 0.6,
+    color: Colors.textLight,
+    marginBottom: 8,
+  },
   addRow: {
     flexDirection: "row",
-    gap: 10,
-    marginTop: 16,
-    marginBottom: 8,
+    alignItems: "center",
+    gap: 12,
   },
   searchRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
-    marginBottom: 6,
-  },
-  count: {
-    ...Type.caption,
-    color: Colors.textLight,
-    marginBottom: 4,
+    gap: 8,
+    backgroundColor: Colors.cream,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    paddingHorizontal: 12,
+    marginTop: 12,
   },
   input: {
     flex: 1,
-    backgroundColor: Colors.linen,
+    backgroundColor: Colors.cream,
     borderRadius: 14,
     borderWidth: 1,
     borderColor: Colors.border,
@@ -346,24 +378,41 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: Colors.bark,
   },
+  searchInput: {
+    flex: 1,
+    paddingVertical: 12,
+    fontFamily: Fonts.regular,
+    fontSize: 15,
+    color: Colors.bark,
+  },
   addButton: {
     width: 48,
+    height: 48,
     borderRadius: 14,
     backgroundColor: Colors.terracotta,
     alignItems: "center",
     justifyContent: "center",
   },
   addButtonDisabled: { opacity: 0.4 },
-  addButtonText: { fontFamily: Fonts.bold, fontSize: 22, color: "#FFFFFF" },
-  list: { paddingTop: 8, paddingBottom: 32, gap: 12 },
+  sendCodesButton: {
+    height: 48,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: Colors.forest,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 12,
+  },
+  sendCodesText: { fontFamily: Fonts.semiBold, fontSize: 15, color: Colors.forest },
+  list: { paddingTop: 4, paddingBottom: 32, gap: 12 },
   card: {
     backgroundColor: Colors.linen,
-    borderRadius: 18,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: Colors.border,
     padding: 16,
   },
-  cardHeader: { flexDirection: "row", alignItems: "center", gap: 12 },
+  cardHeader: { flexDirection: "row", alignItems: "center", gap: 12, minHeight: 44 },
   avatar: {
     width: 44,
     height: 44,
@@ -373,26 +422,42 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   avatarEmoji: { fontSize: 22 },
-  name: { ...Type.body, fontFamily: Fonts.bold, color: Colors.bark },
-  meta: { ...Type.caption, color: Colors.textLight, marginTop: 2 },
-  removeIcon: { fontSize: 18 },
+  name: { fontFamily: Fonts.bold, fontSize: 17, lineHeight: 22, color: Colors.bark },
+  meta: {
+    fontFamily: Fonts.regular,
+    fontSize: 13,
+    lineHeight: 18,
+    color: Colors.textLight,
+    marginTop: 2,
+  },
+  cardFooter: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    marginTop: 8,
+  },
+  iconButton: {
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   guardianList: {
     marginTop: 12,
     borderTopWidth: 1,
     borderTopColor: Colors.border,
-    paddingTop: 10,
+    paddingTop: 12,
     gap: 8,
   },
-  guardianRow: { flexDirection: "row", alignItems: "center", gap: 10 },
-  guardianName: { fontFamily: Fonts.semiBold, fontSize: 14, color: Colors.bark },
-  guardianEmail: { ...Type.caption, color: Colors.textLight },
-  unlink: { fontFamily: Fonts.semiBold, fontSize: 13, color: Colors.clay },
-  addGuardian: { marginTop: 12 },
-  addGuardianText: { fontFamily: Fonts.semiBold, fontSize: 13, color: Colors.terracotta },
+  guardianRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+  guardianName: { fontFamily: Fonts.semiBold, fontSize: 16, lineHeight: 22, color: Colors.bark },
+  guardianEmail: { fontFamily: Fonts.regular, fontSize: 13, lineHeight: 18, color: Colors.textLight },
+  unlink: { fontFamily: Fonts.regular, fontSize: 14, color: Colors.clay },
+  addGuardian: { marginTop: 12, minHeight: 44, justifyContent: "center" },
+  addGuardianText: { fontFamily: Fonts.semiBold, fontSize: 15, color: Colors.terracotta },
   picker: {
     marginTop: 12,
     backgroundColor: Colors.cream,
-    borderRadius: 14,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: Colors.border,
     padding: 12,
@@ -400,7 +465,7 @@ const styles = StyleSheet.create({
   pickerTitle: { fontFamily: Fonts.bold, fontSize: 13, color: Colors.bark, marginBottom: 8 },
   pickerSearch: {
     backgroundColor: Colors.linen,
-    borderRadius: 10,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: Colors.border,
     paddingHorizontal: 12,
@@ -413,14 +478,15 @@ const styles = StyleSheet.create({
   pickerRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
-    paddingVertical: 10,
+    gap: 12,
+    paddingVertical: 12,
+    minHeight: 44,
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
   },
-  pickerName: { fontFamily: Fonts.semiBold, fontSize: 14, color: Colors.bark },
-  pickerEmail: { ...Type.caption, color: Colors.textLight },
-  linkAction: { fontFamily: Fonts.bold, fontSize: 13, color: Colors.forest },
+  pickerName: { fontFamily: Fonts.semiBold, fontSize: 16, lineHeight: 22, color: Colors.bark },
+  pickerEmail: { fontFamily: Fonts.regular, fontSize: 13, lineHeight: 18, color: Colors.textLight },
+  linkAction: { fontFamily: Fonts.semiBold, fontSize: 15, color: Colors.forest },
   pickerDone: { marginTop: 12 },
-  muted: { ...Type.caption, color: Colors.textLight, paddingVertical: 8 },
+  muted: { fontFamily: Fonts.regular, fontSize: 13, color: Colors.textLight, paddingVertical: 8 },
 });

@@ -1,19 +1,20 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { useState } from "react";
 import { ActivityIndicator, Alert, FlatList, StyleSheet, Text, View } from "react-native";
 
+import AdminHeader from "../components/admin/AdminHeader";
 import { CourseFormModal } from "../components/admin/CourseFormModal";
+import IconTile from "../components/admin/IconTile";
 import { EmptyState } from "../components/gallery/EmptyState";
 import { Screen } from "../components/Screen";
 import { BalloonLoader } from "../components/ui/BalloonLoader";
 import { ScreenFadeIn } from "../components/ui/ScreenFadeIn";
 import { StepsButton } from "../components/ui/StepsButton";
-import { StepsHeader } from "../components/ui/StepsHeader";
 import { Touchable } from "../components/ui/Touchable";
 import { Colors } from "../constants/Colors";
 import { Fonts } from "../constants/Fonts";
-import { Type } from "../constants/Typography";
 import { useTranslation } from "../i18n/useTranslation";
 import { formatCourseDates, formatCourseDays } from "../utils/courseSchedule";
 import {
@@ -45,9 +46,9 @@ function CourseCard({
       <View style={[styles.accent, { backgroundColor: accent }]} />
 
       <View style={[styles.cardHead, isRTL && styles.rowReverse]}>
-        <View style={[styles.iconBubble, { backgroundColor: `${accent}22` }]}>
+        <IconTile tint={accent} size={44}>
           <Text style={styles.icon}>{course.emoji}</Text>
-        </View>
+        </IconTile>
         <View style={styles.flex}>
           <Text style={[styles.name, rtlText]} numberOfLines={1}>
             {course.name}
@@ -57,9 +58,12 @@ function CourseCard({
               t.coursesAdmin.noSchedule}
           </Text>
           {formatCourseDates(course, t) ? (
-            <Text style={[styles.meta, rtlText]} numberOfLines={1}>
-              📆 {formatCourseDates(course, t)}
-            </Text>
+            <View style={[styles.dateRow, isRTL && styles.rowReverse]}>
+              <Ionicons name="calendar-outline" size={14} color={Colors.textLight} />
+              <Text style={[styles.meta, styles.dateText, rtlText]} numberOfLines={1}>
+                {formatCourseDates(course, t)}
+              </Text>
+            </View>
           ) : null}
         </View>
         {!course.isActive ? (
@@ -96,9 +100,10 @@ function CourseCard({
         </View>
       </View>
 
-      {/* The primary action: review this course's requests. */}
+      {/* The primary action: review this course's requests. A row rather than a
+          boxed button, so it doesn't compete with the card's own outline. */}
       <Touchable
-        style={[styles.reviewButton, course.pendingCount > 0 && styles.reviewButtonUrgent]}
+        style={styles.reviewRow}
         onPress={() =>
           router.push({
             pathname: "/course-requests",
@@ -106,27 +111,29 @@ function CourseCard({
           })
         }
       >
-        <Text
-          style={[
-            styles.reviewText,
-            course.pendingCount > 0 && styles.reviewTextUrgent,
-          ]}
-        >
-          {course.pendingCount > 0
-            ? t.coursesAdmin.reviewPending(course.pendingCount)
-            : t.coursesAdmin.viewEnrolled}
-        </Text>
+        <View style={[styles.reviewInner, isRTL && styles.rowReverse]}>
+          <Text style={[styles.reviewText, course.pendingCount > 0 && styles.reviewTextUrgent]}>
+            {course.pendingCount > 0
+              ? t.coursesAdmin.reviewPending(course.pendingCount)
+              : t.coursesAdmin.viewEnrolled}
+          </Text>
+          <Ionicons
+            name={isRTL ? "chevron-back" : "chevron-forward"}
+            size={18}
+            color={Colors.textLight}
+          />
+        </View>
       </Touchable>
 
       <View style={[styles.actionRow, isRTL && styles.rowReverse]}>
-        <Touchable style={styles.smallAction} onPress={onEdit}>
-          <Text style={styles.smallActionText}>{t.coursesAdmin.edit}</Text>
+        <Touchable style={styles.action} onPress={onEdit}>
+          <Text style={styles.editText}>{t.coursesAdmin.edit}</Text>
         </Touchable>
-        <Touchable style={styles.smallAction} onPress={onDelete} disabled={isDeleting}>
+        <Touchable style={styles.action} onPress={onDelete} disabled={isDeleting}>
           {isDeleting ? (
             <ActivityIndicator color={Colors.clay} />
           ) : (
-            <Text style={[styles.smallActionText, styles.deleteText]}>{t.coursesAdmin.delete}</Text>
+            <Text style={styles.deleteText}>{t.coursesAdmin.delete}</Text>
           )}
         </Touchable>
       </View>
@@ -183,7 +190,7 @@ export default function CoursesAdminScreen() {
   return (
     <Screen>
       <ScreenFadeIn style={styles.flex}>
-        <StepsHeader title={t.coursesAdmin.title} subtitle={t.coursesAdmin.subtitle} showBack />
+        <AdminHeader title={t.coursesAdmin.title} subtitle={t.coursesAdmin.subtitle} />
 
         <StepsButton
           label={t.coursesAdmin.addCourse}
@@ -236,11 +243,11 @@ export default function CoursesAdminScreen() {
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   rowReverse: { flexDirection: "row-reverse" },
-  addButton: { marginTop: 16, marginBottom: 4 },
-  list: { paddingTop: 12, paddingBottom: 32, gap: 14 },
+  addButton: { marginTop: 8, marginBottom: 4 },
+  list: { paddingTop: 12, paddingBottom: 32, gap: 12 },
   card: {
     backgroundColor: Colors.linen,
-    borderRadius: 18,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: Colors.border,
     padding: 16,
@@ -248,54 +255,71 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   cardInactive: { opacity: 0.62 },
-  accent: { position: "absolute", top: 0, start: 0, end: 0, height: 5 },
-  cardHead: { flexDirection: "row", alignItems: "center", gap: 12 },
-  iconBubble: {
-    width: 46,
-    height: 46,
-    borderRadius: 14,
-    alignItems: "center",
-    justifyContent: "center",
+  // Rounded to match the card, so the bar no longer squares off its corners.
+  accent: {
+    position: "absolute",
+    top: 0,
+    start: 0,
+    end: 0,
+    height: 4,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
   },
+  cardHead: { flexDirection: "row", alignItems: "center", gap: 12 },
   icon: { fontSize: 24 },
-  name: { ...Type.body, fontFamily: Fonts.bold, color: Colors.bark },
-  meta: { ...Type.caption, color: Colors.textLight, marginTop: 2 },
+  name: { fontFamily: Fonts.bold, fontSize: 17, lineHeight: 22, color: Colors.bark },
+  meta: {
+    fontFamily: Fonts.regular,
+    fontSize: 13,
+    lineHeight: 18,
+    color: Colors.textLight,
+    marginTop: 2,
+  },
+  dateRow: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 2 },
+  dateText: { marginTop: 0 },
   hiddenPill: {
     backgroundColor: Colors.border,
     borderRadius: 8,
     paddingHorizontal: 8,
     paddingVertical: 3,
   },
-  hiddenPillText: { fontFamily: Fonts.bold, fontSize: 10.5, color: Colors.textLight },
+  hiddenPillText: { fontFamily: Fonts.semiBold, fontSize: 12, color: Colors.textLight },
   statRow: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: Colors.cream,
-    borderRadius: 14,
-    paddingVertical: 12,
-    marginTop: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    padding: 12,
+    marginTop: 12,
   },
   stat: { flex: 1, alignItems: "center" },
   statDivider: { width: 1, height: 26, backgroundColor: Colors.border },
-  statValue: { fontFamily: Fonts.extraBold, fontSize: 19 },
-  statLabel: { ...Type.caption, fontSize: 11, color: Colors.textLight, marginTop: 1 },
-  reviewButton: {
+  statValue: { fontFamily: Fonts.extraBold, fontSize: 20, lineHeight: 26 },
+  statLabel: {
+    fontFamily: Fonts.regular,
+    fontSize: 11,
+    lineHeight: 16,
+    color: Colors.textLight,
+    marginTop: 1,
+  },
+  reviewRow: {
     marginTop: 12,
-    borderRadius: 12,
-    paddingVertical: 12,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+  },
+  reviewInner: {
+    flexDirection: "row",
     alignItems: "center",
-    backgroundColor: Colors.cream,
-    borderWidth: 1.5,
-    borderColor: Colors.border,
+    justifyContent: "space-between",
+    paddingVertical: 12,
+    minHeight: 44,
   },
-  reviewButtonUrgent: {
-    backgroundColor: `${Colors.honey}26`,
-    borderColor: Colors.honey,
-  },
-  reviewText: { fontFamily: Fonts.semiBold, fontSize: 13.5, color: Colors.textLight },
-  reviewTextUrgent: { color: Colors.bark, fontFamily: Fonts.bold },
-  actionRow: { flexDirection: "row", gap: 10, marginTop: 10 },
-  smallAction: { flex: 1, alignItems: "center", paddingVertical: 8 },
-  smallActionText: { fontFamily: Fonts.semiBold, fontSize: 13, color: Colors.terracotta },
-  deleteText: { color: Colors.clay },
+  reviewText: { fontFamily: Fonts.semiBold, fontSize: 15, color: Colors.terracotta },
+  reviewTextUrgent: { color: Colors.bark },
+  actionRow: { flexDirection: "row", gap: 12, marginTop: 4 },
+  action: { flex: 1, alignItems: "center", justifyContent: "center", minHeight: 44 },
+  editText: { fontFamily: Fonts.semiBold, fontSize: 15, color: Colors.terracotta },
+  deleteText: { fontFamily: Fonts.regular, fontSize: 14, color: Colors.clay },
 });

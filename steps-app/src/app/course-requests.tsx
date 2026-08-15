@@ -1,17 +1,24 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams } from "expo-router";
 import { useState } from "react";
-import { ActivityIndicator, Alert, SectionList, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  SectionList,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
+import AdminHeader from "../components/admin/AdminHeader";
 import { EmptyState } from "../components/gallery/EmptyState";
 import { Screen } from "../components/Screen";
 import { BalloonLoader } from "../components/ui/BalloonLoader";
 import { ScreenFadeIn } from "../components/ui/ScreenFadeIn";
-import { StepsHeader } from "../components/ui/StepsHeader";
 import { Touchable } from "../components/ui/Touchable";
 import { Colors } from "../constants/Colors";
 import { Fonts } from "../constants/Fonts";
-import { Type } from "../constants/Typography";
 import { useTranslation } from "../i18n/useTranslation";
 import {
   decideEnrollment,
@@ -114,7 +121,7 @@ function RequestCard({ request }: { request: EnrollmentRequest }) {
             onPress={() => decide.mutate("approved")}
           >
             {decide.isPending && decide.variables === "approved" ? (
-              <ActivityIndicator color="#FFFFFF" />
+              <ActivityIndicator color={Colors.cream} />
             ) : (
               <Text style={styles.buttonText}>{t.courses.approve}</Text>
             )}
@@ -151,13 +158,17 @@ export default function CourseRequestsScreen() {
   return (
     <Screen>
       <ScreenFadeIn style={styles.flex}>
-        <StepsHeader
+        <AdminHeader
           title={courseName ?? t.courses.requestsTitle}
           subtitle={courseName ? t.courses.requestsForCourse : t.courses.requestsSubtitle}
-          showBack
         />
 
-        <View style={styles.filters}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filters}
+          style={styles.filtersScroll}
+        >
           {filters.map((item) => {
             const isActive = item.key === filter;
             const showBadge = item.key === "pending" && (data?.pendingCount ?? 0) > 0;
@@ -174,7 +185,7 @@ export default function CourseRequestsScreen() {
               </Touchable>
             );
           })}
-        </View>
+        </ScrollView>
 
         {isError ? (
           <EmptyState
@@ -185,11 +196,11 @@ export default function CourseRequestsScreen() {
         ) : !data ? (
           <BalloonLoader label={t.courses.requestsLoading} />
         ) : data.enrollments.length === 0 ? (
-          <EmptyState
-            emoji="📋"
-            title={t.courses.requestsEmpty}
-            subtitle={t.courses.requestsEmptySubtitle}
-          />
+          <View style={styles.empty}>
+            <Text style={styles.emptyText}>
+              {t.courses.requestsEmptyFor(filters.find((f) => f.key === filter)?.label ?? "")}
+            </Text>
+          </View>
         ) : (
           <SectionList
             sections={groupByCourse(data.enrollments)}
@@ -201,8 +212,20 @@ export default function CourseRequestsScreen() {
                 <Text style={styles.sectionTitle} numberOfLines={1}>
                   {section.title}
                 </Text>
-                <View style={styles.sectionCount}>
-                  <Text style={styles.sectionCountText}>{section.data.length}</Text>
+                <View
+                  style={[
+                    styles.sectionCount,
+                    filter === "pending" && section.data.length > 0 && styles.sectionCountUrgent,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.sectionCountText,
+                      filter === "pending" && section.data.length > 0 && styles.sectionCountTextUrgent,
+                    ]}
+                  >
+                    {section.data.length}
+                  </Text>
                 </View>
               </View>
             )}
@@ -220,25 +243,28 @@ export default function CourseRequestsScreen() {
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   rowReverse: { flexDirection: "row-reverse" },
-  filters: { flexDirection: "row", gap: 8, marginTop: 16, marginBottom: 4 },
+  filtersScroll: { flexGrow: 0, marginTop: 8, marginBottom: 4 },
+  filters: { flexDirection: "row", gap: 8, paddingVertical: 4 },
   filterChip: {
-    flex: 1,
+    height: 40,
+    justifyContent: "center",
     borderRadius: 20,
-    borderWidth: 1.5,
+    borderWidth: 1,
     borderColor: Colors.border,
     backgroundColor: Colors.linen,
-    paddingVertical: 8,
-    alignItems: "center",
+    paddingHorizontal: 18,
   },
   filterChipActive: { backgroundColor: Colors.terracotta, borderColor: Colors.terracotta },
-  filterText: { fontFamily: Fonts.semiBold, fontSize: 12, color: Colors.textLight },
-  filterTextActive: { color: "#FFFFFF" },
+  filterText: { fontFamily: Fonts.semiBold, fontSize: 14, color: Colors.textLight },
+  filterTextActive: { color: Colors.cream },
   list: { paddingTop: 12, paddingBottom: 32 },
+  empty: { paddingVertical: 48, alignItems: "center" },
+  emptyText: { fontFamily: Fonts.regular, fontSize: 15, color: Colors.textLight, textAlign: "center" },
   sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    gap: 10,
+    gap: 12,
     backgroundColor: Colors.cream,
     paddingVertical: 10,
     marginTop: 8,
@@ -246,7 +272,8 @@ const styles = StyleSheet.create({
   sectionTitle: {
     flex: 1,
     fontFamily: Fonts.bold,
-    fontSize: 15,
+    fontSize: 17,
+    lineHeight: 22,
     color: Colors.bark,
   },
   sectionCount: {
@@ -255,35 +282,41 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 8,
     backgroundColor: Colors.linen,
+    borderWidth: 1,
+    borderColor: Colors.border,
     alignItems: "center",
     justifyContent: "center",
   },
-  sectionCountText: { fontFamily: Fonts.bold, fontSize: 12, color: Colors.textLight },
+  sectionCountUrgent: { backgroundColor: Colors.honey, borderColor: Colors.honey },
+  sectionCountText: { fontFamily: Fonts.semiBold, fontSize: 12, color: Colors.textLight },
+  sectionCountTextUrgent: { color: Colors.bark },
   hidden: { height: 0, paddingVertical: 0, marginTop: 0, opacity: 0 },
   card: {
     backgroundColor: Colors.linen,
-    borderRadius: 18,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: Colors.border,
     padding: 16,
-    marginBottom: 10,
+    marginBottom: 12,
   },
-  cardHeader: { flexDirection: "row", alignItems: "flex-start", gap: 10 },
-  child: { ...Type.body, fontFamily: Fonts.bold, color: Colors.bark },
-  course: { ...Type.caption, color: Colors.textLight, marginTop: 2 },
-  statusPill: { borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 },
-  statusText: { fontFamily: Fonts.bold, fontSize: 11 },
-  meta: { ...Type.caption, color: Colors.textLight, marginTop: 8 },
+  cardHeader: { flexDirection: "row", alignItems: "flex-start", gap: 12 },
+  child: { fontFamily: Fonts.bold, fontSize: 17, lineHeight: 22, color: Colors.bark },
+  course: { fontFamily: Fonts.regular, fontSize: 13, lineHeight: 18, color: Colors.textLight, marginTop: 2 },
+  statusPill: { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
+  statusText: { fontFamily: Fonts.semiBold, fontSize: 12 },
+  meta: { fontFamily: Fonts.regular, fontSize: 12, lineHeight: 16, color: Colors.textLight, marginTop: 8 },
   note: {
-    ...Type.caption,
+    fontFamily: Fonts.regular,
+    fontSize: 13,
+    lineHeight: 18,
     color: Colors.bark,
     fontStyle: "italic",
-    marginTop: 6,
+    marginTop: 8,
   },
-  actions: { flexDirection: "row", gap: 10, marginTop: 14 },
-  button: { flex: 1, borderRadius: 12, paddingVertical: 12, alignItems: "center" },
+  actions: { flexDirection: "row", gap: 12, marginTop: 16 },
+  button: { flex: 1, borderRadius: 12, minHeight: 44, justifyContent: "center", alignItems: "center" },
   approve: { backgroundColor: Colors.forest },
-  decline: { backgroundColor: Colors.cream, borderWidth: 1.5, borderColor: Colors.clay },
-  buttonText: { fontFamily: Fonts.bold, fontSize: 14, color: "#FFFFFF" },
-  declineText: { color: Colors.clay },
+  decline: { backgroundColor: Colors.cream, borderWidth: 1, borderColor: Colors.clay },
+  buttonText: { fontFamily: Fonts.semiBold, fontSize: 15, color: Colors.cream },
+  declineText: { fontFamily: Fonts.regular, fontSize: 14, color: Colors.clay },
 });

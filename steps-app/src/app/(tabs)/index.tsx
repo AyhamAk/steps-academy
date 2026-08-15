@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -31,6 +32,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 
+import SectionLabel from "../../components/admin/SectionLabel";
 import { AdminHomeSections } from "../../components/home/AdminHomeSections";
 import { SlideBackdrop, SlideVariant } from "../../components/home/SlideBackdrop";
 import { CoursesSection } from "../../components/home/CoursesSection";
@@ -500,7 +502,9 @@ export default function HomeScreen() {
   const { salutationKey, emoji } = getTimeOfDayGreeting();
   const salutation = t.home[salutationKey];
   const firstName = getFirstName(user?.name);
-  const subtitle = t.home.timeOfDaySubtitle[salutationKey](primaryChildName);
+  const subtitle = isAdmin
+    ? t.home.adminSubtitle
+    : t.home.timeOfDaySubtitle[salutationKey](primaryChildName);
   const daysAway = nextEvent ? getDaysAway(parseIsoDate(nextEvent.date), t) : null;
   const greetingComma = isRTL ? "،" : ",";
   const compactGreeting = firstName ? `${salutation}${greetingComma} ${firstName}` : t.home.welcomeBack;
@@ -621,7 +625,7 @@ export default function HomeScreen() {
           </View>
         )}
         <Animated.View style={fullHeaderStyle}>
-          <StepsLogo />
+          <StepsLogo compact={isAdmin} />
 
           <View style={styles.greetingBlock}>
             <Animated.View style={[styles.greetingRow, greetingStyle]}>
@@ -677,17 +681,11 @@ export default function HomeScreen() {
         <WeeklyScheduleSection />
 
         <Animated.View style={[styles.section, announcementSectionStyle]}>
-          <View style={[styles.sectionHeaderRow, isRTL && styles.rowReverse]}>
-            <Text style={[styles.sectionTitle, rtlText]}>{t.home.latestAnnouncement}</Text>
-            {isAdmin ? (
-              <Touchable
-                onPress={() => setIsAnnouncementModalVisible(true)}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              >
-                <Text style={styles.sectionAddLink}>{t.home.addAnnouncement}</Text>
-              </Touchable>
-            ) : null}
-          </View>
+          <SectionLabel
+            label={t.home.latestAnnouncement}
+            actionLabel={isAdmin ? t.home.addAnnouncement : undefined}
+            onActionPress={isAdmin ? () => setIsAnnouncementModalVisible(true) : undefined}
+          />
 
           {announcement ? (
             <StepsCard style={styles.announcementCard}>
@@ -697,25 +695,28 @@ export default function HomeScreen() {
               <View style={[styles.announcementHeaderRow, isRTL && styles.rowReverse]}>
                 <View style={[styles.announcementSenderRow, isRTL && styles.rowReverse]}>
                   <View style={styles.announcementAvatar}>
-                    <Text style={styles.announcementAvatarEmoji}>🏫</Text>
+                    <Ionicons name="business-outline" size={14} color={Colors.honey} />
                   </View>
                   <Text style={[styles.announcementFrom, rtlText]}>{t.home.fromAcademy}</Text>
                 </View>
-                <Text style={styles.announcementEmoji}>📢</Text>
+                <Ionicons name="megaphone-outline" size={18} color={Colors.textLight} />
               </View>
               <ExpandableAnnouncementText
                 text={announcement.text}
                 expanded={isAnnouncementExpanded}
                 rtlText={rtlText}
               />
-              <Touchable
-                onPress={() => setIsAnnouncementExpanded((prev) => !prev)}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              >
-                <Text style={[styles.readMoreLink, rtlText]}>
-                  {isAnnouncementExpanded ? t.common.showLess : t.common.readMore}
-                </Text>
-              </Touchable>
+              {/* A two-word announcement has nothing to expand. */}
+              {announcement.text.length > 120 ? (
+                <Touchable
+                  onPress={() => setIsAnnouncementExpanded((prev) => !prev)}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <Text style={[styles.readMoreLink, rtlText]}>
+                    {isAnnouncementExpanded ? t.common.showLess : t.common.readMore}
+                  </Text>
+                </Touchable>
+              ) : null}
               <Text style={[styles.announcementTimestamp, rtlText]}>
                 {formatRelativeTime(new Date(announcement.createdAt), t)}
               </Text>

@@ -106,8 +106,16 @@ function Butterfly({
   );
 }
 
-export function StepsLogo() {
+/**
+ * Height of the compact variant, used where the logo is a mark rather than the
+ * main event — the admin home, where full size ate a third of the first screen.
+ */
+const COMPACT_HEIGHT = 110;
+
+export function StepsLogo({ compact = false }: { compact?: boolean }) {
   const reduceMotion = useReduceMotionSetting();
+  // Scaling the whole stage keeps the butterflies' fractional positions exact.
+  const scale = compact ? COMPACT_HEIGHT / LOGO_HEIGHT : 1;
 
   const entrance = useSharedValue(reduceMotion ? 1 : 0.6);
   const opacity = useSharedValue(reduceMotion ? 1 : 0);
@@ -137,8 +145,10 @@ export function StepsLogo() {
   }));
 
   return (
-    <Animated.View style={[styles.container, containerStyle]}>
-      <View style={styles.stage}>
+    <Animated.View
+      style={[styles.container, compact && { height: COMPACT_HEIGHT }, containerStyle]}
+    >
+      <View style={[styles.stage, compact && { transform: [{ scale }] }]}>
         <Image source={require("../../assets/logo-base.png")} style={styles.base} resizeMode="contain" />
         {BUTTERFLIES.map((config) => (
           <Butterfly key={config.source} config={config} reduceMotion={reduceMotion} />
@@ -151,6 +161,7 @@ export function StepsLogo() {
 const styles = StyleSheet.create({
   container: {
     alignSelf: "center",
+    justifyContent: "center",
   },
   stage: {
     width: LOGO_WIDTH,

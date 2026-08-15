@@ -3,10 +3,12 @@ import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { useMemo, useState } from "react";
 import { Alert, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { ChangePasswordModal } from "../../components/profile/ChangePasswordModal";
 import { ContactAcademyModal } from "../../components/profile/ContactAcademyModal";
 import { MyCoursesSection } from "../../components/profile/MyCoursesSection";
+import IconTile from "../../components/admin/IconTile";
 import { Screen } from "../../components/Screen";
 import { LanguagePicker } from "../../components/ui/LanguagePicker";
 import { ScreenFadeIn } from "../../components/ui/ScreenFadeIn";
@@ -28,6 +30,7 @@ import { Touchable } from "../../components/ui/Touchable";
 
 export default function ProfileScreen() {
   const { user, logout, isLoading } = useAuth();
+  const insets = useSafeAreaInsets();
   const { t, isRTL, rtlText } = useTranslation();
   const locale = useLocaleStore((state) => state.locale);
   const setLocale = useLocaleStore((state) => state.setLocale);
@@ -137,10 +140,10 @@ export default function ProfileScreen() {
     <Screen>
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 12 }]}
       >
         <ScreenFadeIn>
-        <StepsCard style={styles.identityCard} elevation="featured">
+        <StepsCard style={styles.identityCard} elevation="flat">
           <View
             style={[styles.identityDecor, isRTL ? styles.identityDecorRTL : styles.identityDecorLTR]}
             pointerEvents="none"
@@ -148,18 +151,20 @@ export default function ProfileScreen() {
           <View style={styles.identityAvatar}>
             <Text style={styles.identityAvatarEmoji}>👩</Text>
           </View>
-          <Text style={styles.identityName}>{user?.name}</Text>
+          <View style={[styles.identityNameRow, isRTL && styles.rowReverse]}>
+            <Text style={styles.identityName}>{user?.name}</Text>
+            {user?.role ? (
+              <View
+                style={[
+                  styles.roleBadge,
+                  { backgroundColor: user.role === "admin" ? Colors.terracotta : Colors.forest },
+                ]}
+              >
+                <Text style={styles.roleBadgeText}>{roleLabel}</Text>
+              </View>
+            ) : null}
+          </View>
           <Text style={styles.identityEmail}>{user?.email}</Text>
-          {user?.role ? (
-            <View
-              style={[
-                styles.roleBadge,
-                { backgroundColor: user.role === "admin" ? Colors.terracotta : Colors.forest },
-              ]}
-            >
-              <Text style={styles.roleBadgeText}>{roleLabel}</Text>
-            </View>
-          ) : null}
         </StepsCard>
 
         {children.length > 0 ? (
@@ -219,7 +224,7 @@ export default function ProfileScreen() {
           <LanguagePicker />
 
           <Text style={[styles.prefsSubLabel, styles.prefsSubLabelSpaced, rtlText]}>
-            🔧 {t.profile.settingsTitle}
+            {t.profile.settingsTitle}
           </Text>
           {settingsRows.map((row) => (
             <Touchable
@@ -228,22 +233,28 @@ export default function ProfileScreen() {
               onPress={row.onPress}
             >
               <View style={[styles.settingsRowInner, isRTL && styles.settingsRowInnerRTL]}>
-                <View style={[styles.settingsIconWrap, { backgroundColor: `${row.tint}20` }]}>
+                <IconTile tint={row.tint} size={36}>
                   <Ionicons name={row.icon} size={18} color={row.tint} />
+                </IconTile>
+                <View style={[styles.settingsRowBody, isRTL && styles.settingsRowBodyRTL]}>
+                  <Text
+                    style={[styles.settingsLabel, rtlText]}
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                  >
+                    {row.label}
+                  </Text>
+                  {row.badge ? (
+                    <View style={styles.badge}>
+                      <Text style={styles.badgeText}>{row.badge > 99 ? "99+" : row.badge}</Text>
+                    </View>
+                  ) : null}
+                  <Ionicons
+                    name={isRTL ? "chevron-back" : "chevron-forward"}
+                    size={18}
+                    color={Colors.textLight}
+                  />
                 </View>
-                <Text
-                  style={[styles.settingsLabel, rtlText]}
-                  numberOfLines={1}
-                  ellipsizeMode="tail"
-                >
-                  {row.label}
-                </Text>
-                {row.badge ? (
-                  <View style={styles.badge}>
-                    <Text style={styles.badgeText}>{row.badge > 99 ? "99+" : row.badge}</Text>
-                  </View>
-                ) : null}
-                <Text style={styles.settingsChevron}>{isRTL ? "‹" : "›"}</Text>
               </View>
             </Touchable>
           ))}
@@ -288,7 +299,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 28,
     overflow: "hidden",
-    shadowColor: Colors.terracotta,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
   identityDecor: {
     position: "absolute",
@@ -318,6 +330,11 @@ const styles = StyleSheet.create({
   identityAvatarEmoji: {
     fontSize: 40,
   },
+  identityNameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
   identityName: {
     ...Type.heading,
     color: Colors.bark,
@@ -329,15 +346,14 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   roleBadge: {
-    marginTop: 10,
     borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
   },
   roleBadgeText: {
-    fontFamily: Fonts.bold,
+    fontFamily: Fonts.semiBold,
     fontSize: 12,
-    color: "#FFFFFF",
+    color: Colors.cream,
   },
   section: {
     marginTop: 28,
@@ -362,11 +378,6 @@ const styles = StyleSheet.create({
     gap: 10,
     borderWidth: 1,
     borderColor: Colors.border,
-    shadowColor: Colors.terracotta,
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 2,
   },
   kidCardSelected: {
     borderWidth: 2,
@@ -394,13 +405,10 @@ const styles = StyleSheet.create({
   dashCard: {
     marginTop: 12,
     backgroundColor: Colors.linen,
-    borderRadius: 20,
+    borderRadius: 16,
     overflow: "hidden",
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
   dashCardAccentLTR: {
     borderLeftWidth: 4,
@@ -440,19 +448,16 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.semiBold,
   },
   prefsGroup: {
-    marginTop: 28,
+    marginTop: 24,
     backgroundColor: Colors.linen,
-    borderRadius: 20,
-    padding: 20,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    padding: 16,
   },
   prefsGroupTitle: {
     fontFamily: Fonts.bold,
-    fontSize: 16,
+    fontSize: 17,
     color: Colors.bark,
     marginBottom: 16,
   },
@@ -460,16 +465,27 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.semiBold,
     fontSize: 12,
     color: Colors.textLight,
-    letterSpacing: 0.5,
+    letterSpacing: 0.6,
     textTransform: "uppercase",
     marginBottom: 10,
   },
   prefsSubLabelSpaced: {
     marginTop: 20,
   },
-  settingsRow: {
+  settingsRow: {},
+  rowReverse: { flexDirection: "row-reverse" },
+  settingsRowBody: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingVertical: 12,
+    minHeight: 56,
     borderTopWidth: 1,
     borderTopColor: Colors.border,
+  },
+  settingsRowBodyRTL: {
+    flexDirection: "row-reverse",
   },
   settingsRowPressed: {
     backgroundColor: Colors.cream,
@@ -478,7 +494,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    paddingVertical: 14,
   },
   settingsRowInnerRTL: {
     flexDirection: "row-reverse",
@@ -491,8 +506,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   settingsLabel: {
-    ...Type.body,
-    fontSize: 15,
+    fontFamily: Fonts.semiBold,
+    fontSize: 16,
+    lineHeight: 22,
     color: Colors.bark,
     flexGrow: 1,
     flexShrink: 1,
@@ -511,9 +527,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
   },
   badgeText: {
-    fontFamily: Fonts.bold,
-    fontSize: 11,
-    color: "#FFFFFF",
+    fontFamily: Fonts.semiBold,
+    fontSize: 12,
+    color: Colors.cream,
   },
   logoutButton: {
     marginTop: 24,
