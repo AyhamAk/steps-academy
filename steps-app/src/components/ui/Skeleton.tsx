@@ -143,11 +143,21 @@ export function SkeletonScheduleRows({ count = 4 }: { count?: number }) {
 }
 
 /** 3-column grid of square skeleton tiles, for a photo grid loading state. */
-export function SkeletonPhotoGrid({ tileSize, count = 9 }: { tileSize: number; count?: number }) {
+export function SkeletonPhotoGrid({
+  tileSize,
+  count = 9,
+  style,
+}: {
+  tileSize: number;
+  count?: number;
+  /** Lets the caller bleed the grid past a screen's padding, so placeholders
+   *  land exactly where the real tiles will. */
+  style?: ViewStyle;
+}) {
   return (
-    <View style={styles.grid}>
+    <View style={[styles.grid, style]}>
       {Array.from({ length: count }).map((_, index) => (
-        <SkeletonBlock key={index} width={tileSize} height={tileSize} borderRadius={12} style={styles.gridTile} />
+        <SkeletonBlock key={index} width={tileSize} height={tileSize} borderRadius={14} />
       ))}
     </View>
   );
@@ -290,9 +300,7 @@ const styles = StyleSheet.create({
   grid: {
     flexDirection: "row",
     flexWrap: "wrap",
+    gap: 8,
     marginTop: 16,
-  },
-  gridTile: {
-    margin: 4,
   },
 });

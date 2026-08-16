@@ -70,7 +70,11 @@ function PhotoTile({
   );
 }
 
-const H_PADDING = 20;
+// Screen wraps every page in 24pt of horizontal padding. The grid cancels it
+// with a negative margin so photos run edge to edge, and sizes its tiles from
+// the full window width — adding padding on top of Screen's was what pushed
+// the third column onto the next row.
+const SCREEN_PADDING = 24;
 const GAP = 8;
 const COLS = 3;
 
@@ -78,7 +82,7 @@ export default function EventGalleryScreen() {
   // One source for the tile size: the skeleton, the grid and every tile use
   // this number, so placeholders land exactly where photos will.
   const { width } = useWindowDimensions();
-  const photoTileSize = Math.floor((width - H_PADDING * 2 - GAP * (COLS - 1)) / COLS);
+  const photoTileSize = Math.floor((width - GAP * (COLS - 1)) / COLS);
   const { t, isRTL } = useTranslation();
   const { eventId } = useLocalSearchParams<{ eventId: string }>();
   const children = useChildren();
@@ -113,7 +117,7 @@ export default function EventGalleryScreen() {
             subtitle={t.gallery.pleaseTryAgain}
           />
         ) : photos === null ? (
-          <SkeletonPhotoGrid tileSize={photoTileSize} />
+          <SkeletonPhotoGrid tileSize={photoTileSize} style={styles.gridBleed} />
         ) : photos.length === 0 ? (
           <EmptyState title={t.gallery.noPhotosInEvent} />
         ) : (
@@ -150,10 +154,11 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     gap: GAP,
     justifyContent: "flex-start",
-    paddingHorizontal: H_PADDING,
+    marginHorizontal: -SCREEN_PADDING,
     paddingBottom: 24,
   },
   gridRTL: { flexDirection: "row-reverse" },
+  gridBleed: { marginHorizontal: -SCREEN_PADDING },
   tile: {
     borderRadius: 14,
     overflow: "hidden",
