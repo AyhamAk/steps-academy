@@ -196,10 +196,10 @@ Download the app and enter this code to set up your account.`,
     title: "Profile",
     roleAdmin: "Admin",
     roleParent: "Parent",
-    myKidsTitle: "👶 My Kids",
+    myKidsTitle: "My Kids",
     photosThisMonth: (count: number) =>
-      count === 0 ? "📸 No photos yet this month" : `📸 ${count} photo${count === 1 ? "" : "s"} this month`,
-    viewInGallery: "See her photos in the Gallery tab →",
+      count === 0 ? "No photos yet this month" : `${count} photo${count === 1 ? "" : "s"} this month`,
+    viewInGallery: "See photos in the Gallery tab",
     preferencesTitle: "App Preferences",
     settingsTitle: "Settings",
     notifications: "Notifications",
@@ -824,9 +824,9 @@ export const ar: Translations = {
     title: "الملف الشخصي",
     roleAdmin: "مسؤول",
     roleParent: "ولي أمر",
-    myKidsTitle: "👶 أطفالي",
-    photosThisMonth: (count: number) => (count === 0 ? "📸 لا توجد صور هذا الشهر بعد" : `📸 ${count} صورة هذا الشهر`),
-    viewInGallery: "شاهد صورها في تبويب المعرض ←",
+    myKidsTitle: "أطفالي",
+    photosThisMonth: (count: number) => (count === 0 ? "لا توجد صور هذا الشهر بعد" : `${count} صورة هذا الشهر`),
+    viewInGallery: "شاهد الصور في تبويب المعرض",
     preferencesTitle: "إعدادات التطبيق",
     settingsTitle: "الإعدادات",
     notifications: "الإشعارات",
@@ -1441,14 +1441,14 @@ export const he: Translations = {
     title: "פרופיל",
     roleAdmin: "מנהל",
     roleParent: "הורה",
-    myKidsTitle: "👶 הילדים שלי",
+    myKidsTitle: "הילדים שלי",
     photosThisMonth: (count: number) =>
       count === 0
-        ? "📸 אין עדיין תמונות החודש"
+        ? "אין עדיין תמונות החודש"
         : count === 1
-          ? "📸 תמונה אחת החודש"
-          : `📸 ${count} תמונות החודש`,
-    viewInGallery: "צפה בתמונות שלה בלשונית הגלריה ←",
+          ? "תמונה אחת החודש"
+          : `${count} תמונות החודש`,
+    viewInGallery: "צפו בתמונות בלשונית הגלריה",
     preferencesTitle: "העדפות אפליקציה",
     settingsTitle: "הגדרות",
     notifications: "התראות",

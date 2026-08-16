@@ -32,7 +32,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 
-import SectionLabel from "../../components/admin/SectionLabel";
+import SectionLabel from "../../components/ui/SectionLabel";
 import { AdminHomeSections } from "../../components/home/AdminHomeSections";
 import { SlideBackdrop, SlideVariant } from "../../components/home/SlideBackdrop";
 import { CoursesSection } from "../../components/home/CoursesSection";

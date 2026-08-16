@@ -1,22 +1,58 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ActivityIndicator, Alert, StyleSheet, Text, View } from "react-native";
 
 import { Colors } from "../../constants/Colors";
 import { Fonts } from "../../constants/Fonts";
-import { Type } from "../../constants/Typography";
 import { useTranslation } from "../../i18n/useTranslation";
 import { cancelEnrollment, Course, listCourses, MyEnrollment } from "../../services/coursesApi";
 import { formatCourseDates, formatCourseDays } from "../../utils/courseSchedule";
+import IconTile from "../ui/IconTile";
+import SectionLabel from "../ui/SectionLabel";
 import { Touchable } from "../ui/Touchable";
 
 type Row = { course: Course; enrollment: MyEnrollment };
+
+/**
+ * A meta line whose parts each resolve their own direction.
+ *
+ * Joining "الأحد · Sarah" into one string lets the bidi algorithm reorder the
+ * whole line around the strongest run, which put the separator in the wrong
+ * place for mixed Arabic/English courses. Separate Text nodes keep each part
+ * independent.
+ */
+function MetaRow({
+  icon,
+  parts,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  parts: (string | null | undefined)[];
+}) {
+  const { isRTL } = useTranslation();
+  const visible = parts.filter((part): part is string => !!part);
+  if (visible.length === 0) return null;
+
+  return (
+    <View style={[styles.metaRow, isRTL && styles.rowReverse]}>
+      <Ionicons name={icon} size={14} color={Colors.textLight} style={styles.metaIcon} />
+      <View style={[styles.metaParts, isRTL && styles.rowReverse]}>
+        {visible.map((part, index) => (
+          <View key={`${part}-${index}`} style={[styles.metaParts, isRTL && styles.rowReverse]}>
+            {index > 0 ? <Text style={styles.metaSeparator}>·</Text> : null}
+            <Text style={styles.meta}>{part}</Text>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
 
 /**
  * Every course this parent's children are in or waiting on, with the details
  * of each — previously they could only see status on the Home cards.
  */
 export function MyCoursesSection() {
-  const { t, isRTL, rtlText } = useTranslation();
+  const { t, isRTL } = useTranslation();
   const queryClient = useQueryClient();
 
   const { data: courses } = useQuery({ queryKey: ["courses"], queryFn: listCourses });
@@ -56,76 +92,72 @@ export function MyCoursesSection() {
   };
 
   return (
-    <View style={styles.section}>
-      <Text style={[styles.sectionTitle, rtlText]}>{t.myCourses.title}</Text>
+    <View>
+      <SectionLabel label={t.myCourses.title} />
 
       {rows.map((row) => {
         const { course, enrollment } = row;
         const isApproved = enrollment.status === "approved";
         const isCancelling = cancel.isPending && cancel.variables === enrollment.id;
+        const accent = course.accentColor ?? Colors.terracotta;
 
         return (
           <View key={enrollment.id} style={styles.card}>
-            <View
-              style={[
-                styles.accent,
-                { backgroundColor: course.accentColor ?? Colors.terracotta },
-              ]}
-            />
-            <View style={[styles.head, isRTL && styles.rowReverse]}>
-              <Text style={styles.emoji}>{course.emoji}</Text>
-              <View style={styles.flex}>
-                <Text style={[styles.name, rtlText]} numberOfLines={1}>
-                  {course.name}
-                </Text>
-                <Text style={[styles.child, rtlText]} numberOfLines={1}>
-                  {enrollment.studentName}
-                </Text>
-              </View>
-              <View
-                style={[
-                  styles.statusPill,
-                  { backgroundColor: isApproved ? `${Colors.forest}1F` : `${Colors.honey}2E` },
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.statusText,
-                    { color: isApproved ? Colors.forest : "#a2801f" },
-                  ]}
-                >
-                  {isApproved ? t.myCourses.enrolled : t.myCourses.waitlisted}
-                </Text>
+            {/* Bar and body sit in a row, so the bar can never overrun the
+                card's rounded corner the way an absolute one did. */}
+            <View style={styles.cardRow}>
+              <View style={[styles.accent, { backgroundColor: accent }]} />
+              <View style={styles.body}>
+                <View style={[styles.head, isRTL && styles.rowReverse]}>
+                  <IconTile tint={accent} size={44}>
+                    <Text style={styles.emoji}>{course.emoji}</Text>
+                  </IconTile>
+                  <View style={styles.flex}>
+                    <Text style={styles.name} numberOfLines={1}>
+                      {course.name}
+                    </Text>
+                    <Text style={styles.child} numberOfLines={1}>
+                      {enrollment.studentName}
+                    </Text>
+                  </View>
+                  {/* Everything here is enrolled or waiting; only the exception
+                      is worth a badge. */}
+                  {isApproved ? null : (
+                    <View style={styles.statusPill}>
+                      <Text style={styles.statusText}>{t.myCourses.waitlisted}</Text>
+                    </View>
+                  )}
+                </View>
+
+                <MetaRow
+                  icon="calendar-outline"
+                  parts={[formatCourseDays(course, t), course.instructor ?? ""]}
+                />
+                <MetaRow icon="calendar-outline" parts={[formatCourseDates(course, t)]} />
+
+                {course.description ? (
+                  <Text style={styles.description} numberOfLines={2}>
+                    {course.description}
+                  </Text>
+                ) : null}
+
+                <View style={[styles.footer, isRTL && styles.rowReverse]}>
+                  <Touchable
+                    style={styles.leaveButton}
+                    onPress={() => confirmCancel(row)}
+                    disabled={isCancelling}
+                  >
+                    {isCancelling ? (
+                      <ActivityIndicator color={Colors.clay} />
+                    ) : (
+                      <Text style={styles.leaveText}>
+                        {isApproved ? t.myCourses.leave : t.courses.leaveWaitlist}
+                      </Text>
+                    )}
+                  </Touchable>
+                </View>
               </View>
             </View>
-
-            {formatCourseDays(course, t) || course.instructor ? (
-              <Text style={[styles.detail, rtlText]}>
-                🗓 {[formatCourseDays(course, t), course.instructor].filter(Boolean).join(" · ")}
-              </Text>
-            ) : null}
-            {formatCourseDates(course, t) ? (
-              <Text style={[styles.detail, rtlText]}>📆 {formatCourseDates(course, t)}</Text>
-            ) : null}
-            {course.description ? (
-              <Text style={[styles.detail, rtlText]} numberOfLines={2}>
-                {course.description}
-              </Text>
-            ) : null}
-
-            <Touchable
-              style={styles.cancelButton}
-              onPress={() => confirmCancel(row)}
-              disabled={isCancelling}
-            >
-              {isCancelling ? (
-                <ActivityIndicator color={Colors.clay} />
-              ) : (
-                <Text style={styles.cancelText}>
-                  {isApproved ? t.myCourses.leave : t.courses.leaveWaitlist}
-                </Text>
-              )}
-            </Touchable>
           </View>
         );
       })}
@@ -134,41 +166,79 @@ export function MyCoursesSection() {
 }
 
 const styles = StyleSheet.create({
-  section: { marginTop: 28 },
   flex: { flex: 1 },
   rowReverse: { flexDirection: "row-reverse" },
-  sectionTitle: {
-    fontFamily: Fonts.bold,
-    fontSize: 17,
-    color: Colors.bark,
-    marginBottom: 12,
-  },
   card: {
     backgroundColor: Colors.linen,
     borderRadius: 16,
     borderWidth: 1,
     borderColor: Colors.border,
-    padding: 14,
-    paddingStart: 18,
-    marginBottom: 10,
+    marginBottom: 12,
     overflow: "hidden",
   },
-  accent: { position: "absolute", top: 0, bottom: 0, start: 0, width: 5 },
+  cardRow: { flexDirection: "row" },
+  accent: { width: 4 },
+  body: { flex: 1, padding: 16 },
   head: { flexDirection: "row", alignItems: "center", gap: 12 },
-  emoji: { fontSize: 26 },
-  name: { ...Type.body, fontFamily: Fonts.bold, color: Colors.bark },
-  child: { ...Type.caption, color: Colors.textLight, marginTop: 1 },
-  statusPill: { borderRadius: 8, paddingHorizontal: 9, paddingVertical: 4 },
-  statusText: { fontFamily: Fonts.bold, fontSize: 11 },
-  detail: { ...Type.caption, color: Colors.textLight, marginTop: 8 },
-  cancelButton: {
-    marginTop: 12,
-    borderRadius: 10,
-    paddingVertical: 10,
-    alignItems: "center",
-    borderWidth: 1.5,
-    borderColor: Colors.clay,
-    backgroundColor: Colors.cream,
+  emoji: { fontSize: 24 },
+  name: {
+    fontFamily: Fonts.bold,
+    fontSize: 17,
+    lineHeight: 22,
+    color: Colors.bark,
+    writingDirection: "auto",
   },
-  cancelText: { fontFamily: Fonts.semiBold, fontSize: 13, color: Colors.clay },
+  child: {
+    fontFamily: Fonts.regular,
+    fontSize: 13,
+    lineHeight: 18,
+    color: Colors.textLight,
+    marginTop: 2,
+    writingDirection: "auto",
+  },
+  statusPill: {
+    backgroundColor: `${Colors.honey}2E`,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  statusText: { fontFamily: Fonts.semiBold, fontSize: 12, lineHeight: 16, color: Colors.bark },
+  metaRow: { flexDirection: "row", alignItems: "center", marginTop: 8 },
+  metaIcon: { width: 20 },
+  metaParts: { flexDirection: "row", flexWrap: "wrap", alignItems: "center" },
+  meta: {
+    fontFamily: Fonts.regular,
+    fontSize: 13,
+    lineHeight: 18,
+    color: Colors.textLight,
+    writingDirection: "auto",
+  },
+  metaSeparator: {
+    fontFamily: Fonts.regular,
+    fontSize: 13,
+    lineHeight: 18,
+    color: Colors.textLight,
+    paddingHorizontal: 6,
+  },
+  description: {
+    fontFamily: Fonts.regular,
+    fontSize: 13,
+    lineHeight: 18,
+    color: Colors.textLight,
+    marginTop: 8,
+    writingDirection: "auto",
+  },
+  footer: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+    marginTop: 12,
+  },
+  leaveButton: {
+    minHeight: 44,
+    justifyContent: "center",
+    paddingHorizontal: 4,
+  },
+  leaveText: { fontFamily: Fonts.regular, fontSize: 14, color: Colors.clay },
 });

@@ -13,7 +13,7 @@ import {
 } from "react-native";
 
 import AdminHeader from "../components/admin/AdminHeader";
-import SectionLabel from "../components/admin/SectionLabel";
+import SectionLabel from "../components/ui/SectionLabel";
 import { EmptyState } from "../components/gallery/EmptyState";
 import { Screen } from "../components/Screen";
 import { InviteCodesSection } from "../components/students/InviteCodesSection";

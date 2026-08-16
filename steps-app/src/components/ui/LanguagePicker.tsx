@@ -42,6 +42,7 @@ export function LanguagePicker({ compact = false }: { compact?: boolean }) {
             accessibilityLabel={label}
           >
             <Text
+              numberOfLines={1}
               style={[
                 styles.label,
                 compact && styles.labelCompact,
@@ -58,7 +59,7 @@ export function LanguagePicker({ compact = false }: { compact?: boolean }) {
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: "row", gap: 8 },
+  row: { flexDirection: "row", gap: 8 },  // equal thirds: label lengths differ per language
   pill: {
     flex: 1,
     height: 44,
@@ -71,7 +72,7 @@ const styles = StyleSheet.create({
   },
   pillCompact: { height: 36, borderRadius: 999 },
   pillActive: { backgroundColor: Colors.terracotta, borderColor: Colors.terracotta },
-  label: { fontFamily: Fonts.semiBold, fontSize: 14, color: Colors.bark },
+  label: { fontFamily: Fonts.semiBold, fontSize: 15, color: Colors.bark },
   labelCompact: { fontSize: 13 },
   labelActive: { color: Colors.cream },
 });

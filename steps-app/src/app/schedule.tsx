@@ -5,7 +5,7 @@ import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, View } from "re
 
 import { ActivityFormModal } from "../components/admin/ActivityFormModal";
 import AdminHeader from "../components/admin/AdminHeader";
-import IconTile from "../components/admin/IconTile";
+import IconTile from "../components/ui/IconTile";
 import { EmptyState } from "../components/gallery/EmptyState";
 import { Screen } from "../components/Screen";
 import { SkeletonCardList } from "../components/ui/Skeleton";

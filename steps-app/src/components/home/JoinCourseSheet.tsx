@@ -9,7 +9,7 @@ import { useTranslation } from "../../i18n/useTranslation";
 import { Course, requestEnrollment } from "../../services/coursesApi";
 import { Child } from "../../store/authStore";
 import { formatCourseDates, formatCourseDays } from "../../utils/courseSchedule";
-import IconTile from "../admin/IconTile";
+import IconTile from "../ui/IconTile";
 import { StepsButton } from "../ui/StepsButton";
 import { Touchable } from "../ui/Touchable";
 

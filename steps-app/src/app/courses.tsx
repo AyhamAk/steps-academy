@@ -6,7 +6,7 @@ import { ActivityIndicator, Alert, FlatList, StyleSheet, Text, View } from "reac
 
 import AdminHeader from "../components/admin/AdminHeader";
 import { CourseFormModal } from "../components/admin/CourseFormModal";
-import IconTile from "../components/admin/IconTile";
+import IconTile from "../components/ui/IconTile";
 import { EmptyState } from "../components/gallery/EmptyState";
 import { Screen } from "../components/Screen";
 import { SkeletonCardList } from "../components/ui/Skeleton";

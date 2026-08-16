@@ -8,7 +8,9 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ChangePasswordModal } from "../../components/profile/ChangePasswordModal";
 import { ContactAcademyModal } from "../../components/profile/ContactAcademyModal";
 import { MyCoursesSection } from "../../components/profile/MyCoursesSection";
-import IconTile from "../../components/admin/IconTile";
+import IconTile from "../../components/ui/IconTile";
+import RoleBadge from "../../components/ui/RoleBadge";
+import SectionLabel from "../../components/ui/SectionLabel";
 import { Screen } from "../../components/Screen";
 import { LanguagePicker } from "../../components/ui/LanguagePicker";
 import { ScreenFadeIn } from "../../components/ui/ScreenFadeIn";
@@ -172,71 +174,100 @@ export default function ProfileScreen() {
       >
         <ScreenFadeIn>
         <StepsCard style={styles.identityCard} elevation="flat">
-          <View
-            style={[styles.identityDecor, isRTL ? styles.identityDecorRTL : styles.identityDecorLTR]}
-            pointerEvents="none"
-          />
+          {/* A monogram rather than a face: the old emoji assumed a gender the
+              account never states. Display only - nothing is stored. */}
           <View style={styles.identityAvatar}>
-            <Text style={styles.identityAvatarEmoji}>👩</Text>
+            <Text style={styles.identityMonogram}>
+              {(user?.name ?? "").trim().charAt(0).toUpperCase()}
+            </Text>
           </View>
           <View style={[styles.identityNameRow, isRTL && styles.rowReverse]}>
             <Text style={styles.identityName}>{user?.name}</Text>
             {user?.role ? (
-              <View
-                style={[
-                  styles.roleBadge,
-                  { backgroundColor: user.role === "admin" ? Colors.terracotta : Colors.forest },
-                ]}
-              >
-                <Text style={styles.roleBadgeText}>{roleLabel}</Text>
-              </View>
+              <RoleBadge
+                label={roleLabel}
+                color={user.role === "admin" ? Colors.terracotta : Colors.forest}
+              />
             ) : null}
           </View>
           <Text style={styles.identityEmail}>{user?.email}</Text>
         </StepsCard>
 
         {children.length > 0 ? (
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, rtlText]}>{t.profile.myKidsTitle}</Text>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.kidsStrip}
-            >
-              {children.map((child) => {
-                const isSelected = child.id === selectedChildId;
-                return (
-                  <Touchable
-                    key={child.id}
-                    style={[styles.kidCard, isSelected && styles.kidCardSelected]}
-                    onPress={() => setSelectedChildId(child.id)}
-                  >
-                    <View style={styles.kidAvatar}>
-                      <Text style={styles.kidAvatarEmoji}>🐘</Text>
-                    </View>
-                    <Text style={styles.kidName}>{child.name}</Text>
-                  </Touchable>
-                );
-              })}
-            </ScrollView>
+          <View>
+            <SectionLabel label={t.profile.myKidsTitle} />
+
+            {/* One child is not a choice, so no chips - the name goes in the
+                card header below instead. */}
+            {children.length > 1 ? (
+              <View style={styles.chipRow}>
+                {children.map((child) => {
+                  const isActive = child.id === selectedChildId;
+                  return (
+                    <Touchable
+                      key={child.id}
+                      onPress={() => setSelectedChildId(child.id)}
+                      style={[styles.chip, isActive && styles.chipActive]}
+                    >
+                      <Text style={styles.chipEmoji}>🐘</Text>
+                      <Text style={[styles.chipLabel, isActive && styles.chipLabelActive]}>
+                        {child.name}
+                      </Text>
+                    </Touchable>
+                  );
+                })}
+              </View>
+            ) : null}
 
             {selectedChildId ? (
-              <View style={[styles.dashCard, isRTL ? styles.dashCardAccentRTL : styles.dashCardAccentLTR]}>
-                <View style={[styles.dashRow, isRTL && styles.dashRowRTL]}>
-                  <Text style={styles.dashEmoji}>📸</Text>
-                  {isGalleryPending ? (
-                    <SkeletonBlock width="55%" height={14} />
-                  ) : (
-                    <Text style={[styles.dashText, rtlText]}>
-                      {t.profile.photosThisMonth(photosThisMonthByChild.get(selectedChildId) ?? 0)}
-                    </Text>
-                  )}
-                </View>
-                <View style={[styles.dashRow, styles.dashRowLast, isRTL && styles.dashRowRTL]}>
-                  <Text style={styles.dashEmoji}>🖼️</Text>
-                  <Text style={[styles.dashText, styles.dashTextAccent, rtlText]}>
-                    {t.profile.viewInGallery}
-                  </Text>
+              <View style={styles.dashCard}>
+                <View style={styles.dashRowWrap}>
+                  <View style={styles.dashAccent} />
+                  <View style={styles.dashBody}>
+                    {children.length === 1 ? (
+                      <View style={[styles.dashHeader, isRTL && styles.rowReverse]}>
+                        <Text style={styles.chipEmoji}>🐘</Text>
+                        <Text style={styles.dashChildName} numberOfLines={1}>
+                          {children[0].name}
+                        </Text>
+                      </View>
+                    ) : null}
+
+                    <View style={[styles.dashRow, isRTL && styles.rowReverse]}>
+                      <Ionicons
+                        name="camera-outline"
+                        size={18}
+                        color={Colors.textLight}
+                        style={styles.dashIcon}
+                      />
+                      {isGalleryPending ? (
+                        <SkeletonBlock width="55%" height={14} />
+                      ) : (
+                        <Text style={[styles.dashText, rtlText]}>
+                          {t.profile.photosThisMonth(
+                            photosThisMonthByChild.get(selectedChildId) ?? 0
+                          )}
+                        </Text>
+                      )}
+                    </View>
+
+                    <View style={[styles.dashRow, styles.dashRowLast, isRTL && styles.rowReverse]}>
+                      <Ionicons
+                        name="images-outline"
+                        size={18}
+                        color={Colors.terracotta}
+                        style={styles.dashIcon}
+                      />
+                      <Text style={[styles.dashText, styles.dashTextAccent, rtlText]}>
+                        {t.profile.viewInGallery}
+                      </Text>
+                      <Ionicons
+                        name={isRTL ? "chevron-back" : "chevron-forward"}
+                        size={16}
+                        color={Colors.textLight}
+                      />
+                    </View>
+                  </View>
                 </View>
               </View>
             ) : null}
@@ -246,7 +277,7 @@ export default function ProfileScreen() {
         {user?.role === "admin" ? null : <MyCoursesSection />}
 
         <View style={styles.prefsGroup}>
-          <Text style={[styles.prefsGroupTitle, rtlText]}>{t.profile.preferencesTitle}</Text>
+          <SectionLabel label={t.profile.preferencesTitle} />
 
           <Text style={[styles.prefsSubLabel, rtlText]}>{t.profile.language}</Text>
           <LanguagePicker />
@@ -297,18 +328,17 @@ export default function ProfileScreen() {
 
         {/* Both required by the app stores: a reachable policy, and a way to
             delete the account from inside the app. */}
-        <View style={styles.legalRow}>
-          <Touchable
-            onPress={() => Linking.openURL(`${API_BASE_URL}/privacy`)}
-            style={styles.legalButton}
-          >
-            <Text style={styles.legalText}>{t.profile.privacyPolicy}</Text>
-          </Touchable>
-          <Text style={styles.legalSeparator}>·</Text>
-          <Touchable onPress={confirmDeleteAccount} style={styles.legalButton}>
-            <Text style={styles.deleteAccountText}>{t.profile.deleteAccount}</Text>
-          </Touchable>
-        </View>
+        <Touchable
+          onPress={() => Linking.openURL(API_BASE_URL + "/privacy")}
+          style={styles.legalButton}
+        >
+          <Text style={styles.legalText}>{t.profile.privacyPolicy}</Text>
+        </Touchable>
+        {/* On its own line: deleting an account is irreversible and should not
+            sit beside a policy link as though the two were equivalent. */}
+        <Touchable onPress={confirmDeleteAccount} style={styles.deleteAccountButton}>
+          <Text style={styles.deleteAccountText}>{t.profile.deleteAccount}</Text>
+        </Touchable>
 
         <View style={styles.mascotFooter}>
           <Text style={styles.mascotEmoji}>🐘</Text>
@@ -335,29 +365,15 @@ export default function ProfileScreen() {
 
 const styles = StyleSheet.create({
   scrollContent: {
-    paddingTop: 20,
-    paddingBottom: 40,
+    paddingHorizontal: 20,
+    paddingBottom: 32,
   },
   identityCard: {
     alignItems: "center",
-    paddingVertical: 28,
+    padding: 20,
     overflow: "hidden",
     borderWidth: 1,
     borderColor: Colors.border,
-  },
-  identityDecor: {
-    position: "absolute",
-    top: -40,
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    backgroundColor: `${Colors.terracotta}14`,
-  },
-  identityDecorLTR: {
-    right: -40,
-  },
-  identityDecorRTL: {
-    left: -40,
   },
   identityAvatar: {
     width: 88,
@@ -370,126 +386,89 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginBottom: 14,
   },
-  identityAvatarEmoji: {
-    fontSize: 40,
-  },
   identityNameRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
+    marginTop: 12,
   },
   identityName: {
-    ...Type.heading,
+    fontFamily: Fonts.extraBold,
+    fontSize: 24,
+    lineHeight: 30,
     color: Colors.bark,
     letterSpacing: -0.3,
+    writingDirection: "auto",
+  },
+  identityMonogram: {
+    fontFamily: Fonts.extraBold,
+    fontSize: 34,
+    color: Colors.terracotta,
   },
   identityEmail: {
-    ...Type.caption,
+    fontFamily: Fonts.regular,
+    fontSize: 13,
+    lineHeight: 18,
     color: Colors.textLight,
-    marginTop: 2,
+    marginTop: 4,
   },
-  roleBadge: {
-    borderRadius: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-  },
-  roleBadgeText: {
-    fontFamily: Fonts.semiBold,
-    fontSize: 12,
-    color: Colors.cream,
-  },
-  section: {
-    marginTop: 28,
-  },
-  sectionTitle: {
-    ...Type.heading,
-    color: Colors.bark,
-    marginBottom: 12,
-  },
-  kidsStrip: {
-    gap: 12,
-    paddingEnd: 8,
-  },
-  kidCard: {
+  chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 12 },
+  chip: {
     flexDirection: "row",
     alignItems: "center",
-    alignSelf: "flex-start",
-    backgroundColor: Colors.linen,
-    borderRadius: 40,
-    height: 60,
+    gap: 8,
+    height: 44,
     paddingHorizontal: 14,
-    gap: 10,
+    borderRadius: 999,
+    backgroundColor: Colors.linen,
     borderWidth: 1,
     borderColor: Colors.border,
   },
-  kidCardSelected: {
-    borderWidth: 2,
-    borderColor: Colors.terracotta,
-  },
-  pressedFeedback: {
-    opacity: 0.75,
-  },
-  kidAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: `${Colors.terracotta}26`,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  kidAvatarEmoji: {
-    fontSize: 20,
-  },
-  kidName: {
-    ...Type.body,
-    fontFamily: Fonts.bold,
-    color: Colors.bark,
-  },
+  chipActive: { backgroundColor: `${Colors.terracotta}18`, borderColor: Colors.terracotta },
+  chipEmoji: { fontSize: 18 },
+  chipLabel: { fontSize: 15, fontFamily: Fonts.semiBold, color: Colors.textLight },
+  chipLabelActive: { color: Colors.bark },
   dashCard: {
-    marginTop: 12,
     backgroundColor: Colors.linen,
     borderRadius: 16,
-    overflow: "hidden",
     borderWidth: 1,
     borderColor: Colors.border,
+    overflow: "hidden",
   },
-  dashCardAccentLTR: {
-    borderLeftWidth: 4,
-    borderLeftColor: Colors.honey,
+  dashRowWrap: { flexDirection: "row" },
+  dashAccent: { width: 4, backgroundColor: Colors.honey },
+  dashBody: { flex: 1, paddingHorizontal: 16, paddingVertical: 4 },
+  dashHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingTop: 12,
+    marginBottom: 12,
   },
-  dashCardAccentRTL: {
-    borderRightWidth: 4,
-    borderRightColor: Colors.honey,
+  dashChildName: {
+    fontFamily: Fonts.bold,
+    fontSize: 17,
+    lineHeight: 22,
+    color: Colors.bark,
+    writingDirection: "auto",
   },
   dashRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
-    paddingVertical: 13,
-    paddingHorizontal: 16,
+    minHeight: 52,
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
   },
-  dashRowRTL: {
-    flexDirection: "row-reverse",
-  },
-  dashRowLast: {
-    borderBottomWidth: 0,
-  },
-  dashEmoji: {
-    fontSize: 17,
-    width: 28,
-    textAlign: "center",
-  },
+  dashRowLast: { borderBottomWidth: 0 },
+  dashIcon: { width: 24 },
   dashText: {
-    ...Type.caption,
-    color: Colors.bark,
     flex: 1,
+    fontFamily: Fonts.regular,
+    fontSize: 14,
+    lineHeight: 19,
+    color: Colors.bark,
   },
-  dashTextAccent: {
-    color: Colors.terracotta,
-    fontFamily: Fonts.semiBold,
-  },
+  dashTextAccent: { fontFamily: Fonts.semiBold, fontSize: 15, color: Colors.terracotta },
   prefsGroup: {
     marginTop: 24,
     backgroundColor: Colors.linen,
@@ -497,12 +476,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.border,
     padding: 16,
-  },
-  prefsGroupTitle: {
-    fontFamily: Fonts.bold,
-    fontSize: 17,
-    color: Colors.bark,
-    marginBottom: 16,
   },
   prefsSubLabel: {
     fontFamily: Fonts.semiBold,
@@ -530,9 +503,6 @@ const styles = StyleSheet.create({
   settingsRowBodyRTL: {
     flexDirection: "row-reverse",
   },
-  settingsRowPressed: {
-    backgroundColor: Colors.cream,
-  },
   settingsRowInner: {
     flexDirection: "row",
     alignItems: "center",
@@ -541,13 +511,6 @@ const styles = StyleSheet.create({
   settingsRowInnerRTL: {
     flexDirection: "row-reverse",
   },
-  settingsIconWrap: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-  },
   settingsLabel: {
     fontFamily: Fonts.semiBold,
     fontSize: 16,
@@ -555,10 +518,6 @@ const styles = StyleSheet.create({
     color: Colors.bark,
     flexGrow: 1,
     flexShrink: 1,
-  },
-  settingsChevron: {
-    fontSize: 20,
-    color: Colors.textLight,
   },
   badge: {
     minWidth: 22,
@@ -582,20 +541,19 @@ const styles = StyleSheet.create({
     height: 54,
     justifyContent: "center",
   },
-  legalRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    marginTop: 16,
-  },
   legalButton: {
     minHeight: 44,
+    alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 4,
+    marginTop: 16,
   },
   legalText: { fontFamily: Fonts.regular, fontSize: 13, color: Colors.textLight },
-  legalSeparator: { fontFamily: Fonts.regular, fontSize: 13, color: Colors.textLight },
+  deleteAccountButton: {
+    minHeight: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 16,
+  },
   deleteAccountText: { fontFamily: Fonts.regular, fontSize: 13, color: Colors.clay },
   mascotFooter: {
     alignItems: "center",

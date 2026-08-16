@@ -4,8 +4,8 @@ import { router } from "expo-router";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 
 import AdminHeader from "../components/admin/AdminHeader";
-import IconTile from "../components/admin/IconTile";
-import SectionLabel from "../components/admin/SectionLabel";
+import IconTile from "../components/ui/IconTile";
+import SectionLabel from "../components/ui/SectionLabel";
 import { Screen } from "../components/Screen";
 import { ScreenFadeIn } from "../components/ui/ScreenFadeIn";
 import { Touchable } from "../components/ui/Touchable";
