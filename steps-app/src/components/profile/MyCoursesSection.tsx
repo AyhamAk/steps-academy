@@ -1,12 +1,14 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ActivityIndicator, Alert, StyleSheet, Text, View } from "react-native";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import { StyleSheet, Text, View } from "react-native";
 
 import { Colors } from "../../constants/Colors";
 import { Fonts } from "../../constants/Fonts";
 import { useTranslation } from "../../i18n/useTranslation";
-import { cancelEnrollment, Course, listCourses, MyEnrollment } from "../../services/coursesApi";
+import { Course, listCourses, MyEnrollment } from "../../services/coursesApi";
 import { formatCourseDates, formatCourseDays } from "../../utils/courseSchedule";
+import { LeaveCourseSheet } from "../home/CourseSheet";
 import IconTile from "../ui/IconTile";
 import SectionLabel from "../ui/SectionLabel";
 import { Touchable } from "../ui/Touchable";
@@ -57,12 +59,7 @@ export function MyCoursesSection() {
 
   const { data: courses } = useQuery({ queryKey: ["courses"], queryFn: listCourses });
 
-  const cancel = useMutation({
-    mutationFn: (enrollmentId: string) => cancelEnrollment(enrollmentId),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["courses"] }),
-    onError: () =>
-      Alert.alert(t.myCourses.cancelFailed, t.common.tryAgain, [{ text: t.common.ok }]),
-  });
+  const [leaving, setLeaving] = useState<Row | null>(null);
 
   // Only live enrolments — declined and withdrawn ones are history.
   const rows: Row[] = (courses ?? []).flatMap((course) =>
@@ -73,24 +70,6 @@ export function MyCoursesSection() {
 
   if (rows.length === 0) return null;
 
-  const confirmCancel = ({ course, enrollment }: Row) => {
-    const isApproved = enrollment.status === "approved";
-    Alert.alert(
-      isApproved ? t.myCourses.leaveTitle : t.myCourses.withdrawTitle,
-      isApproved
-        ? t.myCourses.leaveMessage(enrollment.studentName, course.name)
-        : t.myCourses.withdrawMessage(enrollment.studentName, course.name),
-      [
-        { text: t.common.cancel, style: "cancel" },
-        {
-          text: isApproved ? t.myCourses.leave : t.courses.leaveWaitlist,
-          style: "destructive",
-          onPress: () => cancel.mutate(enrollment.id),
-        },
-      ]
-    );
-  };
-
   return (
     <View>
       <SectionLabel label={t.myCourses.title} />
@@ -98,7 +77,6 @@ export function MyCoursesSection() {
       {rows.map((row) => {
         const { course, enrollment } = row;
         const isApproved = enrollment.status === "approved";
-        const isCancelling = cancel.isPending && cancel.variables === enrollment.id;
         const accent = course.accentColor ?? Colors.terracotta;
 
         return (
@@ -142,18 +120,10 @@ export function MyCoursesSection() {
                 ) : null}
 
                 <View style={[styles.footer, isRTL && styles.rowReverse]}>
-                  <Touchable
-                    style={styles.leaveButton}
-                    onPress={() => confirmCancel(row)}
-                    disabled={isCancelling}
-                  >
-                    {isCancelling ? (
-                      <ActivityIndicator color={Colors.clay} />
-                    ) : (
-                      <Text style={styles.leaveText}>
-                        {isApproved ? t.myCourses.leave : t.courses.leaveWaitlist}
-                      </Text>
-                    )}
+                  <Touchable style={styles.leaveButton} onPress={() => setLeaving(row)}>
+                    <Text style={styles.leaveText}>
+                      {isApproved ? t.myCourses.leave : t.courses.leaveWaitlist}
+                    </Text>
                   </Touchable>
                 </View>
               </View>
@@ -161,6 +131,13 @@ export function MyCoursesSection() {
           </View>
         );
       })}
+
+      <LeaveCourseSheet
+        course={leaving?.course ?? null}
+        enrollment={leaving?.enrollment ?? null}
+        onClose={() => setLeaving(null)}
+        onLeft={() => queryClient.invalidateQueries({ queryKey: ["courses"] })}
+      />
     </View>
   );
 }

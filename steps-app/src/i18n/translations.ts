@@ -340,6 +340,12 @@ Download the app and enter this code to set up your account.`,
     withdrawMessage: (child: string, course: string) =>
       `${child}'s request for ${course} will be withdrawn. You can request again later.`,
     leaveTitle: "Leave the course?",
+    leftTitle: "Place given up",
+    leftMessage: (child: string, course: string) =>
+      `${child} is no longer enrolled in ${course}.`,
+    withdrawnTitle: "Request withdrawn",
+    withdrawnMessage: (child: string, course: string) =>
+      `${child}'s request for ${course} has been withdrawn.`,
     leaveMessage: (child: string, course: string) =>
       `${child} will be taken out of ${course} and the place given to another family.`,
     cancelFailed: "Couldn't update the enrolment",
@@ -966,6 +972,10 @@ export const ar: Translations = {
     withdrawMessage: (child: string, course: string) =>
       `سيتم سحب طلب ${child} لـ ${course}. يمكنك التقديم مرة أخرى لاحقاً.`,
     leaveTitle: "مغادرة الدورة؟",
+    leftTitle: "تم إلغاء المكان",
+    leftMessage: (child: string, course: string) => `${child} لم يعد مسجلاً في ${course}.`,
+    withdrawnTitle: "تم سحب الطلب",
+    withdrawnMessage: (child: string, course: string) => `تم سحب طلب ${child} للانضمام إلى ${course}.`,
     leaveMessage: (child: string, course: string) =>
       `سيتم إخراج ${child} من ${course} وسيُمنح المكان لعائلة أخرى.`,
     cancelFailed: "تعذّر تحديث التسجيل",
@@ -1587,6 +1597,10 @@ export const he: Translations = {
     withdrawMessage: (child: string, course: string) =>
       `הבקשה של ${child} ל${course} תבוטל. אפשר לבקש שוב מאוחר יותר.`,
     leaveTitle: "לעזוב את הקורס?",
+    leftTitle: "המקום בוטל",
+    leftMessage: (child: string, course: string) => `${child} כבר לא רשום ל${course}.`,
+    withdrawnTitle: "הבקשה בוטלה",
+    withdrawnMessage: (child: string, course: string) => `בקשת ההרשמה של ${child} ל${course} בוטלה.`,
     leaveMessage: (child: string, course: string) =>
       `${child} יוצא מ${course} והמקום יימסר למשפחה אחרת.`,
     cancelFailed: "לא ניתן לעדכן את ההרשמה",

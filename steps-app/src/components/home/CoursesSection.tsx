@@ -1,6 +1,6 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { Colors } from "../../constants/Colors";
 import { Layout } from "../../constants/Layout";
@@ -10,16 +10,11 @@ import { useTranslation } from "../../i18n/useTranslation";
 import { DataErrorState } from "../ui/DataErrorState";
 import { SkeletonCourseRow } from "../ui/Skeleton";
 import { Touchable } from "../ui/Touchable";
-import {
-  cancelEnrollment,
-  Course,
-  listCourses,
-  requestEnrollment,
-} from "../../services/coursesApi";
+import { Course, listCourses, MyEnrollment } from "../../services/coursesApi";
 import { useChildren } from "../../store/authStore";
 import { formatCourseDates, formatCourseDays } from "../../utils/courseSchedule";
 import { CourseDetailModal } from "./CourseDetailModal";
-import { JoinCourseSheet } from "./JoinCourseSheet";
+import { JoinCourseSheet, LeaveCourseSheet } from "./CourseSheet";
 
 export function CoursesSection() {
   const { t, isRTL, rtlText } = useTranslation();
@@ -27,6 +22,9 @@ export function CoursesSection() {
   const queryClient = useQueryClient();
   const [detailId, setDetailId] = useState<string | null>(null);
   const [joinCourse, setJoinCourse] = useState<Course | null>(null);
+  const [leaving, setLeaving] = useState<{ course: Course; enrollment: MyEnrollment } | null>(
+    null
+  );
 
   const { data: courses, isPending, isError, refetch } = useQuery({
     queryKey: ["courses"],
@@ -34,11 +32,6 @@ export function CoursesSection() {
   });
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: ["courses"] });
-
-  const cancel = useMutation({
-    mutationFn: (enrollmentId: string) => cancelEnrollment(enrollmentId),
-    onSuccess: refresh,
-  });
 
   // Still loading — show the shape of what's coming rather than nothing.
   if (isPending) {
@@ -87,8 +80,6 @@ export function CoursesSection() {
           const approved = course.myEnrollments.find((e) => e.status === "approved");
           const rejected = course.myEnrollments.find((e) => e.status === "rejected");
           // Only the card being acted on spins, not every card at once.
-          const isCancellingThis = cancel.isPending && cancel.variables === pending?.id;
-          const isCancellingApproved = cancel.isPending && cancel.variables === approved?.id;
 
           return (
             <View key={course.id} style={styles.card}>
@@ -139,69 +130,29 @@ export function CoursesSection() {
               {approved ? (
                 <Touchable
                   style={[styles.action, styles.actionApproved]}
-                  disabled={isCancellingApproved}
-                  onPress={() =>
-                    Alert.alert(
-                      t.myCourses.leaveTitle,
-                      t.myCourses.leaveMessage(approved.studentName, course.name),
-                      [
-                        { text: t.common.cancel, style: "cancel" },
-                        {
-                          text: t.myCourses.leave,
-                          style: "destructive",
-                          onPress: () => cancel.mutate(approved.id),
-                        },
-                      ]
-                    )
-                  }
+                  onPress={() => setLeaving({ course, enrollment: approved })}
                 >
-                  {isCancellingApproved ? (
-                    <ActivityIndicator color="#FFFFFF" />
-                  ) : (
-                    <Text style={styles.actionText} numberOfLines={1}>
-                      {t.courses.enrolled(approved.studentName)}
-                    </Text>
-                  )}
+                  <Text style={styles.actionText} numberOfLines={1}>
+                    {t.courses.enrolled(approved.studentName)}
+                  </Text>
                 </Touchable>
               ) : pending ? (
                 <Touchable
                   style={[styles.action, styles.actionPending]}
-                  onPress={() =>
-                    Alert.alert(
-                      t.courses.pendingTitle,
-                      t.courses.pendingMessage(pending.studentName),
-                      [
-                        { text: t.common.cancel, style: "cancel" },
-                        {
-                          text: t.courses.withdraw,
-                          style: "destructive",
-                          onPress: () => cancel.mutate(pending.id),
-                        },
-                      ]
-                    )
-                  }
+                  onPress={() => setLeaving({ course, enrollment: pending })}
                 >
-                  {isCancellingThis ? (
-                    <ActivityIndicator color={Colors.bark} />
-                  ) : (
-                    <Text style={[styles.actionText, styles.actionTextPending]} numberOfLines={1}>
-                      {t.courses.pending}
-                    </Text>
-                  )}
+                  <Text style={[styles.actionText, styles.actionTextPending]} numberOfLines={1}>
+                    {t.courses.pendingFor(pending.studentName)}
+                  </Text>
                 </Touchable>
               ) : (
                 <Touchable
-                  disabled={false}
                   onPress={() => startRequest(course)}
                   style={[styles.action, isFull ? styles.actionWaitlist : styles.actionRequest]}
                 >
-                  {false ? (
-                    <ActivityIndicator color="#FFFFFF" />
-                  ) : (
-                    <Text style={styles.actionText} numberOfLines={1}>
-                      {isFull ? t.courses.joinWaitlist : t.courses.join}
-                    </Text>
-                  )}
+                  <Text style={styles.actionText} numberOfLines={1}>
+                    {isFull ? t.courses.joinWaitlist : t.courses.join}
+                  </Text>
                 </Touchable>
               )}
             </View>
@@ -216,34 +167,26 @@ export function CoursesSection() {
         onJoined={refresh}
       />
 
+      <LeaveCourseSheet
+        course={leaving?.course ?? null}
+        enrollment={leaving?.enrollment ?? null}
+        onClose={() => setLeaving(null)}
+        onLeft={refresh}
+      />
+
       <CourseDetailModal
         course={courses.find((course) => course.id === detailId) ?? null}
-        isBusy={cancel.isPending}
+        isBusy={false}
         onClose={() => setDetailId(null)}
         onRequest={(course) => {
           setDetailId(null);
           startRequest(course);
         }}
-        onCancel={(enrollmentId, isApproved) => {
+        onCancel={(enrollmentId) => {
           const course = courses.find((c) => c.id === detailId);
           const enrollment = course?.myEnrollments.find((e) => e.id === enrollmentId);
-          Alert.alert(
-            isApproved ? t.myCourses.leaveTitle : t.myCourses.withdrawTitle,
-            isApproved
-              ? t.myCourses.leaveMessage(enrollment?.studentName ?? "", course?.name ?? "")
-              : t.myCourses.withdrawMessage(enrollment?.studentName ?? "", course?.name ?? ""),
-            [
-              { text: t.common.cancel, style: "cancel" },
-              {
-                text: isApproved ? t.myCourses.leave : t.myCourses.withdraw,
-                style: "destructive",
-                onPress: () => {
-                  setDetailId(null);
-                  cancel.mutate(enrollmentId);
-                },
-              },
-            ]
-          );
+          setDetailId(null);
+          if (course && enrollment) setLeaving({ course, enrollment });
         }}
       />
     </View>
