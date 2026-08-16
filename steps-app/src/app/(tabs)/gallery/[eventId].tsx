@@ -3,9 +3,9 @@ import { useLocalSearchParams } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
   Animated,
-  FlatList,
   Image,
   StyleSheet,
+  ScrollView,
   Text,
   useWindowDimensions,
   View,
@@ -14,10 +14,11 @@ import {
 import { EmptyState } from "../../../components/gallery/EmptyState";
 import { EventCaption } from "../../../components/gallery/EventCaption";
 import { FullscreenPhotoViewer } from "../../../components/gallery/FullscreenPhotoViewer";
+import AdminHeader from "../../../components/admin/AdminHeader";
+import ChildTag from "../../../components/gallery/ChildTag";
 import { Screen } from "../../../components/Screen";
 import { SkeletonPhotoGrid } from "../../../components/ui/Skeleton";
 import { ScreenFadeIn } from "../../../components/ui/ScreenFadeIn";
-import { StepsHeader } from "../../../components/ui/StepsHeader";
 import { Colors } from "../../../constants/Colors";
 import { useReduceMotionSetting } from "../../../hooks/useReduceMotionSetting";
 import { useTranslation } from "../../../i18n/useTranslation";
@@ -29,11 +30,13 @@ import { Touchable } from "../../../components/ui/Touchable";
 function PhotoTile({
   photo,
   index,
+  size,
   tagged,
   onPress,
 }: {
   photo: Photo;
   index: number;
+  size: number;
   tagged: boolean;
   onPress: () => void;
 }) {
@@ -58,25 +61,25 @@ function PhotoTile({
   };
 
   return (
-    <Animated.View style={[styles.tile, animatedStyle]}>
+    <Animated.View style={[styles.tile, { width: size, height: size }, animatedStyle]}>
       <Touchable style={[styles.tileInner]} onPress={onPress}>
         <Image source={{ uri: resolvePhotoUrl(photo.url) }} style={styles.image} />
-        {tagged ? (
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>🐘</Text>
-          </View>
-        ) : null}
+        {tagged ? <ChildTag /> : null}
       </Touchable>
     </Animated.View>
   );
 }
 
+const H_PADDING = 20;
+const GAP = 8;
+const COLS = 3;
+
 export default function EventGalleryScreen() {
-  // Matches the real grid: three columns inside the screen's 24pt padding,
-  // less each tile's 4pt margin on both sides.
+  // One source for the tile size: the skeleton, the grid and every tile use
+  // this number, so placeholders land exactly where photos will.
   const { width } = useWindowDimensions();
-  const photoTileSize = (width - 48) / 3 - 8;
-  const { t } = useTranslation();
+  const photoTileSize = Math.floor((width - H_PADDING * 2 - GAP * (COLS - 1)) / COLS);
+  const { t, isRTL } = useTranslation();
   const { eventId } = useLocalSearchParams<{ eventId: string }>();
   const children = useChildren();
   const childIds = children.map((child) => child.id);
@@ -92,10 +95,13 @@ export default function EventGalleryScreen() {
   return (
     <Screen>
       <ScreenFadeIn style={styles.fadeContainer}>
-        <StepsHeader
+        <AdminHeader
           title={data?.event.name ?? t.gallery.pageTitle}
-          subtitle={data ? formatIsoDate(data.event.date, t) : undefined}
-          showBack
+          subtitle={
+            data
+              ? t.gallery.parentEventMeta(formatIsoDate(data.event.date, t), photos?.length ?? 0)
+              : undefined
+          }
         />
 
         <EventCaption caption={data?.event.caption} variant="detail" />
@@ -111,21 +117,20 @@ export default function EventGalleryScreen() {
         ) : photos.length === 0 ? (
           <EmptyState title={t.gallery.noPhotosInEvent} />
         ) : (
-          <FlatList
-            data={photos}
-            keyExtractor={(photo) => photo.id}
-            numColumns={3}
-            contentContainerStyle={styles.grid}
-            style={styles.list}
-            renderItem={({ item, index }) => (
-              <PhotoTile
-                photo={item}
-                index={index}
-                tagged={isPhotoTaggedWithAny(item, childIds)}
-                onPress={() => setActiveIndex(index)}
-              />
-            )}
-          />
+          <ScrollView style={styles.list} showsVerticalScrollIndicator={false}>
+            <View style={[styles.grid, isRTL && styles.gridRTL]}>
+              {photos.map((photo, index) => (
+                <PhotoTile
+                  key={photo.id}
+                  photo={photo}
+                  index={index}
+                  size={photoTileSize}
+                  tagged={isPhotoTaggedWithAny(photo, childIds)}
+                  onPress={() => setActiveIndex(index)}
+                />
+              ))}
+            </View>
+          </ScrollView>
         )}
       </ScreenFadeIn>
 
@@ -140,45 +145,29 @@ export default function EventGalleryScreen() {
 }
 
 const styles = StyleSheet.create({
+  grid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: GAP,
+    justifyContent: "flex-start",
+    paddingHorizontal: H_PADDING,
+    paddingBottom: 24,
+  },
+  gridRTL: { flexDirection: "row-reverse" },
+  tile: {
+    borderRadius: 14,
+    overflow: "hidden",
+    backgroundColor: Colors.linen,
+  },
+  tileInner: { flex: 1 },
+  image: { width: "100%", height: "100%" },
   fadeContainer: {
     flex: 1,
   },
   list: {
     marginTop: 16,
   },
-  grid: {
-    gap: 8,
-  },
-  tile: {
-    flex: 1 / 3,
-    aspectRatio: 1,
-    margin: 4,
-  },
-  tileInner: {
-    flex: 1,
-    borderRadius: 12,
-    overflow: "hidden",
-  },
   tilePressed: {
     opacity: 0.75,
-  },
-  image: {
-    width: "100%",
-    height: "100%",
-    backgroundColor: Colors.card,
-  },
-  badge: {
-    position: "absolute",
-    top: 6,
-    end: 6,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: Colors.terracotta,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  badgeText: {
-    fontSize: 11,
   },
 });

@@ -9,19 +9,22 @@ import { useTranslation } from "../../i18n/useTranslation";
 type Props = {
   title: string;
   subtitle?: string;
+  /** Tab roots have nowhere to go back to. */
+  showBack?: boolean;
 };
 
 /**
  * One header for every admin sub-screen. The back arrow sits on the title's
  * centre line rather than below its baseline, and inside a 44x44 target.
  */
-export default function AdminHeader({ title, subtitle }: Props) {
+export default function AdminHeader({ title, subtitle, showBack = true }: Props) {
   const router = useRouter();
   const { isRTL, rtlText, t } = useTranslation();
 
   return (
     <View style={styles.wrap}>
       <View style={[styles.row, isRTL && styles.rowReverse]}>
+        {showBack ? (
         <Pressable
           onPress={() => router.back()}
           hitSlop={12}
@@ -31,6 +34,7 @@ export default function AdminHeader({ title, subtitle }: Props) {
         >
           <Text style={styles.backArrow}>{isRTL ? "→" : "←"}</Text>
         </Pressable>
+        ) : null}
         <Text style={[styles.title, rtlText]} numberOfLines={1} adjustsFontSizeToFit>
           {title}
         </Text>

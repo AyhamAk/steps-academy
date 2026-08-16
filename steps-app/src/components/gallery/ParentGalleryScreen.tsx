@@ -17,10 +17,11 @@ import {
 import { useChildren } from "../../store/authStore";
 import { formatIsoDate } from "../../utils/date";
 import { SkeletonEventList } from "../ui/Skeleton";
+import AdminHeader from "../admin/AdminHeader";
+import ChildTag from "./ChildTag";
 import { ScreenFadeIn } from "../ui/ScreenFadeIn";
 import { StepsButton } from "../ui/StepsButton";
 import { StepsCard } from "../ui/StepsCard";
-import { StepsHeader } from "../ui/StepsHeader";
 import { EmptyState } from "./EmptyState";
 import { EventCaption } from "./EventCaption";
 import { FullscreenPhotoViewer } from "./FullscreenPhotoViewer";
@@ -42,19 +43,12 @@ function TaggedThumb({
   onPress: () => void;
 }) {
   return (
-    <Touchable
-      onPress={onPress}
-      style={[{ marginEnd: 8 }]}
-    >
+    <Touchable onPress={onPress}>
       <Image
         source={{ uri: resolvePhotoUrl(photo.url) }}
         style={[styles.thumb, { width: size, height: size }]}
       />
-      {tagged ? (
-        <View style={styles.badge}>
-          <Text style={styles.badgeText}>🐘</Text>
-        </View>
-      ) : null}
+      {tagged ? <ChildTag /> : null}
     </Touchable>
   );
 }
@@ -75,29 +69,24 @@ export function ParentGalleryScreen() {
     <>
       <ScrollView contentContainerStyle={styles.content}>
         <ScreenFadeIn>
-          <StepsHeader title={t.gallery.pageTitle} subtitle={t.gallery.parentSubtitle} />
+          <AdminHeader
+            title={t.gallery.pageTitle}
+            subtitle={t.gallery.parentSubtitle}
+            showBack={false}
+          />
 
           {/* A message the academy pins above every album. */}
           {quote ? (
             <View style={styles.quoteCard}>
-              {/* Soft blobs behind the text so the card feels like part of the
-                  academy's world rather than a plain notice. */}
-              <View style={[styles.quoteBlob, styles.quoteBlobTop]} pointerEvents="none" />
-              <View style={[styles.quoteBlob, styles.quoteBlobBottom]} pointerEvents="none" />
-
               <View style={[styles.quoteHeader, isRTL && styles.rowReverse]}>
                 <View style={styles.quoteAvatar}>
                   <Text style={styles.quoteAvatarEmoji}>🐘</Text>
                 </View>
                 <Text style={[styles.quoteFrom, rtlText]}>{t.gallery.quoteFrom}</Text>
-              </View>
-
-              <View style={[styles.quoteBody, isRTL && styles.rowReverse]}>
                 <Text style={styles.quoteMark}>“</Text>
-                <Text style={[styles.quoteText, rtlText]}>{quote}</Text>
               </View>
 
-              <Text style={[styles.quoteFooter, isRTL && styles.quoteFooterRTL]}>🌸 ✨ 🎈</Text>
+              <Text style={[styles.quoteText, rtlText]}>{quote}</Text>
             </View>
           ) : null}
 
@@ -131,37 +120,61 @@ export function ParentGalleryScreen() {
                     onPress={() => router.push(`/gallery/${group.event.id}`)}
                     style={styles.eventCard}
                   >
-                    <View
-                      style={[
-                        styles.eventAccentBar,
-                        isRTL ? styles.accentBarRTL : styles.accentBarLTR,
-                        { backgroundColor: EVENT_BORDER_COLORS[index % EVENT_BORDER_COLORS.length] },
-                      ]}
-                    />
-                    <View style={[styles.eventHeaderRow, isRTL && styles.rowReverse]}>
-                      <View style={styles.eventTextBlock}>
-                        <Text style={[styles.eventName, rtlText]}>{group.event.name}</Text>
-                        <Text style={[styles.eventMeta, rtlText]}>
-                          {t.gallery.parentEventMeta(
-                            formatIsoDate(group.event.date, t),
-                            group.photos.length
-                          )}
-                        </Text>
+                    {/* Bar and body share a row, so the bar cannot overrun the
+                        card's rounded corner the way an absolute one did. */}
+                    <View style={styles.eventRow}>
+                      <View
+                        style={[
+                          styles.eventAccentBar,
+                          {
+                            backgroundColor:
+                              EVENT_BORDER_COLORS[index % EVENT_BORDER_COLORS.length],
+                          },
+                        ]}
+                      />
+                      <View style={styles.eventBody}>
+                        <View style={[styles.eventHeaderRow, isRTL && styles.rowReverse]}>
+                          <View style={styles.eventTextBlock}>
+                            <Text style={[styles.eventName, rtlText]}>{group.event.name}</Text>
+                            <Text style={[styles.eventMeta, rtlText]}>
+                              {t.gallery.parentEventMeta(
+                                formatIsoDate(group.event.date, t),
+                                group.photos.length
+                              )}
+                            </Text>
+                          </View>
+                          <Text style={styles.eventChevron}>{isRTL ? "‹" : "›"}</Text>
+                        </View>
+
+                        <EventCaption caption={group.event.caption} />
+
+                        {group.photos.length === 0 ? (
+                          <Text style={styles.stripEmpty}>{t.gallery.noPhotosYetCard}</Text>
+                        ) : (
+                          <ScrollView
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                            style={styles.strip}
+                            contentContainerStyle={[
+                              styles.stripContent,
+                              isRTL && styles.rowReverse,
+                            ]}
+                          >
+                            {group.photos.slice(0, 10).map((photo, photoIndex) => (
+                              <TaggedThumb
+                                key={photo.id}
+                                photo={photo}
+                                size={88}
+                                tagged={isPhotoTaggedWithAny(photo, childIds)}
+                                onPress={() =>
+                                  setViewer({ photos: group.photos, index: photoIndex })
+                                }
+                              />
+                            ))}
+                          </ScrollView>
+                        )}
                       </View>
-                      <Text style={styles.eventChevron}>{isRTL ? "‹" : "›"}</Text>
                     </View>
-                    <EventCaption caption={group.event.caption} />
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.strip}>
-                      {group.photos.slice(0, 10).map((photo, photoIndex) => (
-                        <TaggedThumb
-                          key={photo.id}
-                          photo={photo}
-                          size={72}
-                          tagged={isPhotoTaggedWithAny(photo, childIds)}
-                          onPress={() => setViewer({ photos: group.photos, index: photoIndex })}
-                        />
-                      ))}
-                    </ScrollView>
                   </StepsCard>
                 ))
               )}
@@ -181,143 +194,88 @@ export function ParentGalleryScreen() {
 }
 
 const styles = StyleSheet.create({
+  eventCard: {
+    marginTop: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    padding: 0,
+    overflow: "hidden",
+  },
+  eventRow: { flexDirection: "row" },
+  eventAccentBar: { width: 4 },
+  eventBody: { flex: 1, padding: 16 },
+  eventHeaderRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+  eventTextBlock: { flex: 1 },
+  eventName: {
+    fontFamily: Fonts.bold,
+    fontSize: 18,
+    lineHeight: 24,
+    color: Colors.bark,
+    writingDirection: "auto",
+  },
+  eventMeta: {
+    fontFamily: Fonts.regular,
+    fontSize: 13,
+    lineHeight: 18,
+    color: Colors.textLight,
+    marginTop: 2,
+    writingDirection: "auto",
+  },
+  eventChevron: { fontSize: 22, color: Colors.textLight },
+  quoteCard: {
+    backgroundColor: Colors.linen,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    padding: 16,
+    marginTop: 8,
+    overflow: "hidden",
+  },
+  quoteHeader: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 },
+  quoteAvatar: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: `${Colors.terracotta}22`,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  quoteAvatarEmoji: { fontSize: 15 },
+  quoteFrom: {
+    flex: 1,
+    fontFamily: Fonts.semiBold,
+    fontSize: 13,
+    lineHeight: 18,
+    color: Colors.textLight,
+  },
+  quoteMark: { fontFamily: Fonts.extraBold, fontSize: 22, color: Colors.honey },
+  quoteText: {
+    fontFamily: Fonts.semiBold,
+    fontSize: 16,
+    lineHeight: 23,
+    color: Colors.bark,
+    writingDirection: "auto",
+  },
+  strip: { marginTop: 12 },
+  stripContent: { gap: 8 },
+  stripEmpty: {
+    fontFamily: Fonts.regular,
+    fontSize: 15,
+    lineHeight: 21,
+    color: Colors.textLight,
+    textAlign: "center",
+    paddingVertical: 20,
+  },
+  thumb: { borderRadius: 12, backgroundColor: Colors.linen },
   content: {
     paddingBottom: 40,
   },
   rowReverse: {
     flexDirection: "row-reverse",
   },
-  eventCard: {
-    marginTop: 16,
-    borderRadius: 16,
-  },
-  eventAccentBar: {
-    position: "absolute",
-    top: 0,
-    bottom: 0,
-    width: 6,
-  },
-  accentBarLTR: {
-    left: 0,
-    borderTopLeftRadius: 16,
-    borderBottomLeftRadius: 16,
-  },
-  accentBarRTL: {
-    right: 0,
-    borderTopRightRadius: 16,
-    borderBottomRightRadius: 16,
-  },
-  eventHeaderRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 10,
-    gap: 12,
-  },
-  eventTextBlock: {
-    flex: 1,
-  },
-  eventName: {
-    ...Type.body,
-    fontFamily: Fonts.bold,
-    color: Colors.text,
-  },
-  eventMeta: {
-    ...Type.caption,
-    color: Colors.textLight,
-    marginTop: 2,
-  },
-  eventChevron: {
-    fontSize: 22,
-    color: Colors.textLight,
-  },
-  quoteCard: {
-    backgroundColor: `${Colors.honey}1F`,
-    borderRadius: 22,
-    borderWidth: 1.5,
-    borderColor: `${Colors.honey}70`,
-    paddingHorizontal: 18,
-    paddingVertical: 16,
-    marginTop: 16,
-    overflow: "hidden",
-  },
-  quoteBlob: {
-    position: "absolute",
-    borderRadius: 999,
-    backgroundColor: `${Colors.terracotta}12`,
-  },
-  quoteBlobTop: { width: 120, height: 120, top: -58, end: -34 },
-  quoteBlobBottom: { width: 90, height: 90, bottom: -46, start: -28, backgroundColor: `${Colors.forest}12` },
-  quoteHeader: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 },
-  quoteAvatar: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: `${Colors.honey}45`,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  quoteAvatarEmoji: { fontSize: 15 },
-  quoteFrom: {
-    fontFamily: Fonts.bold,
-    fontSize: 11.5,
-    color: "#a2801f",
-    letterSpacing: 0.5,
-    textTransform: "uppercase",
-  },
-  quoteBody: { flexDirection: "row", alignItems: "flex-start", gap: 6 },
-  quoteMark: {
-    fontFamily: Fonts.extraBold,
-    fontSize: 30,
-    color: Colors.honey,
-    lineHeight: 32,
-    marginTop: -4,
-  },
-  quoteText: {
-    ...Type.body,
-    flex: 1,
-    fontSize: 15,
-    color: Colors.bark,
-    fontStyle: "italic",
-    lineHeight: 22,
-    marginTop: 3,
-  },
-  quoteFooter: {
-    fontSize: 12,
-    letterSpacing: 3,
-    marginTop: 10,
-    textAlign: "right",
-    opacity: 0.75,
-  },
-  quoteFooterRTL: { textAlign: "left" },
   refreshButton: {
     marginTop: 16,
     alignSelf: "center",
-  },
-  strip: {
-    flexDirection: "row",
-  },
-  thumb: {
-    borderRadius: 12,
-    backgroundColor: Colors.background,
-  },
-  thumbPressed: {
-    opacity: 0.75,
-  },
-  badge: {
-    position: "absolute",
-    bottom: 6,
-    end: 6,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: Colors.terracotta,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1.5,
-    borderColor: "#FFFFFF",
-  },
-  badgeText: {
-    fontSize: 10,
   },
 });

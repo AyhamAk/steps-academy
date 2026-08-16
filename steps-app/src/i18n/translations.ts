@@ -614,6 +614,7 @@ Download the app and enter this code to set up your account.`,
     noChildPhotosYet: (name: string) => `No photos of ${name} yet 🌱`,
     noKidsPhotosYet: "No photos of your kids yet 🌱",
     photoTaggedBanner: (name: string) => `🐘 ${name} is in this photo! ⭐`,
+    inThisPhoto: "In this photo:",
 
     pleaseTryAgain: "Please try again.",
     noPhotosInEvent: "No photos in this event yet",
@@ -1230,7 +1231,18 @@ export const ar: Translations = {
     checkConnection: "تحقق من اتصالك وحاول مرة أخرى.",
     noPhotosYetParent: "لا توجد صور بعد",
     noPhotosYetParentSubtitle: "عندما يتم وسم طفلك في صور الفعاليات، ستظهر هنا.",
-    parentEventMeta: (date: string, photoCount: number) => `${date} · ${photoCount} صورة`,
+    parentEventMeta: (date: string, photoCount: number) => {
+      // Arabic counted nouns: 1 singular, 2 dual, 3-10 plural, 11+ singular.
+      const noun =
+        photoCount === 1
+          ? "صورة واحدة"
+          : photoCount === 2
+            ? "صورتان"
+            : photoCount >= 3 && photoCount <= 10
+              ? `${photoCount} صور`
+              : `${photoCount} صورة`;
+      return `${date} · ${noun}`;
+    },
 
     myChildPhotosTitle: (name: string) => `⭐ صور ${name}`,
     myKidsPhotosTitle: "⭐ صور أطفالك",
@@ -1238,6 +1250,7 @@ export const ar: Translations = {
     noChildPhotosYet: (name: string) => `لا توجد صور لـ ${name} بعد 🌱`,
     noKidsPhotosYet: "لا توجد صور لأطفالك بعد 🌱",
     photoTaggedBanner: (name: string) => `🐘 ${name} في هذه الصورة! ⭐`,
+    inThisPhoto: "في هذه الصورة:",
 
     pleaseTryAgain: "يرجى المحاولة مرة أخرى.",
     noPhotosInEvent: "لا توجد صور في هذه الفعالية بعد",
@@ -1855,7 +1868,10 @@ export const he: Translations = {
     checkConnection: "בדוק את החיבור שלך ונסה שוב.",
     noPhotosYetParent: "אין עדיין תמונות",
     noPhotosYetParentSubtitle: "כשילדך יתויג בתמונות מאירועים, הן יופיעו כאן.",
-    parentEventMeta: (date: string, photoCount: number) => `${date} · ${photoCount} תמונות`,
+    parentEventMeta: (date: string, photoCount: number) =>
+      photoCount === 1
+        ? `${date} · תמונה אחת`
+        : `${date} · ${photoCount} תמונות`,
 
     myChildPhotosTitle: (name: string) => `⭐ התמונות של ${name}`,
     myKidsPhotosTitle: "⭐ התמונות של הילדים שלך",
@@ -1863,6 +1879,7 @@ export const he: Translations = {
     noChildPhotosYet: (name: string) => `אין עדיין תמונות של ${name} 🌱`,
     noKidsPhotosYet: "אין עדיין תמונות של הילדים שלך 🌱",
     photoTaggedBanner: (name: string) => `🐘 ${name} נמצא בתמונה הזו! ⭐`,
+    inThisPhoto: "בתמונה הזו:",
 
     pleaseTryAgain: "אנא נסה שוב.",
     noPhotosInEvent: "אין עדיין תמונות באירוע זה",

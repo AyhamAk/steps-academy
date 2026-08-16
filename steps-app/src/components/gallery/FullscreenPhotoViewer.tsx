@@ -18,6 +18,9 @@ import {
 
 import { Colors } from "../../constants/Colors";
 import { Fonts } from "../../constants/Fonts";
+import { Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
 import { useTranslation } from "../../i18n/useTranslation";
 import { matchedTagNames, Photo, resolvePhotoUrl } from "../../services/galleryApi";
 import { Touchable } from "../ui/Touchable";
@@ -35,11 +38,12 @@ export function FullscreenPhotoViewer({
   childIds = [],
   onClose,
 }: FullscreenPhotoViewerProps) {
-  const { t } = useTranslation();
+  const { t, isRTL } = useTranslation();
   const { width } = useWindowDimensions();
   const [index, setIndex] = useState(initialIndex);
   const [fit, setFit] = useState<"contain" | "cover">("contain");
   const [busy, setBusy] = useState<"download" | "share" | null>(null);
+  const insets = useSafeAreaInsets();
   const scrollRef = useRef<ScrollView>(null);
   const didInitialScroll = useRef(false);
   const lastTap = useRef(0);
@@ -140,14 +144,19 @@ export function FullscreenPhotoViewer({
           ))}
         </ScrollView>
 
-        <View style={styles.topBar}>
+        <View
+          style={[styles.topBar, { top: insets.top + 8 }, isRTL && styles.rowReverse]}
+          pointerEvents="box-none"
+        >
           <Touchable style={styles.closeButton} onPress={onClose} hitSlop={8}>
-            <Text style={styles.closeText}>✕</Text>
+            <Ionicons name="close" size={22} color={Colors.cream} />
           </Touchable>
           {photos.length > 1 ? (
-            <Text style={styles.counter}>
-              {safeIndex + 1} / {photos.length}
-            </Text>
+            <View style={styles.counterPill}>
+              <Text style={styles.counter}>
+                {safeIndex + 1} / {photos.length}
+              </Text>
+            </View>
           ) : null}
         </View>
 
@@ -155,45 +164,64 @@ export function FullscreenPhotoViewer({
           <>
             {safeIndex > 0 ? (
               <Touchable
-                style={[styles.arrow, styles.arrowLeft]}
+                style={[styles.arrow, styles.arrowStart]}
                 onPress={() => goTo(safeIndex - 1)}
                 hitSlop={8}
               >
-                <Text style={styles.arrowText}>‹</Text>
+                <Ionicons
+                  name={isRTL ? "chevron-forward" : "chevron-back"}
+                  size={24}
+                  color={Colors.cream}
+                />
               </Touchable>
             ) : null}
             {safeIndex < photos.length - 1 ? (
               <Touchable
-                style={[styles.arrow, styles.arrowRight]}
+                style={[styles.arrow, styles.arrowEnd]}
                 onPress={() => goTo(safeIndex + 1)}
                 hitSlop={8}
               >
-                <Text style={styles.arrowText}>›</Text>
+                <Ionicons
+                  name={isRTL ? "chevron-back" : "chevron-forward"}
+                  size={24}
+                  color={Colors.cream}
+                />
               </Touchable>
             ) : null}
           </>
         ) : null}
 
-        <View style={styles.bottom}>
+        <View style={[styles.bottom, { paddingBottom: insets.bottom + 16 }]}>
           {matched.length > 0 ? (
-            <View style={styles.tagBanner}>
-              <Text style={styles.tagBannerText}>{t.gallery.photoTaggedBanner(matched[0])}</Text>
+            <View style={[styles.captionPill, isRTL && styles.rowReverse]}>
+              <Text style={styles.captionAvatar}>🐘</Text>
+              {/* Two nodes, never one concatenated string: an Arabic sentence
+                  with a Latin name puts its punctuation at the wrong end when
+                  the bidi algorithm resolves the line as a whole. */}
+              <Text style={styles.captionText}>{t.gallery.inThisPhoto}</Text>
+              <Text style={styles.captionName}>{matched[0]}</Text>
             </View>
           ) : null}
 
-          <View style={styles.actions}>
+          <View style={[styles.actions, isRTL && styles.rowReverse]}>
             <Touchable style={styles.actionButton} onPress={handleDownload} disabled={!!busy}>
               {busy === "download" ? (
-                <ActivityIndicator color="#FFFFFF" />
+                <ActivityIndicator color={Colors.cream} />
               ) : (
-                <Text style={styles.actionText}>{t.gallery.save}</Text>
+                <View style={[styles.actionInner, isRTL && styles.rowReverse]}>
+                  <Ionicons name="download-outline" size={18} color={Colors.cream} />
+                  <Text style={styles.actionText}>{t.gallery.save}</Text>
+                </View>
               )}
             </Touchable>
             <Touchable style={styles.actionButton} onPress={handleShare} disabled={!!busy}>
               {busy === "share" ? (
-                <ActivityIndicator color="#FFFFFF" />
+                <ActivityIndicator color={Colors.cream} />
               ) : (
-                <Text style={styles.actionText}>{t.gallery.share}</Text>
+                <View style={[styles.actionInner, isRTL && styles.rowReverse]}>
+                  <Ionicons name="share-outline" size={18} color={Colors.cream} />
+                  <Text style={styles.actionText}>{t.gallery.share}</Text>
+                </View>
               )}
             </Touchable>
           </View>
@@ -208,95 +236,101 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#000000",
   },
+  rowReverse: { flexDirection: "row-reverse" },
   image: {
     flex: 1,
   },
   topBar: {
     position: "absolute",
-    top: 0,
     start: 0,
     end: 0,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingTop: 52,
-    paddingHorizontal: 20,
-    paddingBottom: 12,
-    backgroundColor: "rgba(0,0,0,0.5)",
+    paddingHorizontal: 16,
   },
+  // Scrimmed, so both survive a bright photo behind them.
   closeButton: {
-    padding: 4,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "rgba(0,0,0,0.45)",
+    alignItems: "center",
+    justifyContent: "center",
   },
-  closeText: {
-    color: "#FFFFFF",
-    fontSize: 22,
+  counterPill: {
+    minHeight: 32,
+    paddingHorizontal: 14,
+    borderRadius: 999,
+    backgroundColor: "rgba(0,0,0,0.45)",
+    alignItems: "center",
+    justifyContent: "center",
   },
   counter: {
-    color: "#FFFFFF",
+    color: Colors.cream,
     fontFamily: Fonts.semiBold,
-    fontSize: 15,
+    fontSize: 14,
   },
   arrow: {
     position: "absolute",
     top: "50%",
-    marginTop: -20,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    marginTop: -22,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(0,0,0,0.4)",
+    backgroundColor: "rgba(0,0,0,0.45)",
   },
-  arrowLeft: {
-    start: 16,
-  },
-  arrowRight: {
-    end: 16,
-  },
-  arrowText: {
-    color: "#FFFFFF",
-    fontSize: 26,
-    lineHeight: 30,
-  },
+  arrowStart: { start: 12 },
+  arrowEnd: { end: 12 },
   bottom: {
     position: "absolute",
     bottom: 0,
     start: 0,
     end: 0,
+    paddingHorizontal: 16,
   },
-  tagBanner: {
-    minHeight: 44,
-    backgroundColor: Colors.terracotta,
+  captionPill: {
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 24,
-    paddingVertical: 10,
+    gap: 6,
+    alignSelf: "center",
+    backgroundColor: "rgba(0,0,0,0.55)",
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    marginBottom: 12,
   },
-  tagBannerText: {
-    color: "#FFFFFF",
-    fontFamily: Fonts.bold,
+  captionAvatar: { fontSize: 16 },
+  captionText: {
+    color: Colors.cream,
+    fontFamily: Fonts.semiBold,
     fontSize: 14,
-    textAlign: "center",
+    writingDirection: "auto",
+  },
+  captionName: {
+    color: Colors.honey,
+    fontFamily: Fonts.semiBold,
+    fontSize: 14,
+    writingDirection: "auto",
   },
   actions: {
     flexDirection: "row",
-    justifyContent: "center",
-    gap: 16,
-    paddingVertical: 24,
-    paddingBottom: 40,
-    backgroundColor: "rgba(0,0,0,0.5)",
+    gap: 12,
   },
   actionButton: {
-    backgroundColor: "rgba(255,255,255,0.15)",
-    borderRadius: 24,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    minWidth: 110,
+    flex: 1,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: "rgba(255,255,255,0.14)",
     alignItems: "center",
+    justifyContent: "center",
   },
+  actionInner: { flexDirection: "row", alignItems: "center", gap: 8 },
   actionText: {
-    color: "#FFFFFF",
-    fontFamily: Fonts.bold,
-    fontSize: 14,
+    color: Colors.cream,
+    fontFamily: Fonts.semiBold,
+    fontSize: 15,
   },
 });
