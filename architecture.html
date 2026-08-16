@@ -1,0 +1,391 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Steps Academy — System Architecture</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<style>
+  :root {
+    --bg: #14110C;
+    --panel: #1E1A13;
+    --border: #3A3226;
+    --text: #F5EFE4;
+    --muted: #A8998219;
+    --muted-text: #B3A48C;
+    --terracotta: #E07A3A;
+    --forest: #7FB183;
+    --sky: #8FB6DE;
+    --honey: #E0BC5A;
+    --clay: #D98D82;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 40px 24px 80px;
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  .wrap { max-width: 1400px; margin: 0 auto; }
+  header { text-align: center; margin-bottom: 8px; }
+  h1 { font-size: 30px; margin: 0 0 6px; color: var(--terracotta); letter-spacing: -0.5px; }
+  .sub { color: var(--muted-text); font-size: 15px; margin: 0; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
+    margin: 20px 0 40px;
+  }
+  .chip {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 999px; padding: 5px 13px; font-size: 13px; color: var(--muted-text);
+  }
+  .chip b { color: var(--text); font-weight: 600; }
+  h2 {
+    font-size: 20px; margin: 56px 0 4px; color: var(--text);
+    border-left: 3px solid var(--terracotta); padding-left: 12px;
+  }
+  h2 .n { color: var(--muted-text); font-weight: 400; }
+  .caption { color: var(--muted-text); font-size: 14px; margin: 0 0 20px; padding-left: 15px; }
+  .diagram {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 16px;
+    padding: 24px 16px; overflow-x: auto;
+  }
+  .mermaid { display: flex; justify-content: center; min-width: 0; }
+  h3 { font-size: 16px; margin: 32px 0 10px; }
+  .legend {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 12px; margin-top: 16px;
+  }
+  .key {
+    display: flex; align-items: flex-start; gap: 10px;
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 12px; padding: 12px 14px;
+  }
+  .swatch { width: 16px; height: 16px; border-radius: 4px; flex: 0 0 auto; margin-top: 3px; }
+  .key-text { font-size: 13.5px; line-height: 1.45; }
+  .key-text b { display: block; color: var(--text); }
+  .key-text span { color: var(--muted-text); }
+  .shapes { list-style: none; padding: 0; margin: 12px 0 0; }
+  .shapes li {
+    padding: 7px 0; border-bottom: 1px solid var(--border);
+    font-size: 14px; color: var(--muted-text);
+  }
+  .shapes li:last-child { border-bottom: 0; }
+  .shapes code {
+    background: #0E0C08; border: 1px solid var(--border); border-radius: 5px;
+    padding: 1px 6px; color: var(--honey); font-size: 12.5px;
+  }
+  .notes { background: var(--panel); border: 1px solid var(--border); border-radius: 16px; padding: 6px 24px 20px; }
+  .notes ol { padding-left: 20px; }
+  .notes li { margin-bottom: 12px; font-size: 14.5px; }
+  .notes b { color: var(--honey); }
+  .warn { border-left: 3px solid var(--clay); padding-left: 12px; color: var(--muted-text); }
+  footer { margin-top: 56px; text-align: center; color: var(--muted-text); font-size: 13px; }
+  code.inline {
+    background: #0E0C08; border: 1px solid var(--border); border-radius: 5px;
+    padding: 1px 5px; font-size: 13px; color: var(--sky);
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>Steps Academy — System Architecture</h1>
+  <p class="sub">A Montessori academy app: guardians see photos of their own child; staff run the roster, courses and timetable.</p>
+</header>
+
+<div class="meta">
+  <span class="chip"><b>2</b> deployable units</span>
+  <span class="chip"><b>1</b> Express monolith</span>
+  <span class="chip"><b>19</b> Prisma models &amp; enums</span>
+  <span class="chip"><b>15</b> migrations</span>
+  <span class="chip"><b>13</b> API route groups</span>
+  <span class="chip"><b>3</b> third-party services</span>
+  <span class="chip"><b>0</b> queues · <b>0</b> caches</span>
+  <span class="chip">drawn from code at <b>a3cdce3</b></span>
+</div>
+
+<h2><span class="n">1 —</span> The whole system in one view</h2>
+<p class="caption">Every component that exists in the code. Dashed edges are asynchronous or fire-and-forget.</p>
+<div class="diagram">
+<div class="mermaid">
+flowchart TB
+
+  subgraph CLIENT["📱 CLIENT — Expo React Native app, SDK 54 pinned, TypeScript"]
+    direction TB
+    ROUTER["expo-router<br/>file-based routes"]
+    PARENT["Parent screens<br/>Home · Gallery · Profile"]
+    ADMINUI["Admin screens<br/>Management · Students · Courses<br/>Requests · Schedule · Feedback · Invites"]
+    STUB["Games · Shop<br/>screens exist, no API calls"]
+    RQ["TanStack Query<br/>staleTime 30s · retry 1<br/>cache cleared on session change"]
+    ZUS["Zustand stores<br/>auth · locale · app"]
+    AXIOS["Axios client<br/>req: attach Bearer<br/>res: 401 → clear session"]
+    ASYNC[("AsyncStorage<br/>JWT + locale<br/>on device")]
+    I18N["i18n en · ar · he<br/>JS-driven RTL"]
+  end
+
+  subgraph EDGE["🌐 EDGE"]
+    DNS["GoDaddy DNS<br/>CNAME api → Railway"]
+    RWEDGE["Railway edge<br/>TLS termination<br/>trust proxy 1"]
+  end
+
+  subgraph API["⚙️ API — Node 22 · Express 5 monolith · single Railway service"]
+    direction TB
+    MW["helmet · cors · morgan · json<br/>rate limit 20 per 15 min on auth<br/>multer memory, images, 15 MB"]
+    PUBLIC["Public routes<br/>/health · /privacy · /account-deletion"]
+    AUTHMW["requireAuth → verify JWT<br/>+ confirm user still exists<br/>adminOnly · optionalAuth"]
+    CTRL["12 controllers<br/>auth · gallery · students · courses<br/>schedule · invites · feedback · profile<br/>announcements · notifications"]
+    STUBAPI["games · shop<br/>return 501"]
+    MODELS["11 model modules<br/>the only code touching Prisma"]
+    IMG["sharp pipeline<br/>original + 800px + 200px"]
+    CRON["setInterval, 24 h<br/>delete ended courses<br/>in-process, not a worker"]
+    SEED["devSeed<br/>skipped when NODE_ENV=production"]
+  end
+
+  subgraph DATA["🗄️ DATA AT REST"]
+    PG[("PostgreSQL — Supabase, eu-central-1<br/>pooled :6543 pgbouncer at runtime<br/>direct :5432 for migrations")]
+    R2[("Cloudflare R2 — private bucket<br/>events/{eventId}/{uuid} -original / -medium / -thumb")]
+  end
+
+  subgraph THIRD["🔌 THIRD PARTY"]
+    GOOGLE{{"Google Identity<br/>ID token verified server-side"}}
+    EXPO{{"Expo Push Service<br/>exp.host"}}
+    WA{{"WhatsApp<br/>wa.me deep link"}}
+    PICSUM{{"picsum.photos<br/>dev seed images only"}}
+  end
+
+  subgraph BUILD["🏗️ BUILD & RELEASE"]
+    EAS["EAS Build<br/>preview APK · production"]
+    STORE["Google Play<br/>planned, not submitted"]
+  end
+
+  PARENT --> ROUTER
+  ADMINUI --> ROUTER
+  STUB -.-> ROUTER
+  ROUTER --> RQ
+  RQ --> AXIOS
+  ZUS --> AXIOS
+  ZUS <--> ASYNC
+  ROUTER --> I18N
+
+  AXIOS -->|"HTTPS · api.steps-academy.com"| DNS
+  DNS --> RWEDGE
+  RWEDGE --> MW
+  MW --> PUBLIC
+  MW --> AUTHMW
+  AUTHMW --> CTRL
+  MW --> STUBAPI
+  CTRL --> MODELS
+  CTRL --> IMG
+  MODELS -->|"Prisma Client"| PG
+  AUTHMW -->|"user lookup per request"| MODELS
+  CRON --> MODELS
+  SEED -.->|"dev only"| MODELS
+
+  IMG -->|"PutObject ×3"| R2
+  CTRL -->|"signed GET URL, 1 h TTL"| R2
+  R2 -.->|"image bytes direct to device"| PARENT
+
+  CLIENT -.->|"Google sign-in, gets idToken"| GOOGLE
+  CTRL -->|"verifyIdToken"| GOOGLE
+  CTRL -.->|"push fan-out, never throws"| EXPO
+  EXPO -.->|"notification"| CLIENT
+  ADMINUI -.->|"prefilled invite message"| WA
+  SEED -.-> PICSUM
+
+  EAS -->|"bakes EXPO_PUBLIC_API_URL<br/>into the binary"| CLIENT
+  EAS -.-> STORE
+
+  classDef client fill:#2A1F14,stroke:#E07A3A,stroke-width:1.5px,color:#F5EFE4
+  classDef edge fill:#141F2A,stroke:#8FB6DE,stroke-width:1.5px,color:#F5EFE4
+  classDef api fill:#16251A,stroke:#7FB183,stroke-width:1.5px,color:#F5EFE4
+  classDef data fill:#2A2412,stroke:#E0BC5A,stroke-width:1.5px,color:#F5EFE4
+  classDef third fill:#2A1A18,stroke:#D98D82,stroke-width:1.5px,color:#F5EFE4
+  classDef build fill:#1E1A26,stroke:#B9A2E0,stroke-width:1.5px,color:#F5EFE4
+  classDef stub fill:#241F19,stroke:#6B6152,stroke-width:1px,stroke-dasharray:4 3,color:#A8997F
+
+  class ROUTER,PARENT,ADMINUI,RQ,ZUS,AXIOS,ASYNC,I18N client
+  class DNS,RWEDGE edge
+  class MW,PUBLIC,AUTHMW,CTRL,MODELS,IMG,CRON api
+  class PG,R2 data
+  class GOOGLE,EXPO,WA,PICSUM third
+  class EAS,STORE build
+  class STUB,STUBAPI,SEED stub
+</div>
+</div>
+
+<h2><span class="n">2 —</span> Deployment and release</h2>
+<p class="caption">How code reaches a phone. The two paths are independent, and only one of them is fast.</p>
+<div class="diagram">
+<div class="mermaid">
+flowchart LR
+
+  DEV["Developer machine<br/>Windows · tsx watch · Metro"]
+  GH["GitHub<br/>AyhamAk/steps-academy<br/>single repo, two projects"]
+
+  subgraph SERVERPATH["SERVER — automatic, ~60 s"]
+    RW["Railway<br/>project adventurous-strength<br/>service steps-academy · env production"]
+    PRE["pre-deploy<br/>prisma migrate deploy"]
+    HC["health check /health"]
+    NODE["Node 22 process<br/>1 instance"]
+  end
+
+  subgraph APPPATH["APP — manual, ~15 min, no OTA"]
+    EASB["eas build<br/>preview or production"]
+    APK["Signed APK / AAB"]
+    PHONE["Phone<br/>manual reinstall"]
+  end
+
+  subgraph MANAGED["MANAGED SERVICES"]
+    SUPA[("Supabase Postgres<br/>free tier pauses after ~7 days idle")]
+    R2B[("Cloudflare R2<br/>private bucket")]
+  end
+
+  DEV -->|"git push main"| GH
+  GH -->|"watches main"| RW
+  RW --> PRE --> NODE --> HC
+  NODE --> SUPA
+  NODE --> R2B
+
+  DEV -->|"eas build, run by hand"| EASB
+  EASB --> APK
+  APK -->|"install by hand"| PHONE
+  PHONE -->|"HTTPS"| RW
+
+  DEV -.->|"local run reads .env.local<br/>which points at the SAME prod database"| SUPA
+
+  classDef dev fill:#2A1F14,stroke:#E07A3A,color:#F5EFE4
+  classDef infra fill:#16251A,stroke:#7FB183,color:#F5EFE4
+  classDef store fill:#2A2412,stroke:#E0BC5A,color:#F5EFE4
+  classDef risk fill:#2A1A18,stroke:#D98D82,stroke-width:2px,color:#F5EFE4
+
+  class DEV,GH dev
+  class RW,PRE,HC,NODE,EASB,APK infra
+  class SUPA,R2B store
+  class PHONE risk
+</div>
+</div>
+
+<h2><span class="n">3 —</span> Data flow: a photo, and who is allowed to see it</h2>
+<p class="caption">The core rule of the product, and the only genuinely multi-step path in the system.</p>
+<div class="diagram">
+<div class="mermaid">
+sequenceDiagram
+  autonumber
+  participant A as Admin app
+  participant API as Express API
+  participant S as sharp
+  participant R2 as Cloudflare R2
+  participant DB as Postgres
+  participant EX as Expo Push
+  participant P as Parent app
+
+  A->>API: POST /api/gallery/events/:id/photos<br/>multipart, ≤15 MB, images only
+  API->>API: requireAuth + adminOnly
+  API->>S: buffer in memory, never on disk
+  S-->>API: original + 800px + 200px
+  API->>R2: PutObject ×3 → events/{eventId}/{uuid}-*
+  API->>DB: Photo row stores KEYS, not URLs
+  API->>DB: auto-tag event attendees
+  API-)EX: push to guardians of tagged children
+  EX--)P: "New photos"
+
+  Note over P,DB: Reading is where the privacy rule lives
+  P->>API: GET /api/gallery/me
+  API->>DB: visibleStudentIds(parentId) via ParentStudent
+  DB-->>API: only this parent's children
+  API->>DB: photos WHERE tags.studentId IN (those ids)
+  Note right of API: attendance is NOT enough —<br/>the child must be tagged
+  API->>R2: presign GET, 1 h expiry, per photo
+  R2-->>API: signed URLs
+  API-->>P: groups + signed URLs
+  P->>R2: fetch image bytes directly
+</div>
+</div>
+
+<h2><span class="n">4 —</span> Legend</h2>
+
+<h3>Colour — by layer</h3>
+<div class="legend">
+  <div class="key"><div class="swatch" style="background:#E07A3A"></div><div class="key-text"><b>Client</b><span>Expo React Native app and its on-device state</span></div></div>
+  <div class="key"><div class="swatch" style="background:#8FB6DE"></div><div class="key-text"><b>Edge</b><span>DNS and TLS termination before the app process</span></div></div>
+  <div class="key"><div class="swatch" style="background:#7FB183"></div><div class="key-text"><b>API</b><span>The Express monolith and everything inside it</span></div></div>
+  <div class="key"><div class="swatch" style="background:#E0BC5A"></div><div class="key-text"><b>Data at rest</b><span>Postgres, R2 object storage, AsyncStorage</span></div></div>
+  <div class="key"><div class="swatch" style="background:#D98D82"></div><div class="key-text"><b>Third party</b><span>Services outside our control</span></div></div>
+  <div class="key"><div class="swatch" style="background:#B9A2E0"></div><div class="key-text"><b>Build &amp; release</b><span>How code becomes an installed app</span></div></div>
+  <div class="key"><div class="swatch" style="background:#6B6152"></div><div class="key-text"><b>Grey, dashed</b><span>Exists in the repo but not wired up or not used in production</span></div></div>
+</div>
+
+<h3>Shape and line</h3>
+<ul class="shapes">
+  <li><code>[ rectangle ]</code> — a component or process</li>
+  <li><code>[( cylinder )]</code> — a datastore, something that survives a restart</li>
+  <li><code>{{ hexagon }}</code> — a third-party service reached over the network</li>
+  <li><code>——&gt;</code> solid — synchronous call; the caller waits for the answer</li>
+  <li><code>--·&gt;</code> dashed — asynchronous, fire-and-forget, or dev-only</li>
+</ul>
+
+<h2><span class="n">5 —</span> Assumptions and things the code does not state</h2>
+<div class="notes">
+<ol>
+  <li><b>Railway deployment is inferred, not declared.</b> There is no <code class="inline">Dockerfile</code>, <code class="inline">docker-compose.yml</code>, Terraform, CDK, <code class="inline">railway.json</code> or <code class="inline">.github/workflows</code> anywhere in the repo. The deployment target is known only from the CLI being linked to project <code class="inline">adventurous-strength</code> and from the API answering on that host. Root directory, pre-deploy command and health check live in Railway's dashboard, so they cannot be verified from the repo.</li>
+
+  <li><b>Supabase is inferred from the connection string host</b> (<code class="inline">aws-0-eu-central-1.pooler.supabase.com</code>) in <code class="inline">.env.example</code> and the local env. Prisma's provider is simply <code class="inline">postgresql</code>; nothing names the vendor.</li>
+
+  <li><b>Games and Shop are drawn as stubs deliberately.</b> Both screens exist and both route groups are mounted, but the controllers return <code class="inline">501</code> and no client code calls them. A generic template would show a shop as a payments integration — there is <b>no payment provider in this codebase at all</b>.</li>
+
+  <li><b>No cache, queue, or worker exists.</b> No Redis, no BullMQ, no cron service. The only recurring job is <code class="inline">setInterval</code> inside the API process (<code class="inline">courseCleanup.ts</code>) — it dies with the process and would run once per instance if the service were ever scaled beyond one.</li>
+
+  <li><b>No CDN, load balancer or reverse proxy of our own.</b> Railway's edge terminates TLS; <code class="inline">trust proxy 1</code> exists so rate limiting keys on the real client IP. R2 is private, so images are not CDN-cached — every view is a freshly signed URL.</li>
+
+  <li><b>No error tracking or analytics.</b> No Sentry, no Firebase, no telemetry SDK. Observability is <code class="inline">morgan</code> logs in the Railway console.</li>
+
+  <li><b>Google sign-in is drawn as working, but has never run in a real build.</b> It has only been exercised in Expo Go. A release build is signed with a different keystore, and the OAuth client must carry that SHA-1 or sign-in fails.</li>
+
+  <li class="warn"><b>The local dev environment writes to the production database.</b> <code class="inline">steps-server/.env</code> has <code class="inline">NODE_ENV=development</code> but points <code class="inline">DATABASE_URL</code> at the same Supabase instance Railway serves. This is drawn as a dashed edge in diagram 2 because it is real behaviour, not intent — the seed accounts and placeholder photos in production arrived this way.</li>
+
+  <li class="warn"><b>The API address is compiled into the app.</b> <code class="inline">EXPO_PUBLIC_*</code> values are inlined by EAS at build time, and there is no <code class="inline">expo-updates</code>, so a JS-only change still needs a full rebuild and manual reinstall. This is why the custom domain matters: a change of host would otherwise strand every installed app.</li>
+
+  <li><b>README.md and PROJECT_CONTEXT.md are stale</b> — they describe an in-memory backend, Expo Go delivery and an unbuilt "kid mode". Every diagram here follows the code, not those documents.</li>
+
+  <li><b>Photo rows store object keys, never URLs.</b> The one exception is seeded rows carrying an <code class="inline">externalUrl</code> to picsum.photos, which is why production still shows placeholder images: no real photo has ever been uploaded through the R2 path in production.</li>
+</ol>
+</div>
+
+<footer>
+  Generated from a full read of the repository at commit <code class="inline">a3cdce3</code>. Components shown were located in source, config or migrations — none are assumed from convention.
+</footer>
+
+</div>
+
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: "dark",
+    themeVariables: {
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+      fontSize: "14px",
+      background: "#1E1A13",
+      primaryColor: "#2A1F14",
+      primaryTextColor: "#F5EFE4",
+      lineColor: "#8C7B65",
+      textColor: "#F5EFE4",
+      mainBkg: "#2A1F14",
+      clusterBkg: "#191510",
+      clusterBorder: "#3A3226",
+      actorBkg: "#2A1F14",
+      actorBorder: "#E07A3A",
+      actorTextColor: "#F5EFE4",
+      signalColor: "#B3A48C",
+      signalTextColor: "#F5EFE4",
+      noteBkgColor: "#2A2412",
+      noteTextColor: "#F5EFE4",
+      noteBorderColor: "#E0BC5A"
+    },
+    flowchart: { curve: "basis", nodeSpacing: 45, rankSpacing: 60, htmlLabels: true },
+    sequence: { useMaxWidth: true, wrap: true }
+  });
+</script>
+</body>
+</html>
