@@ -41,8 +41,10 @@ model Feedback {
   id        String   @id @default(uuid())
   userId    String?
   user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-  /// 1–5. Kept alongside the message so trends are readable at a glance.
-  rating    Int
+  /// 1–5, optional. The box is primarily for suggestions about the academy;
+  /// a score is a bonus, not a requirement, so a parent with an idea is never
+  /// forced to rate anything to send it.
+  rating    Int?
   message   String?
   /// Null until an admin has opened the feedback screen. Drives the "new
   /// feedback" alert on the admin home, the same way Notification.read does.

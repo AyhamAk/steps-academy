@@ -19,12 +19,14 @@ import {
 import { useChildren } from "../../store/authStore";
 import { formatCourseDates, formatCourseDays } from "../../utils/courseSchedule";
 import { CourseDetailModal } from "./CourseDetailModal";
+import { JoinCourseSheet } from "./JoinCourseSheet";
 
 export function CoursesSection() {
   const { t, isRTL, rtlText } = useTranslation();
   const children = useChildren();
   const queryClient = useQueryClient();
   const [detailId, setDetailId] = useState<string | null>(null);
+  const [joinCourse, setJoinCourse] = useState<Course | null>(null);
 
   const { data: courses, isPending, isError, refetch } = useQuery({
     queryKey: ["courses"],
@@ -32,25 +34,6 @@ export function CoursesSection() {
   });
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: ["courses"] });
-
-  const request = useMutation({
-    mutationFn: ({ courseId, studentId }: { courseId: string; studentId: string }) =>
-      requestEnrollment(courseId, studentId),
-    onSuccess: (enrollment, variables) => {
-      refresh();
-      const course = courses?.find((c) => c.id === variables.courseId);
-      // Joined outright when there was room; waiting list when there wasn't.
-      const joined = enrollment.status === "approved";
-      Alert.alert(
-        joined ? t.courses.joinedTitle : t.courses.waitlistedTitle,
-        joined
-          ? t.courses.joinedMessage(enrollment.studentName, course?.name ?? "")
-          : t.courses.waitlistedMessage(enrollment.studentName, course?.name ?? ""),
-        [{ text: t.common.ok }]
-      );
-    },
-    onError: () => Alert.alert(t.courses.requestFailed, t.common.tryAgain, [{ text: t.common.ok }]),
-  });
 
   const cancel = useMutation({
     mutationFn: (enrollmentId: string) => cancelEnrollment(enrollmentId),
@@ -78,27 +61,14 @@ export function CoursesSection() {
   }
   if (courses.length === 0) return null;
 
+  // Opens immediately: the sheet asks first and only then talks to the server,
+  // so the tap is never waiting on a network round trip.
   const startRequest = (course: Course) => {
     if (children.length === 0) {
       Alert.alert(t.courses.noChildrenTitle, t.courses.noChildrenMessage, [{ text: t.common.ok }]);
       return;
     }
-    // With one child there's nothing to choose; with several, ask which.
-    if (children.length === 1) {
-      request.mutate({ courseId: course.id, studentId: children[0].id });
-      return;
-    }
-    Alert.alert(
-      t.courses.whichChildTitle,
-      t.courses.whichChildMessage(course.name),
-      [
-        ...children.map((child) => ({
-          text: child.name,
-          onPress: () => request.mutate({ courseId: course.id, studentId: child.id }),
-        })),
-        { text: t.common.cancel, style: "cancel" as const },
-      ]
-    );
+    setJoinCourse(course);
   };
 
   return (
@@ -117,7 +87,6 @@ export function CoursesSection() {
           const approved = course.myEnrollments.find((e) => e.status === "approved");
           const rejected = course.myEnrollments.find((e) => e.status === "rejected");
           // Only the card being acted on spins, not every card at once.
-          const isRequestingThis = request.isPending && request.variables?.courseId === course.id;
           const isCancellingThis = cancel.isPending && cancel.variables === pending?.id;
           const isCancellingApproved = cancel.isPending && cancel.variables === approved?.id;
 
@@ -222,11 +191,11 @@ export function CoursesSection() {
                 </Touchable>
               ) : (
                 <Touchable
-                  disabled={isRequestingThis}
+                  disabled={false}
                   onPress={() => startRequest(course)}
                   style={[styles.action, isFull ? styles.actionWaitlist : styles.actionRequest]}
                 >
-                  {isRequestingThis ? (
+                  {false ? (
                     <ActivityIndicator color="#FFFFFF" />
                   ) : (
                     <Text style={styles.actionText} numberOfLines={1}>
@@ -240,9 +209,16 @@ export function CoursesSection() {
         })}
       </ScrollView>
 
+      <JoinCourseSheet
+        course={joinCourse}
+        children={children}
+        onClose={() => setJoinCourse(null)}
+        onJoined={refresh}
+      />
+
       <CourseDetailModal
         course={courses.find((course) => course.id === detailId) ?? null}
-        isBusy={request.isPending || cancel.isPending}
+        isBusy={cancel.isPending}
         onClose={() => setDetailId(null)}
         onRequest={(course) => {
           setDetailId(null);

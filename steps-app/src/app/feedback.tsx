@@ -2,13 +2,15 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { FlatList, StyleSheet, Text, View } from "react-native";
 
+import AdminHeader from "../components/admin/AdminHeader";
 import { EmptyState } from "../components/gallery/EmptyState";
 import { Screen } from "../components/Screen";
 import { DataErrorState } from "../components/ui/DataErrorState";
 import { ScreenFadeIn } from "../components/ui/ScreenFadeIn";
 import { SkeletonBlock } from "../components/ui/Skeleton";
-import { StepsHeader } from "../components/ui/StepsHeader";
 import { Colors } from "../constants/Colors";
+import { Ionicons } from "@expo/vector-icons";
+
 import { faceForRating } from "../constants/FeedbackFaces";
 import { Fonts } from "../constants/Fonts";
 import { Type } from "../constants/Typography";
@@ -41,7 +43,11 @@ function FeedbackRow({ item }: { item: FeedbackItem }) {
 
   return (
     <View style={[styles.card, isRTL && styles.rowReverse]}>
-      <Text style={styles.face}>{faceForRating(item.rating)}</Text>
+      {item.rating === null ? (
+        <Ionicons name="bulb-outline" size={26} color={Colors.honey} style={styles.face} />
+      ) : (
+        <Text style={styles.face}>{faceForRating(item.rating)}</Text>
+      )}
       <View style={styles.cardBody}>
         <View style={[styles.cardHeader, isRTL && styles.rowReverse]}>
           {/* `from` is null once an account is deleted — the feedback itself
@@ -80,7 +86,7 @@ export default function AdminFeedbackScreen() {
   return (
     <Screen>
       <ScreenFadeIn>
-        <StepsHeader title={t.adminFeedback.title} subtitle={t.adminFeedback.subtitle} showBack />
+        <AdminHeader title={t.adminFeedback.title} subtitle={t.adminFeedback.subtitle} />
 
         {isPending ? (
           <View style={styles.loading}>

@@ -4,18 +4,29 @@ import { prisma } from "../lib/prisma";
 import { sendPushToUsers } from "../lib/push";
 import { UserModel } from "../models/user";
 
-/** A parent rates the app and optionally says why. */
+/**
+ * A parent sends the academy a suggestion, and may attach a score.
+ *
+ * The message is the point; the rating is optional. Requiring a score to leave
+ * an idea turned a suggestion box into a survey, so either alone is accepted —
+ * but not neither.
+ */
 export async function submitFeedback(req: Request, res: Response) {
   const { rating, message } = req.body as { rating?: unknown; message?: unknown };
 
-  const value = Number(rating);
-  if (!Number.isInteger(value) || value < 1 || value > 5) {
+  const hasRating = rating !== undefined && rating !== null;
+  const value = hasRating ? Number(rating) : null;
+  if (hasRating && (!Number.isInteger(value) || value! < 1 || value! > 5)) {
     return res.status(400).json({ message: "rating must be a whole number from 1 to 5" });
   }
   if (message !== undefined && message !== null && typeof message !== "string") {
     return res.status(400).json({ message: "message must be a string" });
   }
   const text = typeof message === "string" ? message.trim().slice(0, 1000) : null;
+
+  if (!text && value === null) {
+    return res.status(400).json({ message: "a message or a rating is required" });
+  }
 
   const feedback = await prisma.feedback.create({
     data: { userId: req.userId!, rating: value, message: text || null },
@@ -28,8 +39,10 @@ export async function submitFeedback(req: Request, res: Response) {
   const admins = await UserModel.listAdmins();
   if (admins.length > 0) {
     await sendPushToUsers(admins, {
-      title: "New feedback",
-      body: `${feedback.user?.name ?? "A parent"} rated the app ${feedback.rating}/5.`,
+      title: "New suggestion",
+      body: feedback.rating
+        ? `${feedback.user?.name ?? "A parent"} wrote in and rated the academy ${feedback.rating}/5.`
+        : `${feedback.user?.name ?? "A parent"} sent the academy a suggestion.`,
       data: { type: "feedback" },
     });
   }

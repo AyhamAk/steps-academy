@@ -44,7 +44,7 @@ export function FeedbackModal({
   }, [visible]);
 
   const send = useMutation({
-    mutationFn: () => submitFeedback(rating!, message.trim() || undefined),
+    mutationFn: () => submitFeedback(message.trim(), rating),
     onSuccess: () => {
       onClose();
       onSent(t.feedback.thanks);
@@ -66,6 +66,7 @@ export function FeedbackModal({
           </View>
           <Text style={[styles.subtitle, rtlText]}>{t.feedback.subtitle}</Text>
 
+          <Text style={[styles.optionalLabel, rtlText]}>{t.feedback.ratingOptional}</Text>
           <View style={styles.faces}>
             {FEEDBACK_FACES.map((face) => (
               <Touchable
@@ -93,7 +94,7 @@ export function FeedbackModal({
             label={t.feedback.send}
             onPress={() => send.mutate()}
             loading={send.isPending}
-            disabled={rating === null}
+            disabled={!message.trim()}
           />
           {send.isError ? <Text style={styles.error}>{t.feedback.failed}</Text> : null}
         </View>
@@ -116,7 +117,15 @@ const styles = StyleSheet.create({
   title: { fontFamily: Fonts.extraBold, fontSize: 20, color: Colors.bark },
   close: { fontSize: 20, color: Colors.textLight },
   subtitle: { ...Type.caption, color: Colors.textLight, marginTop: 4 },
-  faces: { flexDirection: "row", justifyContent: "space-between", marginTop: 20, marginBottom: 18 },
+  optionalLabel: {
+    fontFamily: Fonts.semiBold,
+    fontSize: 12,
+    letterSpacing: 0.6,
+    textTransform: "uppercase",
+    color: Colors.textLight,
+    marginTop: 20,
+  },
+  faces: { flexDirection: "row", justifyContent: "space-between", marginTop: 10, marginBottom: 18 },
   face: {
     width: 56,
     height: 56,

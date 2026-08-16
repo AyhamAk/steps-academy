@@ -2,17 +2,18 @@ import { api } from "./api";
 
 export type FeedbackItem = {
   id: string;
-  rating: number;
+  /** Null when the parent sent a suggestion without scoring anything. */
+  rating: number | null;
   message: string | null;
   /** Null when the account has since been deleted. */
   from: string | null;
   createdAt: string;
 };
 
-export async function submitFeedback(rating: number, message?: string) {
-  const { data } = await api.post<{ feedback: { id: string; rating: number } }>("/api/feedback", {
-    rating,
+export async function submitFeedback(message: string, rating?: number | null) {
+  const { data } = await api.post<{ feedback: { id: string; rating: number | null } }>("/api/feedback", {
     message,
+    rating: rating ?? null,
   });
   return data.feedback;
 }
