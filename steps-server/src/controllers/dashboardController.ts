@@ -156,13 +156,15 @@ export async function dashboard(_req: Request, res: Response) {
       prisma.student.count(),
       prisma.analyticsEvent.count(),
       q<{ first: Date | null }>(`select min("createdAt") first from "AnalyticsEvent"`),
+      // The series column is aliased "bucket", not "day": Postgres rejects DAY
+      // as a column alias here, and the whole page 500s on the syntax error.
       q<{ day: string; n: number }>(
-        `select to_char(d.day, 'DD/MM') day,
-                coalesce(count(distinct coalesce(e."userId", e."anonId")), 0)::int n
+        `select to_char(d.bucket, 'DD/MM') day,
+                count(distinct coalesce(e."userId", e."anonId"))::int n
          from generate_series(date_trunc('day', now()) - interval '13 days',
-                              date_trunc('day', now()), interval '1 day') d(day)
-         left join "AnalyticsEvent" e on date_trunc('day', e."createdAt") = d.day
-         group by d.day order by d.day`
+                              date_trunc('day', now()), interval '1 day') d(bucket)
+         left join "AnalyticsEvent" e on date_trunc('day', e."createdAt") = d.bucket
+         group by d.bucket order by d.bucket`
       ),
       q<{ route: string; n: number }>(
         `select props->>'route' route, count(*)::int n from "AnalyticsEvent"
@@ -441,6 +443,9 @@ export async function dashboard(_req: Request, res: Response) {
 
     res.type("html").send(html);
   } catch (error) {
+    // Kept visible rather than swallowed: a dashboard that silently shows
+    // nothing is worse than one that says what broke.
+    console.error("[dashboard] failed:", error);
     res
       .status(500)
       .type("html")
