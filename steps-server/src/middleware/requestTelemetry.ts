@@ -22,9 +22,12 @@ export function requestTelemetry(req: Request, res: Response, next: NextFunction
 
   res.on("finish", () => {
     try {
-      if (SKIP_EXACT.has(req.path)) return;
-      // The ingest endpoint would otherwise log itself on every flush.
-      if (req.path.startsWith("/api/analytics")) return;
+      // originalUrl, not path: once a request has been routed, req.path is
+      // relative to the mounted router ("/events"), so matching on it silently
+      // failed and the ingest endpoint logged itself on every flush.
+      const fullPath = (req.originalUrl || req.url).split("?")[0];
+      if (SKIP_EXACT.has(fullPath)) return;
+      if (fullPath.startsWith("/api/analytics")) return;
 
       // The pattern, not the path: /api/gallery/events/:eventId, never the id.
       const pattern = `${req.baseUrl}${req.route?.path ?? ""}` || req.path;
