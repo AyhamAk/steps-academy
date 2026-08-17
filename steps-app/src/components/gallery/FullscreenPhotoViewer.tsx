@@ -1,7 +1,7 @@
 import { File, Paths } from "expo-file-system";
 import * as MediaLibrary from "expo-media-library";
 import * as Sharing from "expo-sharing";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -21,6 +21,7 @@ import { Fonts } from "../../constants/Fonts";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { track } from "../../services/analytics";
 import { useTranslation } from "../../i18n/useTranslation";
 import { matchedTagNames, Photo, resolvePhotoUrl } from "../../services/galleryApi";
 import { Touchable } from "../ui/Touchable";
@@ -29,6 +30,9 @@ type FullscreenPhotoViewerProps = {
   photos: Photo[] | null;
   initialIndex?: number;
   childIds?: string[];
+  /** Album only. Deliberately no photo id and no child id: usage data must
+   *  never become a record of who looked at which picture of which child. */
+  albumId?: string;
   onClose: () => void;
 };
 
@@ -36,6 +40,7 @@ export function FullscreenPhotoViewer({
   photos,
   initialIndex = 0,
   childIds = [],
+  albumId,
   onClose,
 }: FullscreenPhotoViewerProps) {
   const { t, isRTL } = useTranslation();
@@ -47,6 +52,23 @@ export function FullscreenPhotoViewer({
   const scrollRef = useRef<ScrollView>(null);
   const didInitialScroll = useRef(false);
   const lastTap = useRef(0);
+  const openedAt = useRef(0);
+  const swipes = useRef(0);
+
+  const isOpen = !!photos && photos.length > 0;
+  useEffect(() => {
+    if (!isOpen) return;
+    openedAt.current = Date.now();
+    swipes.current = 0;
+    track("photo_viewer_opened", { album_id: albumId });
+    return () => {
+      track("photo_viewer_closed", {
+        album_id: albumId,
+        seconds: Math.round((Date.now() - openedAt.current) / 1000),
+        photos_swiped: swipes.current,
+      });
+    };
+  }, [isOpen, albumId]);
 
   if (!photos || photos.length === 0) return null;
 
@@ -61,6 +83,7 @@ export function FullscreenPhotoViewer({
   };
 
   const handleMomentumEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    swipes.current += 1;
     setIndex(Math.round(e.nativeEvent.contentOffset.x / width));
   };
 
@@ -89,6 +112,7 @@ export function FullscreenPhotoViewer({
       }
       const file = await downloadToCache();
       await MediaLibrary.saveToLibraryAsync(file.uri);
+      track("photo_downloaded", { album_id: albumId });
       Alert.alert(t.gallery.saved, t.gallery.photoSavedToCameraRoll, [{ text: t.common.ok }]);
     } catch {
       Alert.alert(t.gallery.couldntSavePhoto, t.common.tryAgain, [{ text: t.common.ok }]);

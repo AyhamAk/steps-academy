@@ -19,7 +19,7 @@ import { env } from "../config/env";
 const router = Router();
 
 const ACADEMY_EMAIL = env.academyEmail;
-const UPDATED = "16 August 2026";
+const UPDATED = "17 August 2026";
 
 function page(title: string, body: string): string {
   return `<!doctype html>
@@ -100,6 +100,20 @@ cannot reach another family's photographs.</p>
   <li>We do not share photographs with anyone outside the academy and the child's own guardians</li>
 </ul>
 
+<h2>How we improve the app</h2>
+<p>We record how the app is used so we can see what works and what does not:
+which screens are opened, which albums and courses families look at, where a
+sign-up is abandoned, and when something goes wrong. This is measured by us, on
+our own server. <strong>No analytics company is involved and no usage data is
+sent to any third party.</strong></p>
+<ul>
+  <li>We record that an <strong>album</strong> was opened — never which photograph
+      was viewed, and never which child is in it.</li>
+  <li>We never record names, email addresses, photographs, or anything you type.</li>
+  <li>Usage records are kept for twelve months and then deleted automatically.</li>
+  <li>Deleting your account deletes your usage history with it.</li>
+</ul>
+
 <h2>Where it is kept</h2>
 <p>Account and roster data is stored in a managed PostgreSQL database hosted in
 the European Union. Photographs are stored in private object storage and are
@@ -160,6 +174,7 @@ your account uses, asking us to delete it. We will confirm once it is done.</p>
   <li>The link between you and your child</li>
   <li>Your notifications and your device's notification token</li>
   <li>Your invite code redemption record</li>
+  <li>Your app usage history</li>
 </ul>
 
 <h2>What is not deleted</h2>

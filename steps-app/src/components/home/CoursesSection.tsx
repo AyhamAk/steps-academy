@@ -13,6 +13,7 @@ import { Touchable } from "../ui/Touchable";
 import { Course, listCourses, MyEnrollment } from "../../services/coursesApi";
 import { useChildren } from "../../store/authStore";
 import { formatCourseDates, formatCourseDays } from "../../utils/courseSchedule";
+import { track } from "../../services/analytics";
 import { CourseDetailModal } from "./CourseDetailModal";
 import { JoinCourseSheet, LeaveCourseSheet } from "./CourseSheet";
 
@@ -90,7 +91,13 @@ export function CoursesSection() {
                 ]}
               />
 
-              <Touchable style={styles.cardInfo} onPress={() => setDetailId(course.id)}>
+              <Touchable
+                style={styles.cardInfo}
+                onPress={() => {
+                  track("course_viewed", { course_id: course.id });
+                  setDetailId(course.id);
+                }}
+              >
                 <Text style={styles.emoji}>{course.emoji}</Text>
                 <Text style={[styles.name, rtlText]} numberOfLines={2}>
                   {course.name}

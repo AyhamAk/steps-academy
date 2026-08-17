@@ -19,6 +19,7 @@ import { Touchable } from "../components/ui/Touchable";
 import { Colors } from "../constants/Colors";
 import { Fonts } from "../constants/Fonts";
 import { Type } from "../constants/Typography";
+import { track } from "../services/analytics";
 import { useTranslation } from "../i18n/useTranslation";
 import { useAuth } from "../hooks/useAuth";
 import { checkInviteCode } from "../services/inviteApi";
@@ -64,10 +65,15 @@ export default function OnboardingScreen() {
     try {
       const { studentName } = await checkInviteCode(code);
       setChildName(studentName);
+      track("invite_code_entered", { success: true });
+      track("onboarding_step_completed", { step: "invite_code" });
       setStep(2);
     } catch {
       // Every failure reads the same on the server, so there's nothing more
       // specific to say here.
+      // The server answers every bad code identically on purpose, so the
+      // reason recorded here is only ever "rejected", never the code itself.
+      track("invite_code_entered", { success: false, reason: "rejected" });
       setFormError(t.invite.invalidCode);
     } finally {
       setIsChecking(false);
@@ -79,12 +85,14 @@ export default function OnboardingScreen() {
     if (!EMAIL_REGEX.test(email.trim())) return setFormError(t.auth.emailInvalid);
     if (password.length < MIN_PASSWORD_LENGTH) return setFormError(t.auth.passwordTooShort);
     setFormError(null);
+    track("onboarding_step_completed", { step: "details" });
     setStep(3);
   };
 
   const handleCreate = async () => {
     if (!hasConsented) return setFormError(t.invite.consentRequired);
     setFormError(null);
+    track("onboarding_step_completed", { step: "consent" });
     const ok = await register({
       name: name.trim(),
       email: email.trim(),

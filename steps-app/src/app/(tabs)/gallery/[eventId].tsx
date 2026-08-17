@@ -14,6 +14,7 @@ import { EmptyState } from "../../../components/gallery/EmptyState";
 import { EventCaption } from "../../../components/gallery/EventCaption";
 import { FullscreenPhotoViewer } from "../../../components/gallery/FullscreenPhotoViewer";
 import AdminHeader from "../../../components/admin/AdminHeader";
+import { track } from "../../../services/analytics";
 import ChildTag from "../../../components/gallery/ChildTag";
 import { Screen } from "../../../components/Screen";
 import { SkeletonPhotoGrid } from "../../../components/ui/Skeleton";
@@ -85,12 +86,20 @@ export default function EventGalleryScreen() {
   const childIds = children.map((child) => child.id);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
+  const reachedEnd = useRef(false);
+
   const { data, isError } = useQuery({
     queryKey: ["gallery", "event", eventId],
     queryFn: () => myEventGallery(eventId as string),
     enabled: !!eventId,
   });
   const photos = data?.photos ?? null;
+
+  // Album id and date only — never a photo, never a child.
+  useEffect(() => {
+    if (!data) return;
+    track("album_opened", { album_id: data.event.id, album_date: data.event.date });
+  }, [data?.event.id]);
 
   return (
     <Screen>
@@ -123,7 +132,20 @@ export default function EventGalleryScreen() {
           ) : photos.length === 0 ? (
             <EmptyState title={t.gallery.noPhotosInEvent} />
           ) : (
-            <ScrollView style={styles.list} showsVerticalScrollIndicator={false}>
+            <ScrollView
+              style={styles.list}
+              showsVerticalScrollIndicator={false}
+              scrollEventThrottle={250}
+              onScroll={(e) => {
+                if (reachedEnd.current) return;
+                const { contentOffset, layoutMeasurement, contentSize } = e.nativeEvent;
+                const atEnd =
+                  contentOffset.y + layoutMeasurement.height >= contentSize.height - 40;
+                if (!atEnd) return;
+                reachedEnd.current = true;
+                track("album_scrolled_to_end", { album_id: eventId as string });
+              }}
+            >
               <View style={[styles.grid, isRTL && styles.gridRTL]}>
                 {photoTileSize > 0
                   ? photos.map((photo, index) => (
@@ -144,6 +166,7 @@ export default function EventGalleryScreen() {
       </ScreenFadeIn>
 
       <FullscreenPhotoViewer
+        albumId={eventId as string}
         photos={activeIndex === null ? null : photos}
         initialIndex={activeIndex ?? 0}
         childIds={childIds}

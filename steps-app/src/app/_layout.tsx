@@ -8,9 +8,9 @@ import {
   Nunito_800ExtraBold,
 } from "@expo-google-fonts/nunito";
 import { useFonts } from "expo-font";
-import { Stack, useRouter, useSegments } from "expo-router";
+import { Stack, usePathname, useRouter, useSegments } from "expo-router";
 import * as Notifications from "expo-notifications";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { I18nManager, View } from "react-native";
 
 import { AnimatedIntro } from "../components/ui/AnimatedIntro";
@@ -20,8 +20,49 @@ import { AUTH_ENABLED } from "../constants/flags";
 import { applyLocaleDirection } from "../i18n/applyLocaleDirection";
 import { registerForPushNotificationsAsync } from "../services/pushNotifications";
 import { updatePushTokenRequest } from "../services/authApi";
+import { startAnalytics, track } from "../services/analytics";
 import { useAuthStore } from "../store/authStore";
 import { isRTLLocale, useLocaleStore } from "../store/localeStore";
+
+/**
+ * Session lifecycle plus every route change, in one place.
+ *
+ * Screens do not report themselves: the router already knows where we are, and
+ * one listener here cannot drift out of date the way twenty call sites would.
+ */
+function useUsageTracking(ready: boolean) {
+  const pathname = usePathname();
+  const previous = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!ready) return;
+    return startAnalytics();
+  }, [ready]);
+
+  useEffect(() => {
+    if (!ready || !pathname) return;
+    const from = previous.current;
+    if (from === pathname) return;
+
+    track("screen_view", { route: pathname, previous_route: from ?? undefined });
+
+    // A move between two tab roots is also a tab switch. Derived here rather
+    // than wired into each tab, so adding a tab needs no analytics work.
+    const tabOf = (route: string | null) => {
+      if (!route) return null;
+      const match = route.match(/^\/\(tabs\)\/?([^/]*)/);
+      if (!match) return null;
+      return match[1] || "index";
+    };
+    const fromTab = tabOf(from);
+    const toTab = tabOf(pathname);
+    if (fromTab && toTab && fromTab !== toTab) {
+      track("tab_switch", { from_tab: fromTab, to_tab: toTab });
+    }
+
+    previous.current = pathname;
+  }, [pathname, ready]);
+}
 
 function useAuthGate(ready: boolean) {
   const token = useAuthStore((state) => state.token);
@@ -106,6 +147,7 @@ export default function RootLayout() {
   const [isIntroDone, setIsIntroDone] = useState(false);
 
   useAuthGate(ready);
+  useUsageTracking(ready);
   useRTLReconciliation(ready);
   usePushRegistration(token);
   useNotificationTapNavigation();

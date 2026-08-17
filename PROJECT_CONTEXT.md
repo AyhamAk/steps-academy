@@ -36,29 +36,29 @@ Steps/
 - Bottom tab navigation with 5 tabs.
 
 **Stubbed / not yet built:**
-- Games, Shop, Gallery, Profile tabs — each is a one-line placeholder screen
-  client-side, and a `501 Not Implemented` route server-side.
-- No real database — the backend "persists" users in an in-memory `Map`,
-  wiped on every server restart.
-- No child sub-profiles, no kid mode, no onboarding flow (an unused
-  `hasOnboarded` flag exists in a store but nothing reads/sets it yet).
+- **Games and Shop only** — a short placeholder screen client-side and a
+  `501 Not Implemented` route server-side. Gallery, Profile, Courses,
+  Schedule, Students, Invites and Feedback are all fully built.
+- No child sub-profiles and no kid mode.
 
-**README.md is slightly stale** — it says "SDK 57" and "no database, server is
-a skeleton." In reality the app is pinned to **Expo SDK 54** (see gotcha
-below), and auth is fully implemented against an in-memory store, not a true
-skeleton. Trust the code over the README for anything auth-related.
+**Built since this file was first written:** Postgres via Prisma, Cloudflare R2
+photo storage, the Railway deployment, invite-code onboarding, courses and
+enrolment, the weekly schedule, notifications, the admin dashboards, parent
+feedback, account deletion, and the public privacy / account-deletion pages.
 
-## Why auth is currently disabled
+## Auth is ON
 
-`steps-app/src/constants/flags.ts` exports `AUTH_ENABLED = false`. When false,
-the redirect-to-`/auth` gate in `src/app/_layout.tsx` is inert and the app
-boots straight into the tab navigator regardless of login state.
+`steps-app/src/constants/flags.ts` exports `AUTH_ENABLED = true`, and every API
+route outside `/health`, `/privacy`, `/account-deletion` and the invite-code
+check is behind `requireAuth`. The redirect-to-`/auth` gate in
+`src/app/_layout.tsx` is live: no token means the auth screen.
 
-**Why:** Google OAuth sign-in cannot be tested inside Expo Go — it requires a
-custom dev client build. Rather than rip the auth code out, it's flagged off
-so it can be flipped back on (`AUTH_ENABLED = true`) once testing moves to a
-dev/prod build that supports the OAuth redirect flow. All the auth code
-(screens, store, API calls, backend routes) is otherwise complete and untouched.
+Sign-up additionally requires a valid **invite code**, which is what links the
+new parent to their child. Existing accounts are grandfathered.
+
+Google sign-in is wired end to end but **has never worked in a real build** —
+Play re-signs the app, so the OAuth client needs the Play App Signing SHA-1,
+which only exists after the first upload.
 
 ## Mobile app (`steps-app/`)
 
@@ -185,8 +185,7 @@ src/
     auth.ts             requireAuth (401 if missing/invalid Bearer token),
                         optionalAuth (never blocks, just sets req.userId if valid)
     errorHandler.ts       notFound + generic errorHandler (no error detail leakage)
-  models/user.ts        in-memory Map-based "database" (usersById, usersByEmail)
-                        — wiped on every restart, no real DB wired up
+  models/user.ts        Prisma data access for the User table (Postgres)
   routes/               one file per resource, mounted under /api/<resource>
   utils/jwt.ts          signToken({userId}) / verifyToken(token)
 ```

@@ -99,6 +99,7 @@ model User {
   children      ParentStudent[]
 
   feedback            Feedback[]
+  analyticsEvents     AnalyticsEvent[]
   enrollmentRequests  CourseEnrollment[] @relation("EnrollmentRequester")
   enrollmentDecisions CourseEnrollment[] @relation("EnrollmentDecider")
   invitesCreated      InviteCode[]       @relation("InvitesCreated")
@@ -325,4 +326,33 @@ model InviteRedemption {
   /// One account can never consume the same code twice.
   @@unique([codeId, userId])
   @@index([userId])
+}
+
+/// First-party usage events. Deliberately one flat table: at one academy's
+/// volume the raw rows are cheap, and keeping them un-aggregated means a
+/// question nobody has thought of yet can still be answered later.
+///
+/// Never contains a photo id, a child id, a name, an email or anything a user
+/// typed. The ingest endpoint strips those keys; see analyticsController.
+model AnalyticsEvent {
+  id         String   @id @default(uuid())
+  name       String
+  /// Null for events sent before sign-in. Cascades so deleting an account
+  /// deletes that family's usage history with it.
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Stable per-install id, so a pre-login funnel can still be followed.
+  anonId     String?
+  role       String?
+  sessionId  String?
+  platform   String?
+  appVersion String?
+  locale     String?
+  isLoggedIn Boolean  @default(false)
+  props      Json?
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([name, createdAt])
+  @@index([userId, createdAt])
 }

@@ -4,13 +4,13 @@ A warm, child-centered mobile app for a Montessori academy serving children aged
 
 ## Features
 
-- **Auth** — email/password sign-up & sign-in (JWT + bcrypt). Google sign-in is scaffolded (needs a custom dev client, untested in Expo Go). Parents enter their children's names at sign-up.
+- **Auth** — email/password sign-up & sign-in (JWT + bcrypt), **always on**. Sign-up requires a per-child invite code issued by the academy, which is what links a parent to their child; parents never type a child's name. Google sign-in is wired but has never worked in a real build (the release keystore's SHA-1 is not on the OAuth client).
 - **Home board** — time-aware greeting, a hero carousel, the next upcoming event, and the latest academy announcement.
 - **Gallery** — the emotional core:
   - _Admins_ create events, upload photos, and tag children per photo.
   - _Parents_ see events with photos of **their** child (matched by tag), a full-screen lightbox with swipe / save-to-camera-roll / share, and a 🐘 badge on photos their child is in.
 - **Profile** — child pills, a per-child photo count, language switcher, and settings.
-- **Internationalization** — full **English / Arabic / Hebrew** with right-to-left mirroring (JS-driven so it works in Expo Go).
+- **Internationalization** — full **English / Arabic / Hebrew** with right-to-left mirroring. Mirroring is JS-driven on purpose: `applyLocaleDirection` keeps native `I18nManager` RTL permanently off, because the OS would mirror rows a second time and fight the app's own styles.
 - **Polish** — skeleton loaders, per-screen error boundaries, card depth tiers, a typography scale, and reduce-motion-aware animations.
 
 ## Stack
@@ -18,9 +18,9 @@ A warm, child-centered mobile app for a Montessori academy serving children aged
 - **Mobile app** (`steps-app/`) — React Native + **Expo SDK 54** (pinned — see note below), TypeScript, Expo Router (file-based), TanStack Query, Zustand, Axios, AsyncStorage, NativeWind + `StyleSheet`, `react-native-reanimated`, `@expo/vector-icons`.
 - **Backend API** (`steps-server/`) — Node.js + Express 5, TypeScript, JWT (`jsonwebtoken`), `bcryptjs`, `multer` uploads.
 
-> ⚠️ **Expo SDK is pinned at 54 — do not upgrade.** The runtime must match the SDK the tester's installed Expo Go build supports.
+> ⚠️ **Expo SDK is pinned at 54 — do not upgrade.** The app is delivered as an EAS build, not through Expo Go. There is no `expo-updates`, so **every JS change needs a full rebuild and reinstall** — the API URL is compiled into the binary.
 >
-> ⚠️ **The backend stores everything in memory** (plain `Map`s) — all data is wiped on every restart, and uploaded photos live on local disk under `steps-server/uploads/`. A dev seed (below) repopulates a demo parent on each start. Migrating to Postgres + object storage is the planned next step before production.
+> ✅ **The backend runs on Postgres (Supabase) via Prisma, with photos on Cloudflare R2.** Nothing is stored in memory and nothing is written to local disk. The API is deployed on Railway at `https://api.steps-academy.com`. A dev seed (below) creates a demo parent, and is skipped entirely when `NODE_ENV=production`.
 
 ## Project structure
 
@@ -42,7 +42,7 @@ steps-server/              Node.js + Express backend
     routes/                auth, gallery, announcements, games, shop, profile
     controllers/           route handlers
     middleware/            auth (JWT), upload (multer), error handling
-    models/                in-memory data (user, event, photo, photoTag, ...)
+    models/                Prisma data access (user, event, photo, photoTag, ...)
     devSeed.ts             demo data seeded on startup (dev only)
     index.ts               entry point
 ```
@@ -89,7 +89,7 @@ npm install
 npm start
 ```
 
-Scan the QR code with **Expo Go** (SDK 54) on your phone, or press `i` / `a` for a simulator.
+Press `i` / `a` for a simulator. On a physical device the app is installed as an EAS build (`npx eas build --profile preview --platform android`), not scanned into Expo Go.
 
 > On a physical device, `EXPO_PUBLIC_API_URL` must be your computer's **LAN IP** (not `localhost`). `EXPO_PUBLIC_*` vars are baked into the bundle at start time — restart Metro after changing them. If Metro binds to the wrong network adapter (e.g. behind a VPN), force it:
 > ```bash

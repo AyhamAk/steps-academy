@@ -5,8 +5,10 @@ import morgan from "morgan";
 
 import { env } from "./config/env";
 import { runDevSeed } from "./devSeed";
+import { scheduleAnalyticsPurge } from "./lib/analyticsRetention";
 import { scheduleCourseCleanup } from "./lib/courseCleanup";
 import { errorHandler, notFound } from "./middleware/errorHandler";
+import { requestTelemetry } from "./middleware/requestTelemetry";
 import announcementRoutes from "./routes/announcementRoutes";
 import authRoutes from "./routes/authRoutes";
 import courseRoutes from "./routes/courseRoutes";
@@ -17,6 +19,7 @@ import gamesRoutes from "./routes/gamesRoutes";
 import notificationRoutes from "./routes/notificationRoutes";
 import scheduleRoutes from "./routes/scheduleRoutes";
 import profileRoutes from "./routes/profileRoutes";
+import analyticsRoutes from "./routes/analyticsRoutes";
 import legalRoutes from "./routes/legalRoutes";
 import shopRoutes from "./routes/shopRoutes";
 import studentRoutes from "./routes/studentRoutes";
@@ -37,6 +40,7 @@ app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
 app.use(cors(env.corsOrigin ? { origin: env.corsOrigin.split(",").map((o) => o.trim()) } : {}));
 app.use(morgan("dev"));
 app.use(express.json());
+app.use(requestTelemetry);
 // Photos now live on Cloudflare R2, served via short-lived signed URLs
 // generated per-request — nothing is served directly from this process.
 
@@ -47,6 +51,7 @@ app.get("/health", (_req, res) => {
 // Public web pages the app stores require. No auth, no data.
 app.use("/", legalRoutes);
 
+app.use("/api/analytics", analyticsRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/games", gamesRoutes);
 app.use("/api/shop", shopRoutes);
@@ -67,4 +72,5 @@ app.listen(env.port, () => {
   console.log(`Steps API listening on port ${env.port}`);
   void runDevSeed();
   scheduleCourseCleanup();
+  scheduleAnalyticsPurge();
 });

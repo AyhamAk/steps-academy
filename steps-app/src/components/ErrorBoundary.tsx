@@ -1,4 +1,6 @@
 import React from "react";
+
+import { currentScreen, track } from "../services/analytics";
 import { StyleSheet, Text, View } from "react-native";
 
 import { Colors } from "../constants/Colors";
@@ -40,6 +42,12 @@ export class ErrorBoundary extends React.Component<Props, State> {
   componentDidCatch(error: unknown) {
     // Surfaced in Metro logs; a real build would forward this to Sentry.
     console.error("ErrorBoundary caught:", error);
+    // Type and screen only. A stack trace or an error message can contain a
+    // name, a URL or something the user typed, so neither is ever recorded.
+    track("client_error", {
+      screen: currentScreen(),
+      error_type: error instanceof Error ? error.name : typeof error,
+    });
   }
 
   reset = () => this.setState({ hasError: false });

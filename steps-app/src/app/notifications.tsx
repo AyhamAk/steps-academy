@@ -13,6 +13,7 @@ import { Colors } from "../constants/Colors";
 import { Fonts } from "../constants/Fonts";
 import { Type } from "../constants/Typography";
 import { Translations } from "../i18n/translations";
+import { track } from "../services/analytics";
 import { useTranslation } from "../i18n/useTranslation";
 import {
   AppNotification,
@@ -109,7 +110,14 @@ export default function NotificationsScreen() {
               return (
                 <Touchable
                   disabled={!destination}
-                  onPress={() => destination && router.push(destination as never)}
+                  onPress={() => {
+                    if (!destination) return;
+                    track("notification_opened", {
+                      notification_type: item.type,
+                      destination,
+                    });
+                    router.push(destination as never);
+                  }}
                   style={[styles.row, isRTL && styles.rowReverse, !item.read && styles.rowUnread]}
                 >
                   <View style={item.read ? styles.dotSpacer : styles.unreadDot} />

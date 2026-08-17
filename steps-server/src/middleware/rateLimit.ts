@@ -10,3 +10,14 @@ export const authRateLimit = rateLimit({
   legacyHeaders: false,
   message: { message: "Too many attempts. Please try again later." },
 });
+
+// Generous by design: a busy family sends a batch every 15 seconds, and the
+// cost of dropping real events is higher than the cost of a few extra rows.
+export const analyticsRateLimit = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  // Silence rather than an error body: the client ignores the response anyway.
+  handler: (_req, res) => res.status(202).json({ ok: true }),
+});

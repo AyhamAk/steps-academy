@@ -5,6 +5,7 @@ import { StyleSheet, Text, View } from "react-native";
 import { Colors } from "../../constants/Colors";
 import { Fonts } from "../../constants/Fonts";
 import { Type } from "../../constants/Typography";
+import { track } from "../../services/analytics";
 import { useTranslation } from "../../i18n/useTranslation";
 import { formatTime, getWeekSchedule, WEEK_DAYS, WeekDay } from "../../services/scheduleApi";
 import { DataErrorState } from "../ui/DataErrorState";
@@ -63,7 +64,10 @@ export function WeeklyScheduleSection() {
           return (
             <Touchable
               key={day}
-              onPress={() => setSelectedDay(day)}
+              onPress={() => {
+                track("schedule_viewed", { view: day });
+                setSelectedDay(day);
+              }}
               hitSlop={6}
               style={[
                 styles.dayTab,

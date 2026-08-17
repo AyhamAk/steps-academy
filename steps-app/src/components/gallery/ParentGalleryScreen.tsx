@@ -29,7 +29,7 @@ import { Touchable } from "../ui/Touchable";
 
 const EVENT_BORDER_COLORS = [Colors.terracotta, Colors.forest, Colors.sky, Colors.honey];
 
-type ViewerState = { photos: Photo[]; index: number };
+type ViewerState = { photos: Photo[]; index: number; albumId: string };
 
 function TaggedThumb({
   photo,
@@ -167,7 +167,11 @@ export function ParentGalleryScreen() {
                                 size={88}
                                 tagged={isPhotoTaggedWithAny(photo, childIds)}
                                 onPress={() =>
-                                  setViewer({ photos: group.photos, index: photoIndex })
+                                  setViewer({
+                                    photos: group.photos,
+                                    index: photoIndex,
+                                    albumId: group.event.id,
+                                  })
                                 }
                               />
                             ))}
@@ -184,6 +188,7 @@ export function ParentGalleryScreen() {
       </ScrollView>
 
       <FullscreenPhotoViewer
+        albumId={viewer?.albumId}
         photos={viewer?.photos ?? null}
         initialIndex={viewer?.index ?? 0}
         childIds={childIds}

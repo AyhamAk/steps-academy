@@ -12,6 +12,7 @@ import {
   MyEnrollment,
   requestEnrollment,
 } from "../../services/coursesApi";
+import { track } from "../../services/analytics";
 import { Child } from "../../store/authStore";
 import { formatCourseDates, formatCourseDays } from "../../utils/courseSchedule";
 import IconTile from "../ui/IconTile";
@@ -127,12 +128,17 @@ export function JoinCourseSheet({
     setChildId(children.length === 1 ? children[0].id : null);
     setOutcome(null);
     setFailed(false);
+    track("course_signup_opened", { course_id: course.id });
   }, [course?.id]);
 
   const join = useMutation({
     mutationFn: (studentId: string) => requestEnrollment(course!.id, studentId),
     onSuccess: (enrollment) => {
       setOutcome({ joined: enrollment.status === "approved", childName: enrollment.studentName });
+      track("course_signup_completed", {
+        course_id: course!.id,
+        waitlisted: enrollment.status !== "approved",
+      });
       onJoined();
     },
     onError: () => setFailed(true),
@@ -142,8 +148,18 @@ export function JoinCourseSheet({
 
   const isFull = course.spotsLeft !== null && course.spotsLeft === 0;
 
+  const closeSheet = () => {
+    if (!outcome) {
+      track("course_signup_abandoned", {
+        course_id: course.id,
+        step: childId ? "confirm" : "select_child",
+      });
+    }
+    onClose();
+  };
+
   return (
-    <Modal visible animationType="slide" transparent onRequestClose={onClose}>
+    <Modal visible animationType="slide" transparent onRequestClose={closeSheet}>
       <SheetShell course={course} isBusy={join.isPending}>
         {outcome ? (
           <Result
@@ -209,7 +225,7 @@ export function JoinCourseSheet({
               disabled={!childId}
               style={styles.primary}
             />
-            <Touchable onPress={onClose} disabled={join.isPending} style={styles.cancel}>
+            <Touchable onPress={closeSheet} disabled={join.isPending} style={styles.cancel}>
               <Text style={styles.cancelText}>{t.common.cancel}</Text>
             </Touchable>
           </>

@@ -2,6 +2,7 @@ import { StyleSheet, Text, View } from "react-native";
 
 import { Colors } from "../../constants/Colors";
 import { Fonts } from "../../constants/Fonts";
+import { track } from "../../services/analytics";
 import { applyLocaleDirection } from "../../i18n/applyLocaleDirection";
 import { Locale, useLocaleStore } from "../../store/localeStore";
 import { Touchable } from "./Touchable";
@@ -22,6 +23,7 @@ export function LanguagePicker({ compact = false }: { compact?: boolean }) {
 
   const select = (next: Locale) => {
     if (next === locale) return;
+    track("language_changed", { from: locale, to: next });
     setLocale(next);
     applyLocaleDirection(next);
   };
