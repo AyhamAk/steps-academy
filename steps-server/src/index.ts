@@ -20,6 +20,7 @@ import notificationRoutes from "./routes/notificationRoutes";
 import scheduleRoutes from "./routes/scheduleRoutes";
 import profileRoutes from "./routes/profileRoutes";
 import analyticsRoutes from "./routes/analyticsRoutes";
+import dashboardRoutes from "./routes/dashboardRoutes";
 import legalRoutes from "./routes/legalRoutes";
 import shopRoutes from "./routes/shopRoutes";
 import studentRoutes from "./routes/studentRoutes";
@@ -50,6 +51,7 @@ app.get("/health", (_req, res) => {
 
 // Public web pages the app stores require. No auth, no data.
 app.use("/", legalRoutes);
+app.use("/dashboard", dashboardRoutes);
 
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/auth", authRoutes);

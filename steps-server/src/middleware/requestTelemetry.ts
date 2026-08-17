@@ -28,6 +28,8 @@ export function requestTelemetry(req: Request, res: Response, next: NextFunction
       const fullPath = (req.originalUrl || req.url).split("?")[0];
       if (SKIP_EXACT.has(fullPath)) return;
       if (fullPath.startsWith("/api/analytics")) return;
+      // Reading the dashboard is not app usage.
+      if (fullPath.startsWith("/dashboard")) return;
 
       // The pattern, not the path: /api/gallery/events/:eventId, never the id.
       const pattern = `${req.baseUrl}${req.route?.path ?? ""}` || req.path;
