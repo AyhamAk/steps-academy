@@ -62,7 +62,10 @@ function serializeEvent(event: {
     name: event.name,
     date: event.date,
     caption: event.caption,
-    ...(event.attendees ? { attendees: event.attendees } : {}),
+    // Always an array, never absent: the app reads .length off this without
+    // guarding, so omitting it crashed the gallery the moment an album was
+    // created. An event with no attendees is [], not undefined.
+    attendees: event.attendees ?? [],
   };
 }
 
@@ -107,7 +110,9 @@ export async function createEvent(req: Request, res: Response) {
     data: { type: "event", eventId: event.id },
   });
 
-  res.status(201).json({ event: { ...serializeEvent(event), photoCount: 0 } });
+  res.status(201).json({
+    event: { ...serializeEvent(event), photoCount: 0, previewUrls: [], attendees: event.attendees ?? [] },
+  });
 }
 
 export async function listEvents(req: Request, res: Response) {

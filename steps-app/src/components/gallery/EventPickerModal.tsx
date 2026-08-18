@@ -115,7 +115,7 @@ export function EventPickerModal({
                     {t.gallery.eventMeta(
                       formatIsoDate(event.date, t),
                       event.photoCount,
-                      event.attendees.length
+                      (event.attendees ?? []).length
                     )}
                   </Text>
                 </Touchable>

@@ -304,7 +304,7 @@ export function AdminGalleryScreen() {
                     {t.gallery.eventMeta(
                       formatIsoDate(event.date, t),
                       event.photoCount,
-                      event.attendees.length
+                      (event.attendees ?? []).length
                     )}
                   </Text>
                 )}
@@ -320,15 +320,15 @@ export function AdminGalleryScreen() {
             </View>
             {/* Preview strip so the admin can recognise an event at a glance
                 instead of reading a list of names. */}
-            {event.previewUrls.length > 0 ? (
+            {(event.previewUrls ?? []).length > 0 ? (
               <View style={[styles.previewRow, isRTL && styles.rowReverse]}>
-                {event.previewUrls.map((url) => (
+                {(event.previewUrls ?? []).map((url) => (
                   <Image key={url} source={{ uri: url }} style={styles.previewThumb} />
                 ))}
-                {event.photoCount > event.previewUrls.length ? (
+                {event.photoCount > (event.previewUrls ?? []).length ? (
                   <View style={[styles.previewThumb, styles.previewMore]}>
                     <Text style={styles.previewMoreText}>
-                      +{event.photoCount - event.previewUrls.length}
+                      +{event.photoCount - (event.previewUrls ?? []).length}
                     </Text>
                   </View>
                 ) : null}
