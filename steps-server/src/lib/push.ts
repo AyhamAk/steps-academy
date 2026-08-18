@@ -34,6 +34,14 @@ export async function sendPushToUsers(users: User[], payload: PushPayload): Prom
     title: payload.title,
     body: payload.body,
     data: payload.data ?? {},
+    // Without channelId, a notification delivered while the app is closed
+    // lands on Android's fallback channel — no banner, no sound. The app
+    // creates this channel at MAX importance on first launch.
+    channelId: "default",
+    // High priority is what wakes the device to display it; the default
+    // ("normal") lets Android hold it until the next maintenance window.
+    priority: "high",
+    badge: 1,
   }));
 
   for (const batch of chunk(messages, CHUNK_SIZE)) {

@@ -8,7 +8,8 @@ Notifications.setNotificationHandler({
     shouldShowBanner: true,
     shouldShowList: true,
     shouldPlaySound: true,
-    shouldSetBadge: false,
+    // Android draws the unread count on the launcher icon from this.
+    shouldSetBadge: true,
   }),
 });
 
@@ -22,9 +23,16 @@ export async function registerForPushNotificationsAsync(): Promise<string | null
 
   try {
     if (Platform.OS === "android") {
+      // MAX, not DEFAULT: on Android, DEFAULT importance puts the notification
+      // straight into the shade with no heads-up banner and no sound, so a
+      // parent only finds out there are new photos if they happen to look.
       await Notifications.setNotificationChannelAsync("default", {
-        name: "default",
-        importance: Notifications.AndroidImportance.DEFAULT,
+        name: "Steps Academy",
+        importance: Notifications.AndroidImportance.MAX,
+        vibrationPattern: [0, 250, 250, 250],
+        lightColor: "#E07A3A",
+        sound: "default",
+        showBadge: true,
       });
     }
 
