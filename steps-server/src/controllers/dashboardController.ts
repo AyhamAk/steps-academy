@@ -156,13 +156,14 @@ export async function dashboard(_req: Request, res: Response) {
       prisma.student.count(),
       prisma.analyticsEvent.count(),
       q<{ first: Date | null }>(`select min("createdAt") first from "AnalyticsEvent"`),
-      // The series column is aliased "bucket", not "day": Postgres rejects DAY
-      // as a column alias here, and the whole page 500s on the syntax error.
-      q<{ day: string; n: number }>(
-        `select to_char(d.bucket, 'DD/MM') day,
-                count(distinct coalesce(e."userId", e."anonId"))::int n
+      // Neither the series column nor the output column may be called "day" —
+      // Postgres rejects it as an alias in both positions, and one syntax
+      // error takes the whole page down.
+      q<{ label: string; n: number }>(
+        `select to_char(d.bucket, 'DD/MM') as label,
+                count(distinct coalesce(e."userId", e."anonId"))::int as n
          from generate_series(date_trunc('day', now()) - interval '13 days',
-                              date_trunc('day', now()), interval '1 day') d(bucket)
+                              date_trunc('day', now()), interval '1 day') as d(bucket)
          left join "AnalyticsEvent" e on date_trunc('day', e."createdAt") = d.bucket
          group by d.bucket order by d.bucket`
       ),
@@ -331,7 +332,7 @@ export async function dashboard(_req: Request, res: Response) {
   </div>
 
   <h2>Daily active users · last 14 days</h2>
-  <div class="card">${barChart(dailyActives.map((r) => ({ label: r.day, value: Number(r.n) })))}</div>
+  <div class="card">${barChart(dailyActives.map((r) => ({ label: r.label, value: Number(r.n) })))}</div>
 
   <div class="cols">
     <div>
