@@ -10,7 +10,7 @@ import Animated, {
 } from "react-native-reanimated";
 
 import { Colors } from "../../constants/Colors";
-import { Layout } from "../../constants/Layout";
+import { gridCardWidth, useLayout } from "../../hooks/useLayout";
 import { useReduceMotionSetting } from "../../hooks/useReduceMotionSetting";
 
 type SkeletonBlockProps = {
@@ -109,10 +109,15 @@ export function SkeletonEventList({ count = 3 }: { count?: number }) {
 
 /** Course-card shaped placeholders, matching the real horizontal card strip. */
 export function SkeletonCourseRow({ count = 2 }: { count?: number }) {
+  // Same maths as the real cards, so placeholders sit exactly where the
+  // content will land instead of jumping when it arrives.
+  const { width, gutter, cardGap, columns } = useLayout();
+  const cardWidth = gridCardWidth({ width, gutter, cardGap, columns });
+
   return (
     <View style={styles.courseRow}>
       {Array.from({ length: count }).map((_, index) => (
-        <View key={index} style={styles.courseCard}>
+        <View key={index} style={[styles.courseCard, { width: cardWidth }]}>
           <SkeletonBlock width={34} height={34} borderRadius={10} style={styles.courseGap} />
           <SkeletonBlock width="80%" height={15} style={styles.courseGap} />
           <SkeletonBlock width="60%" height={12} style={styles.courseGap} />
@@ -271,10 +276,9 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   courseCard: {
-    // Same fixed size as the real card, so the row doesn't resize when the
-    // skeleton is swapped out for content.
-    width: Layout.courseCard.width,
-    height: Layout.courseCard.height,
+    // Width is computed per device at the call site; minHeight keeps the row
+    // stable without clipping the content that replaces it.
+    minHeight: 240,
     backgroundColor: Colors.card,
     borderRadius: 18,
     borderWidth: 1,

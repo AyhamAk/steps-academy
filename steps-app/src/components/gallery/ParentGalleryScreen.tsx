@@ -1,3 +1,4 @@
+import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { useState } from "react";
@@ -54,6 +55,7 @@ function TaggedThumb({
 }
 
 export function ParentGalleryScreen() {
+  const tabBarHeight = useBottomTabBarHeight();
   const { t, isRTL, rtlText } = useTranslation();
   const children = useChildren();
   const childIds = children.map((child) => child.id);
@@ -67,7 +69,9 @@ export function ParentGalleryScreen() {
 
   return (
     <>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView
+        contentContainerStyle={[styles.content, { paddingBottom: tabBarHeight + 24 }]}
+      >
         <ScreenFadeIn>
           <AdminHeader
             title={t.gallery.pageTitle}
@@ -135,8 +139,8 @@ export function ParentGalleryScreen() {
                       <View style={styles.eventBody}>
                         <View style={[styles.eventHeaderRow, isRTL && styles.rowReverse]}>
                           <View style={styles.eventTextBlock}>
-                            <Text style={[styles.eventName, rtlText]}>{group.event.name}</Text>
-                            <Text style={[styles.eventMeta, rtlText]}>
+                            <Text style={[styles.eventName, rtlText]} maxFontSizeMultiplier={1.3}>{group.event.name}</Text>
+                            <Text style={[styles.eventMeta, rtlText]} maxFontSizeMultiplier={1.4}>
                               {t.gallery.parentEventMeta(
                                 formatIsoDate(group.event.date, t),
                                 group.photos.length
@@ -149,7 +153,7 @@ export function ParentGalleryScreen() {
                         <EventCaption caption={group.event.caption} />
 
                         {group.photos.length === 0 ? (
-                          <Text style={styles.stripEmpty}>{t.gallery.noPhotosYetCard}</Text>
+                          <Text style={styles.stripEmpty} maxFontSizeMultiplier={1.4}>{t.gallery.noPhotosYetCard}</Text>
                         ) : (
                           <ScrollView
                             horizontal

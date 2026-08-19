@@ -49,6 +49,9 @@ import { ToastBanner, useToast } from "../../components/ui/Toast";
 import { Colors } from "../../constants/Colors";
 import { Fonts } from "../../constants/Fonts";
 import { Type } from "../../constants/Typography";
+import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
+
+import { useLayout } from "../../hooks/useLayout";
 import { useReduceMotionSetting } from "../../hooks/useReduceMotionSetting";
 import { Translations } from "../../i18n/translations";
 import { useTranslation } from "../../i18n/useTranslation";
@@ -101,14 +104,14 @@ const HERO_PHOTO_COUNT = 4;
 function SlideBackground({
   variant,
   isRTL,
+  slideWidth,
   children,
 }: {
   variant: SlideVariant;
   isRTL: boolean;
+  slideWidth: number;
   children: React.ReactNode;
 }) {
-  const { width } = useWindowDimensions();
-  const slideWidth = width - 48;
 
   return (
     <SlideBackdrop
@@ -140,8 +143,10 @@ function HeroCarousel({
   onToast: (message: string) => void;
   onFeedback: () => void;
 }) {
-  const { width } = useWindowDimensions();
-  const slideWidth = width - 48;
+  const { width, gutter } = useLayout();
+  // Against the gutter, not a hardcoded 48: the card then has the same margin
+  // on both sides at every width.
+  const slideWidth = width - gutter * 2;
   const reduceMotion = useReduceMotionSetting();
   const scrollRef = useRef<ScrollView>(null);
   const indexRef = useRef(0);
@@ -186,9 +191,11 @@ function HeroCarousel({
         pagingEnabled
         showsHorizontalScrollIndicator={false}
         onMomentumScrollEnd={handleMomentumEnd}
+        snapToInterval={slideWidth}
+        decelerationRate="fast"
         style={{ width: slideWidth }}
       >
-        <SlideBackground variant="terracotta" isRTL={isRTL}>
+        <SlideBackground variant="terracotta" isRTL={isRTL} slideWidth={slideWidth}>
           {/* With thumbnails there is no room for the emoji too — the strip is
               the picture, so the emoji only stands in when there are no photos. */}
           {heroPhotoUrls.length > 0 ? (
@@ -227,7 +234,7 @@ function HeroCarousel({
           )}
         </SlideBackground>
 
-        <SlideBackground variant="forest" isRTL={isRTL}>
+        <SlideBackground variant="forest" isRTL={isRTL} slideWidth={slideWidth}>
           <Text style={[styles.carouselEmoji, { textAlign, alignSelf: startAlign }]}>💬</Text>
           <Text style={[styles.carouselHeadline, { textAlign, alignSelf: startAlign }]}>
             {t.feedback.carouselHeadline}
@@ -240,7 +247,7 @@ function HeroCarousel({
           </Touchable>
         </SlideBackground>
 
-        <SlideBackground variant="sky" isRTL={isRTL}>
+        <SlideBackground variant="sky" isRTL={isRTL} slideWidth={slideWidth}>
           <Text style={[styles.carouselHeadline, { textAlign, alignSelf: startAlign }]}>
             {t.home.moodCheckinQuestion(childOrGeneric)}
           </Text>
@@ -426,6 +433,8 @@ function ExpandableAnnouncementText({
 const HEADER_COLLAPSE_RANGE = 90;
 
 export default function HomeScreen() {
+  const tabBarHeight = useBottomTabBarHeight();
+  const { width, gutter, insets } = useLayout();
   const user = useAuthStore((state) => state.user);
   const isAdmin = user?.role === "admin";
   const reducedMotion = useReducedMotion();
@@ -616,16 +625,26 @@ export default function HomeScreen() {
         onScroll={scrollHandler}
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          // The last card was being sliced in half by the tab bar.
+          { paddingBottom: tabBarHeight + 24 },
+        ]}
       >
         <View>
         {isAdmin ? null : (
-          <View style={[styles.bellRow, isRTL && styles.rowReverse]}>
+          <View
+            style={[
+              styles.bellRow,
+              isRTL && styles.rowReverse,
+              { marginTop: insets.top > 0 ? 0 : 8 },
+            ]}
+          >
             <NotificationBell />
           </View>
         )}
         <Animated.View style={fullHeaderStyle}>
-          <StepsLogo compact={isAdmin} />
+          <StepsLogo compact={isAdmin} maxWidth={Math.min(width * 0.55, 240)} />
 
           <View style={styles.greetingBlock}>
             <Animated.View style={[styles.greetingRow, greetingStyle]}>
@@ -769,6 +788,7 @@ const styles = StyleSheet.create({
   },
   decorTopRight: {
     position: "absolute",
+    zIndex: 0,
     top: -50,
     width: 160,
     height: 160,
@@ -824,6 +844,7 @@ const styles = StyleSheet.create({
   bellRow: {
     flexDirection: "row",
     justifyContent: "flex-end",
+    zIndex: 2,
     paddingTop: 4,
     marginBottom: -8,
   },

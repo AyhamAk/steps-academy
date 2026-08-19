@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { useMemo, useState } from "react";
 import { Alert, Linking, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { ChangePasswordModal } from "../../components/profile/ChangePasswordModal";
@@ -34,6 +35,7 @@ import { Touchable } from "../../components/ui/Touchable";
 export default function ProfileScreen() {
   const { user, logout, deleteAccount, isLoading } = useAuth();
   const insets = useSafeAreaInsets();
+  const tabBarHeight = useBottomTabBarHeight();
   const { t, isRTL, rtlText } = useTranslation();
   const locale = useLocaleStore((state) => state.locale);
   const setLocale = useLocaleStore((state) => state.setLocale);
@@ -170,7 +172,10 @@ export default function ProfileScreen() {
     <Screen>
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 12 }]}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingTop: insets.top + 12, paddingBottom: tabBarHeight + 24 },
+        ]}
       >
         <ScreenFadeIn>
         <StepsCard style={styles.identityCard} elevation="flat">
@@ -182,7 +187,7 @@ export default function ProfileScreen() {
             </Text>
           </View>
           <View style={[styles.identityNameRow, isRTL && styles.rowReverse]}>
-            <Text style={styles.identityName}>{user?.name}</Text>
+            <Text style={styles.identityName} maxFontSizeMultiplier={1.3}>{user?.name}</Text>
             {user?.role ? (
               <RoleBadge
                 label={roleLabel}
@@ -227,7 +232,7 @@ export default function ProfileScreen() {
                     {children.length === 1 ? (
                       <View style={[styles.dashHeader, isRTL && styles.rowReverse]}>
                         <Text style={styles.chipEmoji}>🐘</Text>
-                        <Text style={styles.dashChildName} numberOfLines={1}>
+                        <Text style={styles.dashChildName} numberOfLines={1} maxFontSizeMultiplier={1.3}>
                           {children[0].name}
                         </Text>
                       </View>
@@ -243,7 +248,7 @@ export default function ProfileScreen() {
                       {isGalleryPending ? (
                         <SkeletonBlock width="55%" height={14} />
                       ) : (
-                        <Text style={[styles.dashText, rtlText]}>
+                        <Text style={[styles.dashText, rtlText]} maxFontSizeMultiplier={1.4}>
                           {t.profile.photosThisMonth(
                             photosThisMonthByChild.get(selectedChildId) ?? 0
                           )}
@@ -258,7 +263,7 @@ export default function ProfileScreen() {
                         color={Colors.terracotta}
                         style={styles.dashIcon}
                       />
-                      <Text style={[styles.dashText, styles.dashTextAccent, rtlText]}>
+                      <Text style={[styles.dashText, styles.dashTextAccent, rtlText]} maxFontSizeMultiplier={1.4}>
                         {t.profile.viewInGallery}
                       </Text>
                       <Ionicons
@@ -305,7 +310,7 @@ export default function ProfileScreen() {
                   </Text>
                   {row.badge ? (
                     <View style={styles.badge}>
-                      <Text style={styles.badgeText}>{row.badge > 99 ? "99+" : row.badge}</Text>
+                      <Text style={styles.badgeText} maxFontSizeMultiplier={1.4}>{row.badge > 99 ? "99+" : row.badge}</Text>
                     </View>
                   ) : null}
                   <Ionicons

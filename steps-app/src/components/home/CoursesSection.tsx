@@ -1,14 +1,16 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Alert, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { Colors } from "../../constants/Colors";
-import { Layout } from "../../constants/Layout";
+import { gridCardWidth, useLayout } from "../../hooks/useLayout";
 import { Fonts } from "../../constants/Fonts";
 import { Type } from "../../constants/Typography";
 import { useTranslation } from "../../i18n/useTranslation";
 import { DataErrorState } from "../ui/DataErrorState";
 import { SkeletonCourseRow } from "../ui/Skeleton";
+import SectionLabel from "../ui/SectionLabel";
 import { Touchable } from "../ui/Touchable";
 import { Course, listCourses, MyEnrollment } from "../../services/coursesApi";
 import { useChildren } from "../../store/authStore";
@@ -19,6 +21,10 @@ import { JoinCourseSheet, LeaveCourseSheet } from "./CourseSheet";
 
 export function CoursesSection() {
   const { t, isRTL, rtlText } = useTranslation();
+  const { width, gutter, cardGap, columns, isNarrow } = useLayout();
+  // One column on a narrow phone. Squeezing two columns onto a 360pt screen is
+  // what forced "1 Sep - 30 N..." — at full width the date simply fits.
+  const cardWidth = gridCardWidth({ width, gutter, cardGap, columns });
   const children = useChildren();
   const queryClient = useQueryClient();
   const [detailId, setDetailId] = useState<string | null>(null);
@@ -38,7 +44,7 @@ export function CoursesSection() {
   if (isPending) {
     return (
       <View style={styles.section}>
-        <Text style={[styles.sectionTitle, rtlText]}>{t.courses.sectionTitle}</Text>
+        <SectionLabel label={t.courses.sectionTitle} />
         <SkeletonCourseRow />
       </View>
     );
@@ -48,7 +54,7 @@ export function CoursesSection() {
   if (isError || !courses) {
     return (
       <View style={styles.section}>
-        <Text style={[styles.sectionTitle, rtlText]}>{t.courses.sectionTitle}</Text>
+        <SectionLabel label={t.courses.sectionTitle} />
         <DataErrorState compact onRetry={() => void refetch()} />
       </View>
     );
@@ -67,7 +73,7 @@ export function CoursesSection() {
 
   return (
     <View style={styles.section}>
-      <Text style={[styles.sectionTitle, rtlText]}>{t.courses.sectionTitle}</Text>
+      <Text style={[styles.sectionTitle, rtlText]} maxFontSizeMultiplier={1.3}>{t.courses.sectionTitle}</Text>
 
       <ScrollView
         horizontal
@@ -83,7 +89,7 @@ export function CoursesSection() {
           // Only the card being acted on spins, not every card at once.
 
           return (
-            <View key={course.id} style={styles.card}>
+            <View key={course.id} style={[styles.card, { width: cardWidth }]}>
               <View
                 style={[
                   styles.cardAccent,
@@ -99,19 +105,19 @@ export function CoursesSection() {
                 }}
               >
                 <Text style={styles.emoji}>{course.emoji}</Text>
-                <Text style={[styles.name, rtlText]} numberOfLines={2}>
+                <Text style={[styles.name, rtlText]} numberOfLines={2} maxFontSizeMultiplier={1.3}>
                   {course.name}
                 </Text>
                 {/* Fixed-height block: a course missing its days or dates leaves
                     the space blank rather than shrinking the whole card. */}
                 <View style={styles.metaBlock}>
                   {formatCourseDays(course, t) ? (
-                    <Text style={[styles.meta, rtlText]} numberOfLines={1}>
+                    <Text style={[styles.meta, rtlText]} maxFontSizeMultiplier={1.4}>
                       🗓 {formatCourseDays(course, t)}
                     </Text>
                   ) : null}
                   {formatCourseDates(course, t) ? (
-                    <Text style={[styles.meta, rtlText]} numberOfLines={1}>
+                    <Text style={[styles.meta, rtlText]} maxFontSizeMultiplier={1.4}>
                       📆 {formatCourseDates(course, t)}
                     </Text>
                   ) : null}
@@ -124,7 +130,7 @@ export function CoursesSection() {
                     isRTL && styles.selfEnd,
                   ]}
                 >
-                  <Text style={[styles.badgeText, { color: isFull ? Colors.clay : Colors.forest }]}>
+                  <Text style={[styles.badgeText, { color: isFull ? Colors.clay : Colors.forest }]} maxFontSizeMultiplier={1.4}>
                     {course.spotsLeft === null
                       ? t.courses.openToAll
                       : isFull
@@ -136,17 +142,18 @@ export function CoursesSection() {
 
               {approved ? (
                 <Touchable
-                  style={[styles.action, styles.actionApproved]}
+                  style={styles.statusRow}
                   onPress={() => setLeaving({ course, enrollment: approved })}
                 >
-                  <Text
-                    style={styles.actionText}
-                    numberOfLines={1}
-                    adjustsFontSizeToFit
-                    minimumFontScale={0.75}
-                  >
-                    {t.courses.enrolled(approved.studentName)}
-                  </Text>
+                  {/* A status, not a call to action: a filled green button was
+                      the loudest thing on the card and invited a tap that only
+                      offers to undo it. */}
+                  <View style={[styles.statusInner, isRTL && styles.rowReverse]}>
+                    <Ionicons name="checkmark-circle" size={16} color={Colors.forest} />
+                    <Text style={styles.statusText} maxFontSizeMultiplier={1.3}>
+                      {t.courses.enrolled(approved.studentName)}
+                    </Text>
+                  </View>
                 </Touchable>
               ) : pending ? (
                 <Touchable
@@ -220,23 +227,22 @@ const styles = StyleSheet.create({
   },
   scroll: { gap: 12, paddingEnd: 8 },
   card: {
-    width: Layout.courseCard.width,
-    height: Layout.courseCard.height,
+    // Width comes from the layout hook; height follows the content. A fixed
+    // height clipped long course names and forced the meta lines to truncate.
     backgroundColor: Colors.linen,
     borderRadius: 18,
     padding: 16,
     paddingTop: 20,
     overflow: "hidden",
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
   // Absorbs the leftover space so the action button always sits on the bottom
   // edge, level across every card in the row.
   cardInfo: { flex: 1, marginBottom: 12 },
-  metaBlock: { height: Layout.courseCard.metaBlockHeight },
+  // minHeight so a course with both a weekday and a date line can wrap
+  // rather than truncate, while cards without them stay level.
+  metaBlock: { minHeight: 44 },
   cardAccent: { position: "absolute", top: 0, start: 0, end: 0, height: 4 },
   emoji: { fontSize: 32, marginBottom: 10 },
   name: {
@@ -244,9 +250,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: Colors.bark,
     lineHeight: 20,
-    // minHeight, not height: a fixed height cut the second line through the
-    // middle of the letters. numberOfLines={2} on the element ellipsises it.
-    minHeight: Layout.courseCard.nameHeight,
+    minHeight: 40,
   },
   meta: { ...Type.caption, color: Colors.textLight, marginTop: 4 },
   badge: {
@@ -263,6 +267,17 @@ const styles = StyleSheet.create({
   actionPending: { backgroundColor: `${Colors.honey}33`, borderWidth: 1.5, borderColor: Colors.honey },
   actionApproved: { backgroundColor: Colors.forest },
   actionWaitlist: { backgroundColor: Colors.honey },
+  rowReverse: { flexDirection: "row-reverse" },
+  statusRow: { minHeight: 44, justifyContent: "center" },
+  statusInner: { flexDirection: "row", alignItems: "center", gap: 6 },
+  statusText: {
+    flex: 1,
+    minWidth: 0,
+    fontFamily: Fonts.semiBold,
+    fontSize: 14,
+    lineHeight: 19,
+    color: Colors.forest,
+  },
   actionText: {
     fontFamily: Fonts.bold,
     fontSize: 13,

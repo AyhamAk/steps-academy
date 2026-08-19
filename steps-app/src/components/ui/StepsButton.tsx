@@ -186,7 +186,11 @@ export function StepsButton({
             <ActivityIndicator color={textColor} />
           </View>
         ) : (
-          <Text style={{ color: textColor, fontSize: sizeStyle.fontSize, fontFamily: Fonts.bold }}>
+          <Text
+            style={{ color: textColor, fontSize: sizeStyle.fontSize, fontFamily: Fonts.bold }}
+            maxFontSizeMultiplier={1.2}
+            numberOfLines={1}
+          >
             {label}
           </Text>
         )}
@@ -198,6 +202,7 @@ export function StepsButton({
 const styles = StyleSheet.create({
   base: {
     borderRadius: 50,
+    minHeight: 48,
     alignItems: "center",
     justifyContent: "center",
     shadowColor: Colors.primary,
@@ -221,6 +226,10 @@ const styles = StyleSheet.create({
     top: -20,
     bottom: -20,
     width: 24,
-    backgroundColor: "rgba(255,255,255,0.45)",
+    // Was rgba(255,255,255,0.45), which on an outline button sat over a
+    // transparent fill and read as a solid white rectangle inside the pill
+    // whenever the sweep rested mid-button. Faint enough now to be a
+    // highlight rather than a shape.
+    backgroundColor: "rgba(255,255,255,0.18)",
   },
 });

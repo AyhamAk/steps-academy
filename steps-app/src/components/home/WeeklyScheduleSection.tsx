@@ -10,6 +10,7 @@ import { useTranslation } from "../../i18n/useTranslation";
 import { formatTime, getWeekSchedule, WEEK_DAYS, WeekDay } from "../../services/scheduleApi";
 import { DataErrorState } from "../ui/DataErrorState";
 import { SkeletonScheduleRows } from "../ui/Skeleton";
+import SectionLabel from "../ui/SectionLabel";
 import { Touchable } from "../ui/Touchable";
 
 /** The academy runs Sunday–Thursday; Fri/Sat fall back to Sunday. */
@@ -50,7 +51,7 @@ export function WeeklyScheduleSection() {
 
   return (
     <View style={styles.section}>
-      <Text style={[styles.sectionTitle, rtlText]}>{t.home.weeklyScheduleTitle}</Text>
+      <SectionLabel label={t.home.weeklyScheduleTitle} />
 
       <View style={[styles.dayTabs, isRTL && styles.rowReverse]}>
         {WEEK_DAYS.map((day) => {
@@ -116,8 +117,8 @@ export function WeeklyScheduleSection() {
               />
               <Text style={styles.emoji}>{activity.emoji}</Text>
               <View style={styles.info}>
-                <Text style={[styles.name, rtlText]}>{activity.name}</Text>
-                <Text style={[styles.meta, rtlText]}>
+                <Text style={[styles.name, rtlText]} maxFontSizeMultiplier={1.3}>{activity.name}</Text>
+                <Text style={[styles.meta, rtlText]} maxFontSizeMultiplier={1.4}>
                   {formatTime(activity.startTime)} ·{" "}
                   {t.home.scheduleDuration(activity.durationMinutes)}
                 </Text>

@@ -112,10 +112,19 @@ function Butterfly({
  */
 const COMPACT_HEIGHT = 110;
 
-export function StepsLogo({ compact = false }: { compact?: boolean }) {
+export function StepsLogo({
+  compact = false,
+  maxWidth,
+}: {
+  compact?: boolean;
+  /** Caps the logo on small screens, where full size ate a third of the fold. */
+  maxWidth?: number;
+}) {
   const reduceMotion = useReduceMotionSetting();
-  // Scaling the whole stage keeps the butterflies' fractional positions exact.
-  const scale = compact ? COMPACT_HEIGHT / LOGO_HEIGHT : 1;
+  // Scaling the whole stage keeps the butterflies' fractional positions exact,
+  // so the artwork never distorts — only its size changes.
+  const widthScale = maxWidth ? Math.min(maxWidth / LOGO_WIDTH, 1) : 1;
+  const scale = (compact ? COMPACT_HEIGHT / LOGO_HEIGHT : 1) * widthScale;
 
   const entrance = useSharedValue(reduceMotion ? 1 : 0.6);
   const opacity = useSharedValue(reduceMotion ? 1 : 0);
@@ -146,9 +155,13 @@ export function StepsLogo({ compact = false }: { compact?: boolean }) {
 
   return (
     <Animated.View
-      style={[styles.container, compact && { height: COMPACT_HEIGHT }, containerStyle]}
+      style={[
+        styles.container,
+        { height: LOGO_HEIGHT * scale },
+        containerStyle,
+      ]}
     >
-      <View style={[styles.stage, compact && { transform: [{ scale }] }]}>
+      <View style={[styles.stage, scale !== 1 && { transform: [{ scale }] }]}>
         <Image source={require("../../assets/logo-base.png")} style={styles.base} resizeMode="contain" />
         {BUTTERFLIES.map((config) => (
           <Butterfly key={config.source} config={config} reduceMotion={reduceMotion} />

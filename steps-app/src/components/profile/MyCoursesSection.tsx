@@ -41,7 +41,7 @@ function MetaRow({
         {visible.map((part, index) => (
           <View key={`${part}-${index}`} style={[styles.metaParts, isRTL && styles.rowReverse]}>
             {index > 0 ? <Text style={styles.metaSeparator}>·</Text> : null}
-            <Text style={styles.meta}>{part}</Text>
+            <Text style={styles.meta} maxFontSizeMultiplier={1.4}>{part}</Text>
           </View>
         ))}
       </View>
@@ -91,10 +91,10 @@ export function MyCoursesSection() {
                     <Text style={styles.emoji}>{course.emoji}</Text>
                   </IconTile>
                   <View style={styles.flex}>
-                    <Text style={styles.name} numberOfLines={1}>
+                    <Text style={styles.name} numberOfLines={1} maxFontSizeMultiplier={1.3}>
                       {course.name}
                     </Text>
-                    <Text style={styles.child} numberOfLines={1}>
+                    <Text style={styles.child} numberOfLines={1} maxFontSizeMultiplier={1.4}>
                       {enrollment.studentName}
                     </Text>
                   </View>
@@ -102,7 +102,7 @@ export function MyCoursesSection() {
                       is worth a badge. */}
                   {isApproved ? null : (
                     <View style={styles.statusPill}>
-                      <Text style={styles.statusText}>{t.myCourses.waitlisted}</Text>
+                      <Text style={styles.statusText} maxFontSizeMultiplier={1.4}>{t.myCourses.waitlisted}</Text>
                     </View>
                   )}
                 </View>
@@ -114,7 +114,7 @@ export function MyCoursesSection() {
                 <MetaRow icon="calendar-outline" parts={[formatCourseDates(course, t)]} />
 
                 {course.description ? (
-                  <Text style={styles.description} numberOfLines={2}>
+                  <Text style={styles.description} numberOfLines={2} maxFontSizeMultiplier={1.4}>
                     {course.description}
                   </Text>
                 ) : null}
