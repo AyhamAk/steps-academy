@@ -100,15 +100,22 @@ function useRTLReconciliation(ready: boolean) {
   }, [ready]);
 }
 
-// Registers this device for push notifications once the user is signed in,
-// and sends the token to the backend so it can target this device.
-function usePushRegistration(token: string | null) {
+/**
+ * Registers this device for push once someone is signed in.
+ *
+ * Keyed on the user id, not just the auth token: a push token belongs to an
+ * account *and* a device, and logging out clears it server-side. Without this,
+ * signing in as a second person on the same phone left that account with no
+ * token at all — the server had nowhere to send their notifications, so they
+ * silently received none.
+ */
+function usePushRegistration(token: string | null, userId: string | null) {
   useEffect(() => {
-    if (!token) return;
+    if (!token || !userId) return;
     registerForPushNotificationsAsync().then((pushToken) => {
       if (pushToken) updatePushTokenRequest(pushToken).catch(() => {});
     });
-  }, [token]);
+  }, [token, userId]);
 }
 
 // A tap on a push notification (app backgrounded or killed) should land on
@@ -149,7 +156,8 @@ export default function RootLayout() {
   useAuthGate(ready);
   useUsageTracking(ready);
   useRTLReconciliation(ready);
-  usePushRegistration(token);
+  const userId = useAuthStore((state) => state.user?.id ?? null);
+  usePushRegistration(token, userId);
   useNotificationTapNavigation();
 
   if (!ready) {

@@ -139,7 +139,12 @@ export function CoursesSection() {
                   style={[styles.action, styles.actionApproved]}
                   onPress={() => setLeaving({ course, enrollment: approved })}
                 >
-                  <Text style={styles.actionText} numberOfLines={1}>
+                  <Text
+                    style={styles.actionText}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.75}
+                  >
                     {t.courses.enrolled(approved.studentName)}
                   </Text>
                 </Touchable>
@@ -148,7 +153,12 @@ export function CoursesSection() {
                   style={[styles.action, styles.actionPending]}
                   onPress={() => setLeaving({ course, enrollment: pending })}
                 >
-                  <Text style={[styles.actionText, styles.actionTextPending]} numberOfLines={1}>
+                  <Text
+                    style={[styles.actionText, styles.actionTextPending]}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.75}
+                  >
                     {t.courses.pendingFor(pending.studentName)}
                   </Text>
                 </Touchable>
@@ -234,7 +244,9 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: Colors.bark,
     lineHeight: 20,
-    height: Layout.courseCard.nameHeight,
+    // minHeight, not height: a fixed height cut the second line through the
+    // middle of the letters. numberOfLines={2} on the element ellipsises it.
+    minHeight: Layout.courseCard.nameHeight,
   },
   meta: { ...Type.caption, color: Colors.textLight, marginTop: 4 },
   badge: {
@@ -251,7 +263,13 @@ const styles = StyleSheet.create({
   actionPending: { backgroundColor: `${Colors.honey}33`, borderWidth: 1.5, borderColor: Colors.honey },
   actionApproved: { backgroundColor: Colors.forest },
   actionWaitlist: { backgroundColor: Colors.honey },
-  actionText: { fontFamily: Fonts.bold, fontSize: 13, color: "#FFFFFF" },
+  actionText: {
+    fontFamily: Fonts.bold,
+    fontSize: 13,
+    color: Colors.cream,
+    textAlign: "center",
+    paddingHorizontal: 4,
+  },
   actionTextPending: { color: Colors.bark },
   actionTextDisabled: { color: Colors.textLight },
 });

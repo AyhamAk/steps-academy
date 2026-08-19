@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
+import * as Notifications from "expo-notifications";
 import { useEffect } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import Animated, {
@@ -27,8 +28,21 @@ import { Touchable } from "./Touchable";
 export function NotificationBell() {
   const { t } = useTranslation();
   const reduceMotion = useReduceMotionSetting();
-  const { data } = useQuery({ queryKey: ["notifications"], queryFn: getNotifications });
+  const { data } = useQuery({
+    queryKey: ["notifications"],
+    queryFn: getNotifications,
+    // Without this the count only refreshes when a screen remounts, so a
+    // parent who leaves the app open never sees a new one arrive.
+    refetchInterval: 60_000,
+    refetchOnWindowFocus: true,
+  });
   const unread = data?.unreadCount ?? 0;
+
+  // The number on the launcher icon. Nothing set it before, so the badge could
+  // never appear no matter what the server sent.
+  useEffect(() => {
+    Notifications.setBadgeCountAsync(unread).catch(() => {});
+  }, [unread]);
 
   const swing = useSharedValue(0);
 
