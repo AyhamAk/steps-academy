@@ -75,6 +75,12 @@ export const UserModel = {
     await prisma.user.delete({ where: { id } });
   },
 
+  /** Full user rows for a set of ids — push needs the token, not just the id. */
+  async listByIds(ids: string[]): Promise<User[]> {
+    if (ids.length === 0) return [];
+    return prisma.user.findMany({ where: { id: { in: ids } } });
+  },
+
   async listAdmins(): Promise<User[]> {
     return prisma.user.findMany({ where: { role: "admin" } });
   },

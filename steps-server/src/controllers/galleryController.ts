@@ -98,17 +98,28 @@ export async function createEvent(req: Request, res: Response) {
     createdBy: req.userId!,
   });
 
-  // Notify every parent about the new event.
-  const parents = await UserModel.listParents();
-  await NotificationModel.createForUsers(
-    parents.map((parent) => parent.id),
-    { type: "event", eventName: event.name, eventId: event.id }
-  );
-  await sendPushToUsers(parents, {
-    title: "New event",
-    body: event.name,
-    data: { type: "event", eventId: event.id },
-  });
+  // Only the guardians of children who were actually at the event. Telling
+  // every parent in the academy about an album their child is not in is noise,
+  // and it hints at which children attended what.
+  const guardianIds = new Set<string>();
+  for (const studentId of students.map((student) => student.id)) {
+    const guardians = await StudentModel.listGuardians(studentId);
+    for (const guardian of guardians) guardianIds.add(guardian.id);
+  }
+
+  if (guardianIds.size > 0) {
+    const recipients = await UserModel.listByIds([...guardianIds]);
+    await NotificationModel.createForUsers([...guardianIds], {
+      type: "event",
+      eventName: event.name,
+      eventId: event.id,
+    });
+    await sendPushToUsers(recipients, {
+      title: "New album",
+      body: event.name,
+      data: { type: "event", eventId: event.id },
+    });
+  }
 
   res.status(201).json({
     event: { ...serializeEvent(event), photoCount: 0, previewUrls: [], attendees: event.attendees ?? [] },
@@ -322,20 +333,11 @@ export async function addTag(req: Request, res: Response) {
 
   const tag = await PhotoTagModel.create(photo.id, student.id);
 
-  // Notify this child's guardians — resolved through the parent-student link,
-  // so a same-named child in another family can never be reached by mistake.
-  const guardians = await StudentModel.listGuardians(student.id);
-  if (guardians.length > 0) {
-    await NotificationModel.createForUsers(
-      guardians.map((guardian) => guardian.id),
-      { type: "photo", childName: student.name, eventId: photo.eventId }
-    );
-    await sendPushToUsers(guardians, {
-      title: `New photo of ${student.name}`,
-      body: "Tap to view it in the gallery",
-      data: { type: "photo", eventId: photo.eventId },
-    });
-  }
+  // Deliberately silent. Tagging is a correction an admin makes photo by photo
+  // while tidying an album, so notifying here sent a parent one push per
+  // photo — twenty tags meant twenty notifications about the same album.
+  // Families are told about photos when an album is created or added to
+  // (see uploadPhotos), which is the moment that actually means something.
 
   res.status(201).json({ photo: await serializePhoto(photo.id), tag });
 }
