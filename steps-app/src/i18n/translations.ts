@@ -1,6 +1,10 @@
 export const en = {
   common: {
     readMore: "Read more",
+    // Meridiem markers. The clock stays in Latin digits; only the marker
+    // localises, which is what Levant and Gulf apps do.
+    am: "AM",
+    pm: "PM",
     showLess: "Show less",
     done: "Done",
     back: "Back",
@@ -646,6 +650,8 @@ export type Translations = typeof en;
 export const ar: Translations = {
   common: {
     readMore: "قراءة المزيد",
+    am: "ص",
+    pm: "م",
     showLess: "عرض أقل",
     done: "تم",
     back: "رجوع",
@@ -1288,6 +1294,8 @@ export const ar: Translations = {
 export const he: Translations = {
   common: {
     readMore: "קרא עוד",
+    am: "לפנה״צ",
+    pm: "אחה״צ",
     showLess: "הצג פחות",
     done: "סיום",
     back: "חזרה",

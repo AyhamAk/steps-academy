@@ -137,10 +137,15 @@ export default function ScheduleAdminScreen() {
                     <Text style={[styles.name, rtlText]} numberOfLines={1}>
                       {activity.name}
                     </Text>
-                    <Text style={[styles.meta, rtlText]}>
-                      {formatTime(activity.startTime)} ·{" "}
-                      {t.home.scheduleDuration(activity.durationMinutes)}
-                    </Text>
+                    {/* Separate Text nodes so the Latin time keeps its own
+                        direction inside an Arabic line. */}
+                    <View style={[styles.metaRow, isRTL && styles.rowReverse]}>
+                      <Text style={styles.metaLtr}>{formatTime(activity.startTime, t)}</Text>
+                      <Text style={styles.meta}>·</Text>
+                      <Text style={styles.meta}>
+                        {t.home.scheduleDuration(activity.durationMinutes)}
+                      </Text>
+                    </View>
                   </View>
                   <Touchable
                     onPress={() => {
@@ -237,7 +242,15 @@ const styles = StyleSheet.create({
   cardRow: { flexDirection: "row", alignItems: "center", gap: 12 },
   emoji: { fontSize: 20 },
   name: { fontFamily: Fonts.semiBold, fontSize: 16, lineHeight: 22, color: Colors.bark },
-  meta: { fontFamily: Fonts.regular, fontSize: 13, lineHeight: 18, color: Colors.textLight, marginTop: 2 },
+  metaRow: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 2 },
+  meta: { fontFamily: Fonts.regular, fontSize: 13, lineHeight: 18, color: Colors.textLight },
+  metaLtr: {
+    fontFamily: Fonts.regular,
+    fontSize: 13,
+    lineHeight: 18,
+    color: Colors.textLight,
+    writingDirection: "ltr",
+  },
   iconAction: {
     width: 44,
     height: 44,

@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { Colors } from "../../constants/Colors";
@@ -7,7 +7,13 @@ import { Fonts } from "../../constants/Fonts";
 import { Type } from "../../constants/Typography";
 import { track } from "../../services/analytics";
 import { useTranslation } from "../../i18n/useTranslation";
-import { formatTime, getWeekSchedule, WEEK_DAYS, WeekDay } from "../../services/scheduleApi";
+import {
+  formatTime,
+  getWeekSchedule,
+  ScheduleActivity,
+  WEEK_DAYS,
+  WeekDay,
+} from "../../services/scheduleApi";
 import { DataErrorState } from "../ui/DataErrorState";
 import { SkeletonScheduleRows } from "../ui/Skeleton";
 import SectionLabel from "../ui/SectionLabel";
@@ -33,11 +39,48 @@ function datesForThisWeek(): Record<WeekDay, number> {
   return dates;
 }
 
+/** Minutes since midnight, the unit the now marker is positioned in. */
+function minutesNow(): number {
+  const now = new Date();
+  return now.getHours() * 60 + now.getMinutes();
+}
+
+function toMinutes(startTime: string): number {
+  const [hour, minute] = startTime.split(":");
+  return Number(hour) * 60 + Number(minute);
+}
+
+/**
+ * Where the day has got to, drawn across the rail.
+ *
+ * This is the one thing a list can't show and the reason a parent opens the
+ * app mid-morning: not what happens today, but what is happening right now.
+ */
+function NowLine({ isRTL, label }: { isRTL: boolean; label: string }) {
+  return (
+    <View style={[styles.nowRow, isRTL && styles.rowReverse]}>
+      <Text style={[styles.nowLabel, isRTL ? styles.timeRTL : styles.timeLTR]}>{label}</Text>
+      <View style={styles.rail}>
+        <View style={styles.nowDot} />
+      </View>
+      <View style={styles.nowLine} />
+    </View>
+  );
+}
+
 export function WeeklyScheduleSection() {
   const { t, isRTL, rtlText } = useTranslation();
   const today = todayAcademyDay();
   const weekDates = datesForThisWeek();
   const [selectedDay, setSelectedDay] = useState<WeekDay>(today);
+  // Re-render on the minute so the now marker moves on its own — a parent who
+  // leaves the app open should not have to pull to refresh to see it advance.
+  const [nowMinutes, setNowMinutes] = useState(minutesNow);
+
+  useEffect(() => {
+    const id = setInterval(() => setNowMinutes(minutesNow()), 60_000);
+    return () => clearInterval(id);
+  }, []);
 
   const { data: days, isPending, isError, refetch } = useQuery({
     queryKey: ["schedule"],
@@ -48,6 +91,29 @@ export function WeeklyScheduleSection() {
   if (days && days.every((day) => day.activities.length === 0)) return null;
 
   const dayData = days?.find((day) => day.day === selectedDay);
+
+  // Activities sharing a start time share one slot. On a list two 9:00 entries
+  // read as two unrelated rows; on a timeline they visibly collide, which is
+  // the point — the academy has double-booked and should see it.
+  type Slot = { startTime: string; activities: ScheduleActivity[] };
+  const slots: Slot[] = [...(dayData?.activities ?? [])]
+    .sort((a, b) => a.startTime.localeCompare(b.startTime))
+    .reduce<Slot[]>((acc, activity) => {
+      const last = acc[acc.length - 1];
+      if (last && last.startTime === activity.startTime) last.activities.push(activity);
+      else acc.push({ startTime: activity.startTime, activities: [activity] });
+      return acc;
+    }, []);
+
+  // Index of the first slot still to come; slots.length once the day is done,
+  // and -1 on any day that isn't today, which hides the marker entirely.
+  const nextSlot = slots.findIndex((slot) => toMinutes(slot.startTime) > nowMinutes);
+  const nowBefore =
+    selectedDay !== today ? -1 : nextSlot === -1 ? slots.length : nextSlot;
+  const nowLabel = formatTime(
+    `${String(Math.floor(nowMinutes / 60)).padStart(2, "0")}:${String(nowMinutes % 60).padStart(2, "0")}`,
+    t
+  );
 
   return (
     <View style={styles.section}>
@@ -90,53 +156,71 @@ export function WeeklyScheduleSection() {
         })}
       </View>
 
-      <View style={styles.scheduleCard}>
-        {isPending ? (
-          <SkeletonScheduleRows />
-        ) : isError || !days ? (
-          <DataErrorState compact onRetry={() => void refetch()} />
-        ) : !dayData || dayData.activities.length === 0 ? (
-          <View style={styles.placeholder}>
-            <Text style={styles.placeholderText}>{t.home.scheduleEmptyDay}</Text>
-          </View>
-        ) : (
-          dayData.activities.map((activity, index) => (
-            <View
-              key={activity.id}
-              style={[
-                styles.row,
-                isRTL && styles.rowReverse,
-                index < dayData.activities.length - 1 && styles.rowDivider,
-              ]}
-            >
-              <View
-                style={[
-                  styles.accentBar,
-                  { backgroundColor: activity.accentColor ?? Colors.honey },
-                ]}
-              />
-              <Text style={styles.emoji}>{activity.emoji}</Text>
-              <View style={styles.info}>
-                <Text style={[styles.name, rtlText]} maxFontSizeMultiplier={1.3}>{activity.name}</Text>
-                {/* The time and the duration are separate Text nodes, each
-                    resolving its own direction. As one joined string the
-                    Latin time was reordered by the surrounding Arabic run. */}
-                <View style={[styles.metaRow, isRTL && styles.rowReverse]}>
-                  <Text style={styles.metaLtr} maxFontSizeMultiplier={1.4}>
-                    {formatTime(activity.startTime)}
+      {isPending ? (
+        <SkeletonScheduleRows />
+      ) : isError || !days ? (
+        <DataErrorState compact onRetry={() => void refetch()} />
+      ) : !dayData || dayData.activities.length === 0 ? (
+        <View style={styles.placeholder}>
+          <Text style={styles.placeholderText}>{t.home.scheduleEmptyDay}</Text>
+        </View>
+      ) : (
+        <View style={styles.timeline}>
+          {slots.map((slot, index) => {
+            const isLast = index === slots.length - 1;
+            return (
+              <View key={slot.startTime}>
+                {/* The now marker sits between the slot it has passed and the
+                    one still to come, rather than at a proportional offset:
+                    the rail isn't drawn to scale, so a fractional position
+                    would point at nothing in particular. */}
+                {nowBefore === index ? <NowLine isRTL={isRTL} label={nowLabel} /> : null}
+
+                <View style={[styles.slot, isRTL && styles.rowReverse]}>
+                  <Text
+                    style={[styles.time, isRTL ? styles.timeRTL : styles.timeLTR]}
+                    maxFontSizeMultiplier={1.3}
+                  >
+                    {formatTime(slot.startTime, t)}
                   </Text>
-                  <Text style={styles.meta} maxFontSizeMultiplier={1.4}>
-                    ·
-                  </Text>
-                  <Text style={styles.meta} maxFontSizeMultiplier={1.4}>
-                    {t.home.scheduleDuration(activity.durationMinutes)}
-                  </Text>
+
+                  {/* The rail and the dot are one column: the rail runs the
+                      full height of the slot so consecutive slots join up,
+                      and the dot sits on top of it at the title's baseline. */}
+                  <View style={styles.rail}>
+                    {isLast ? null : <View style={styles.railLine} />}
+                    <View
+                      style={[
+                        styles.dot,
+                        { backgroundColor: slot.activities[0].accentColor ?? Colors.honey },
+                      ]}
+                    />
+                  </View>
+
+                  <View style={styles.slotBody}>
+                    {slot.activities.map((activity) => (
+                      <View key={activity.id} style={styles.entry}>
+                        <Text
+                          style={[styles.name, rtlText]}
+                          maxFontSizeMultiplier={1.3}
+                        >
+                          {activity.name}
+                        </Text>
+                        <Text style={[styles.duration, rtlText]} maxFontSizeMultiplier={1.4}>
+                          {t.home.scheduleDuration(activity.durationMinutes)}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
                 </View>
               </View>
-            </View>
-          ))
-        )}
-      </View>
+            );
+          })}
+
+          {/* Everything today has already started. */}
+          {nowBefore === slots.length ? <NowLine isRTL={isRTL} label={nowLabel} /> : null}
+        </View>
+      )}
     </View>
   );
 }
@@ -144,12 +228,6 @@ export function WeeklyScheduleSection() {
 const styles = StyleSheet.create({
   section: {
     marginBottom: 24,
-  },
-  sectionTitle: {
-    fontFamily: Fonts.bold,
-    fontSize: 17,
-    color: Colors.bark,
-    marginBottom: 12,
   },
   dayTabs: {
     flexDirection: "row",
@@ -191,55 +269,60 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.bold,
     fontSize: 17,
   },
-  scheduleCard: {
-    backgroundColor: Colors.linen,
-    borderRadius: 20,
-    overflow: "hidden",
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
-  },
   placeholder: { paddingVertical: 26, alignItems: "center" },
   placeholderText: { ...Type.caption, color: Colors.textLight },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
+  // No card. The schedule sits directly on the page, which is what separates
+  // it from the boxed sections above it — a sequence, not a collection.
+  timeline: { paddingTop: 6 },
+  slot: { flexDirection: "row", gap: 10 },
+  // Fixed gutter: the times line up as one column you can scan straight down,
+  // which is the whole point of leading with them.
+  time: {
+    width: 74,
+    fontFamily: Fonts.bold,
+    fontSize: 13.5,
+    lineHeight: 20,
+    color: Colors.bark,
+    writingDirection: "ltr",
   },
-  rowDivider: {
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
+  timeLTR: { textAlign: "right" },
+  timeRTL: { textAlign: "left" },
+  // The rail stretches to the full height of the slot, so consecutive dots are
+  // joined by one unbroken line rather than a series of stubs.
+  rail: { width: 14, alignItems: "center" },
+  railLine: {
+    position: "absolute",
+    top: 6,
+    bottom: 0,
+    width: 2,
+    backgroundColor: Colors.border,
   },
-  accentBar: {
-    width: 4,
-    height: 36,
-    borderRadius: 2,
+  // Category colour lives here now that the accent bar is gone.
+  dot: {
+    width: 13,
+    height: 13,
+    borderRadius: 7,
+    marginTop: 4.5,
+    borderWidth: 2,
+    borderColor: Colors.background,
   },
-  emoji: {
-    fontSize: 22,
-    width: 28,
-    textAlign: "center",
-  },
-  info: {
-    flex: 1,
-  },
+  slotBody: { flex: 1, paddingBottom: 20 },
+  entry: { marginBottom: 2 },
   name: {
     fontFamily: Fonts.semiBold,
     fontSize: 15,
+    lineHeight: 20,
     color: Colors.bark,
   },
-  metaRow: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 2 },
-  meta: {
-    ...Type.caption,
-    color: Colors.textLight,
-  },
-  metaLtr: {
-    ...Type.caption,
-    color: Colors.textLight,
+  duration: { ...Type.caption, color: Colors.textLight, marginTop: 1 },
+  nowRow: { flexDirection: "row", gap: 10, alignItems: "center", paddingBottom: 20 },
+  nowLabel: {
+    width: 74,
+    fontFamily: Fonts.bold,
+    fontSize: 12,
+    color: Colors.terracotta,
     writingDirection: "ltr",
   },
+  nowDot: { width: 9, height: 9, borderRadius: 5, backgroundColor: Colors.terracotta },
+  nowLine: { flex: 1, height: 1.5, backgroundColor: Colors.terracotta, borderRadius: 1 },
 });

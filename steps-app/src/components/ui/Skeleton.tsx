@@ -115,7 +115,7 @@ export function SkeletonCourseRow({ count = 3 }: { count?: number }) {
   return (
     <View style={styles.courseList}>
       {Array.from({ length: count }).map((_, index) => (
-        <View key={index} style={styles.scheduleRow}>
+        <View key={index} style={styles.courseRow}>
           <SkeletonBlock width={4} height={40} borderRadius={2} />
           <SkeletonBlock width={40} height={40} borderRadius={12} />
           <View style={styles.scheduleText}>
@@ -130,14 +130,14 @@ export function SkeletonCourseRow({ count = 3 }: { count?: number }) {
   );
 }
 
-/** Rows inside the weekly timetable card while the schedule loads. */
+/** Timeline rows while the schedule loads: time gutter, dot, then the entry. */
 export function SkeletonScheduleRows({ count = 4 }: { count?: number }) {
   return (
     <View>
       {Array.from({ length: count }).map((_, index) => (
         <View key={index} style={styles.scheduleRow}>
-          <SkeletonBlock width={4} height={36} borderRadius={2} />
-          <SkeletonBlock width={24} height={24} borderRadius={12} />
+          <SkeletonBlock width={58} height={14} />
+          <SkeletonBlock width={11} height={11} borderRadius={6} />
           <View style={styles.scheduleText}>
             <SkeletonBlock width="55%" height={14} style={styles.courseGap} />
             <SkeletonBlock width="35%" height={11} />
@@ -219,9 +219,7 @@ export function SkeletonHomeSections({ isAdmin = false }: { isAdmin?: boolean })
       <View style={styles.sectionHeader}>
         <SkeletonBlock width="38%" height={17} />
       </View>
-      <View style={styles.card}>
-        <SkeletonScheduleRows count={3} />
-      </View>
+      <SkeletonScheduleRows count={3} />
 
       <View style={styles.sectionHeader}>
         <SkeletonBlock width="46%" height={17} />
@@ -282,12 +280,18 @@ const styles = StyleSheet.create({
   courseGap: {
     marginBottom: 8,
   },
-  scheduleRow: {
+  courseRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
     paddingVertical: 14,
     paddingHorizontal: 16,
+  },
+  scheduleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingVertical: 12,
   },
   scheduleText: {
     flex: 1,

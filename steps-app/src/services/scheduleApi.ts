@@ -1,3 +1,4 @@
+import { Translations } from "../i18n/translations";
 import { ltrIsolate, NBSP } from "../utils/bidi";
 import { api } from "./api";
 
@@ -28,7 +29,8 @@ export type ActivityInput = {
 };
 
 /**
- * "08:30" → "8:30 AM". Kept on the client so storage stays sortable.
+ * "08:30" → "8:30 AM", or "8:30 ص" in Arabic. Kept on the client so storage
+ * stays sortable.
  *
  * The result is bidi-isolated and joined with a non-breaking space, because
  * this string is nearly always shown inside an Arabic or Hebrew line: without
@@ -36,10 +38,10 @@ export type ActivityInput = {
  * hour and the minutes), and without the NBSP a wrap could orphan "PM" on a
  * line of its own.
  */
-export function formatTime(startTime: string): string {
+export function formatTime(startTime: string, t: Translations): string {
   const [rawHour, minute] = startTime.split(":");
   const hour = Number(rawHour);
-  const suffix = hour < 12 ? "AM" : "PM";
+  const suffix = hour < 12 ? t.common.am : t.common.pm;
   const display = hour % 12 === 0 ? 12 : hour % 12;
   return ltrIsolate(`${display}:${minute}${NBSP}${suffix}`);
 }

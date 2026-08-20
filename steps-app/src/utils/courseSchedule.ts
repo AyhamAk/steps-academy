@@ -9,7 +9,7 @@ export function formatCourseDays(course: Course, t: Translations): string | null
   const days = WEEK_DAYS.filter((day) => course.weekDays.includes(day)).map(
     (day) => t.home.weekDays[day]
   );
-  const time = course.startTime ? formatTime(course.startTime) : null;
+  const time = course.startTime ? formatTime(course.startTime, t) : null;
   const parts = [days.join(" · "), time].filter(Boolean) as string[];
   return parts.length > 0 ? parts.join(" · ") : null;
 }
