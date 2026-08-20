@@ -89,7 +89,7 @@ export default function NotificationsScreen() {
   const items = snapshot ?? data?.notifications ?? null;
 
   return (
-    <Screen>
+    <Screen safeBottom>
       <ScreenFadeIn style={styles.container}>
         <StepsHeader title={t.notifications.title} showBack />
 

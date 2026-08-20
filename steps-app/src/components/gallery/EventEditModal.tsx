@@ -13,6 +13,7 @@ import {
 
 import { Colors } from "../../constants/Colors";
 import { Fonts } from "../../constants/Fonts";
+import { useSheetPadding } from "../../hooks/useLayout";
 import { useTranslation } from "../../i18n/useTranslation";
 import { deleteEvent, GalleryEvent, updateEvent, updateEventAttendees } from "../../services/galleryApi";
 import { Student } from "../../services/studentsApi";
@@ -41,6 +42,7 @@ export function EventEditModal({
   onDeleted: (eventId: string) => void;
 }) {
   const { t, isRTL, rtlText } = useTranslation();
+  const sheetPadding = useSheetPadding(24);
   const [name, setName] = useState("");
   const [date, setDate] = useState("");
   const [attendeeIds, setAttendeeIds] = useState<string[]>([]);
@@ -116,7 +118,7 @@ export function EventEditModal({
         style={styles.backdrop}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        <View style={styles.sheet}>
+        <View style={[styles.sheet, { paddingBottom: sheetPadding }]}>
           <View style={[styles.header, isRTL && styles.rowReverse]}>
             <Text style={styles.title}>{t.gallery.editAlbum}</Text>
             <Touchable onPress={onClose} hitSlop={12} disabled={isSaving || isDeleting}>
@@ -211,7 +213,6 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 24,
     paddingHorizontal: 20,
     paddingTop: 20,
-    paddingBottom: 24,
     maxHeight: "88%",
   },
   rowReverse: { flexDirection: "row-reverse" },

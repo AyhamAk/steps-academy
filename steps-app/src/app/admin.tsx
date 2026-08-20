@@ -98,7 +98,7 @@ export default function AdminScreen() {
   const chevron = isRTL ? "chevron-back" : "chevron-forward";
 
   return (
-    <Screen>
+    <Screen safeBottom>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         <ScreenFadeIn>
           <AdminHeader title={t.admin.title} subtitle={t.admin.subtitle} />

@@ -4,6 +4,7 @@ import { Linking, Modal, StyleSheet, Text, View } from "react-native";
 import { ACADEMY_CONTACT } from "../../constants/academy";
 import { Colors } from "../../constants/Colors";
 import { Fonts } from "../../constants/Fonts";
+import { useSheetPadding } from "../../hooks/useLayout";
 import { useTranslation } from "../../i18n/useTranslation";
 import { Touchable } from "../ui/Touchable";
 
@@ -15,6 +16,7 @@ type ContactAcademyModalProps = {
 
 export function ContactAcademyModal({ visible, onClose, onError }: ContactAcademyModalProps) {
   const { t, isRTL, rtlText } = useTranslation();
+  const sheetPadding = useSheetPadding(32);
 
   const open = async (url: string) => {
     try {
@@ -63,7 +65,7 @@ export function ContactAcademyModal({ visible, onClose, onError }: ContactAcadem
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <Touchable style={styles.backdrop} onPress={onClose}>
-        <Touchable style={styles.sheet} onPress={() => {}}>
+        <Touchable style={[styles.sheet, { paddingBottom: sheetPadding }]} onPress={() => {}}>
           <View style={styles.header}>
             <View>
               <Text style={styles.title}>{t.profile.contactTitle}</Text>
@@ -105,7 +107,6 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 24,
     paddingHorizontal: 20,
     paddingTop: 20,
-    paddingBottom: 32,
   },
   header: {
     flexDirection: "row",

@@ -188,7 +188,7 @@ export default function CoursesAdminScreen() {
   };
 
   return (
-    <Screen>
+    <Screen safeBottom>
       <ScreenFadeIn style={styles.flex}>
         <AdminHeader title={t.coursesAdmin.title} subtitle={t.coursesAdmin.subtitle} />
 

@@ -119,7 +119,7 @@ export default function InviteSendScreen() {
     state === "signedUp" ? Colors.forest : state === "waiting" ? Colors.honey : Colors.textLight;
 
   return (
-    <Screen>
+    <Screen safeBottom>
       <StepsHeader title={t.invite.sendTitle} subtitle={t.invite.sendSubtitle} showBack />
 
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">

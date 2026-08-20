@@ -4,6 +4,7 @@ import { ActivityIndicator, Modal, ScrollView, StyleSheet, Text, View } from "re
 import { Colors } from "../../constants/Colors";
 import { Fonts } from "../../constants/Fonts";
 import { Type } from "../../constants/Typography";
+import { useSheetPadding } from "../../hooks/useLayout";
 import { useTranslation } from "../../i18n/useTranslation";
 import { Course } from "../../services/coursesApi";
 import { formatCourseDates, formatCourseDays, hasCourseEnded } from "../../utils/courseSchedule";
@@ -53,6 +54,7 @@ export function CourseDetailModal({
   onCancel,
 }: CourseDetailModalProps) {
   const { t, isRTL, rtlText, locale } = useTranslation();
+  const sheetPadding = useSheetPadding(30);
   if (!course) return null;
 
   const accent = course.accentColor ?? Colors.terracotta;
@@ -67,7 +69,7 @@ export function CourseDetailModal({
   return (
     <Modal visible animationType="slide" transparent onRequestClose={onClose}>
       <View style={styles.backdrop}>
-        <View style={styles.sheet}>
+        <View style={[styles.sheet, { paddingBottom: sheetPadding }]}>
           <View style={[styles.accent, { backgroundColor: accent }]} />
 
           <View style={[styles.header, isRTL && styles.rowReverse]}>
@@ -186,7 +188,6 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 26,
     paddingHorizontal: 20,
     paddingTop: 22,
-    paddingBottom: 30,
     maxHeight: "82%",
     overflow: "hidden",
   },

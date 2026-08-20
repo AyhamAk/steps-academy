@@ -13,6 +13,7 @@ import {
 import { Colors } from "../../constants/Colors";
 import { Fonts } from "../../constants/Fonts";
 import { Type } from "../../constants/Typography";
+import { useSheetPadding } from "../../hooks/useLayout";
 import { useTranslation } from "../../i18n/useTranslation";
 import { ActivityInput, ScheduleActivity, WeekDay } from "../../services/scheduleApi";
 import { StepsButton } from "../ui/StepsButton";
@@ -40,6 +41,7 @@ export function ActivityFormModal({
   onSubmit,
 }: ActivityFormModalProps) {
   const { t, rtlText } = useTranslation();
+  const sheetPadding = useSheetPadding(28);
   const [name, setName] = useState("");
   const [emoji, setEmoji] = useState("🌟");
   const [hour, setHour] = useState("09");
@@ -87,7 +89,7 @@ export function ActivityFormModal({
         style={styles.backdrop}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        <View style={styles.sheet}>
+        <View style={[styles.sheet, { paddingBottom: sheetPadding }]}>
           <View style={styles.header}>
             <Text style={styles.title}>
               {activity ? t.scheduleAdmin.editTitle : t.scheduleAdmin.addTitle}
@@ -216,7 +218,6 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 24,
     paddingHorizontal: 20,
     paddingTop: 20,
-    paddingBottom: 28,
     maxHeight: "90%",
   },
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },

@@ -67,7 +67,7 @@ export default function ScheduleAdminScreen() {
     ]);
 
   return (
-    <Screen>
+    <Screen safeBottom>
       <ScreenFadeIn style={styles.flex}>
         <AdminHeader title={t.scheduleAdmin.title} subtitle={t.scheduleAdmin.subtitle} />
 

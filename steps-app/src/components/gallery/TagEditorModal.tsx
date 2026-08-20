@@ -14,6 +14,7 @@ import {
 
 import { Colors } from "../../constants/Colors";
 import { Fonts } from "../../constants/Fonts";
+import { useSheetPadding } from "../../hooks/useLayout";
 import { useTranslation } from "../../i18n/useTranslation";
 import { addPhotoTag, Photo, removePhotoTag, resolvePhotoUrl } from "../../services/galleryApi";
 import { Student } from "../../services/studentsApi";
@@ -28,6 +29,7 @@ type TagEditorModalProps = {
 
 export function TagEditorModal({ photo, suggestions, onClose, onTagsChanged }: TagEditorModalProps) {
   const { t } = useTranslation();
+  const sheetPadding = useSheetPadding(16);
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -70,7 +72,7 @@ export function TagEditorModal({ photo, suggestions, onClose, onTagsChanged }: T
         style={styles.backdrop}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        <View style={styles.sheet}>
+        <View style={[styles.sheet, { paddingBottom: sheetPadding }]}>
           <View style={styles.header}>
             <Text style={styles.title}>{t.gallery.taggedKids}</Text>
             <Touchable onPress={onClose}>

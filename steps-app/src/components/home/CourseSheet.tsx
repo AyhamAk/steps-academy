@@ -14,6 +14,7 @@ import {
 } from "../../services/coursesApi";
 import { track } from "../../services/analytics";
 import { Child } from "../../store/authStore";
+import { useSheetPadding } from "../../hooks/useLayout";
 import { formatCourseDates, formatCourseDays } from "../../utils/courseSchedule";
 import { courseIcon } from "../../utils/courseIcon";
 import { courseName } from "../../utils/courseText";
@@ -39,6 +40,7 @@ function SheetShell({
   isBusy: boolean;
 }) {
   const { t, isRTL, locale } = useTranslation();
+  const sheetPadding = useSheetPadding(28);
   const accent = course.accentColor ?? Colors.terracotta;
   const meta = [formatCourseDays(course, t), formatCourseDates(course, t)]
     .filter(Boolean)
@@ -46,7 +48,7 @@ function SheetShell({
 
   return (
     <View style={styles.backdrop}>
-      <View style={styles.sheet}>
+      <View style={[styles.sheet, { paddingBottom: sheetPadding }]}>
         <View style={[styles.header, isRTL && styles.rowReverse]}>
           <IconTile tint={accent} size={48}>
             <Ionicons name={courseIcon(course.emoji)} size={24} color={accent} />
@@ -331,7 +333,6 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 24,
     paddingHorizontal: 20,
     paddingTop: 22,
-    paddingBottom: 28,
   },
   flex: { flex: 1 },
   rowReverse: { flexDirection: "row-reverse" },

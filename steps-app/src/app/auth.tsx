@@ -179,7 +179,7 @@ export default function AuthScreen() {
   );
 
   return (
-    <Screen>
+    <Screen safeBottom>
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === "ios" ? "padding" : undefined}

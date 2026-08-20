@@ -17,6 +17,9 @@
         "ITSAppUsesNonExemptEncryption": false
       }
     },
+    "androidNavigationBar": {
+      "barStyle": "dark-content"
+    },
     "android": {
       "package": "com.stepsacademy.steps",
       "versionCode": 1,

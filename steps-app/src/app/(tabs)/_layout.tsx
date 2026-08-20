@@ -6,6 +6,7 @@ import { StyleSheet, View } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from "react-native-reanimated";
 
 import { Colors } from "../../constants/Colors";
+import { useLayout } from "../../hooks/useLayout";
 import { useTranslation } from "../../i18n/useTranslation";
 
 type IoniconName = keyof typeof Ionicons.glyphMap;
@@ -108,6 +109,7 @@ function TabTopBorder() {
 
 export default function TabsLayout() {
   const { t } = useTranslation();
+  const { bottomInset } = useLayout();
 
   return (
     <Tabs
@@ -118,8 +120,17 @@ export default function TabsLayout() {
         tabBarStyle: {
           backgroundColor: Colors.card,
           borderTopColor: Colors.border,
-          height: 75,
-          paddingBottom: 12,
+          // The navigation bar is added on top of the 75pt bar rather than
+          // eaten out of it, so the icons keep their designed height on a
+          // three-button device.
+          //
+          // Both lines are needed. bottom-tabs skips its own inset maths the
+          // moment `height` is a number, and it spreads this style object
+          // after its own `paddingBottom: insets.bottom` — so a bare 12 here
+          // silently threw the inset away and left the icons under the
+          // system buttons.
+          height: 75 + bottomInset,
+          paddingBottom: 12 + bottomInset,
           paddingTop: 6,
         },
         tabBarBackground: () => (

@@ -84,7 +84,7 @@ export default function AdminFeedbackScreen() {
   }, [data?.total]);
 
   return (
-    <Screen>
+    <Screen safeBottom>
       <ScreenFadeIn>
         <AdminHeader title={t.adminFeedback.title} subtitle={t.adminFeedback.subtitle} />
 

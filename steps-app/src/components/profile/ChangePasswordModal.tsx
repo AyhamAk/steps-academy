@@ -12,6 +12,7 @@ import {
 
 import { Colors } from "../../constants/Colors";
 import { Fonts } from "../../constants/Fonts";
+import { useSheetPadding } from "../../hooks/useLayout";
 import { useTranslation } from "../../i18n/useTranslation";
 import { changePasswordRequest } from "../../services/authApi";
 import { StepsButton } from "../ui/StepsButton";
@@ -25,6 +26,7 @@ type ChangePasswordModalProps = {
 
 export function ChangePasswordModal({ visible, onClose, onSuccess }: ChangePasswordModalProps) {
   const { t, rtlText } = useTranslation();
+  const sheetPadding = useSheetPadding(32);
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -77,7 +79,7 @@ export function ChangePasswordModal({ visible, onClose, onSuccess }: ChangePassw
         style={styles.backdrop}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        <View style={styles.sheet}>
+        <View style={[styles.sheet, { paddingBottom: sheetPadding }]}>
           <View style={styles.header}>
             <Text style={styles.title}>{t.profile.changePasswordTitle}</Text>
             <Touchable onPress={close} hitSlop={8}>
@@ -147,7 +149,6 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 24,
     paddingHorizontal: 20,
     paddingTop: 20,
-    paddingBottom: 32,
   },
   header: {
     flexDirection: "row",

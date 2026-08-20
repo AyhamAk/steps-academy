@@ -13,6 +13,7 @@ import {
 
 import { Colors } from "../../constants/Colors";
 import { Fonts } from "../../constants/Fonts";
+import { useSheetPadding } from "../../hooks/useLayout";
 import { useTranslation } from "../../i18n/useTranslation";
 import { createEvent, GalleryEvent } from "../../services/galleryApi";
 import { Student } from "../../services/studentsApi";
@@ -42,6 +43,7 @@ export function EventPickerModal({
   onCreated,
 }: EventPickerModalProps) {
   const { t } = useTranslation();
+  const sheetPadding = useSheetPadding(32);
   const [mode, setMode] = useState<"list" | "create">("list");
   const [name, setName] = useState("");
   const [date, setDate] = useState(todayIso());
@@ -86,7 +88,7 @@ export function EventPickerModal({
         style={styles.backdrop}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        <View style={styles.sheet}>
+        <View style={[styles.sheet, { paddingBottom: sheetPadding }]}>
           <View style={styles.header}>
             <Text style={styles.title}>
               {mode === "list" ? t.gallery.chooseEvent : t.gallery.newEvent}
@@ -214,7 +216,6 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 24,
     paddingHorizontal: 20,
     paddingTop: 20,
-    paddingBottom: 32,
     maxHeight: "85%",
   },
   header: {

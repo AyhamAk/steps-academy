@@ -14,6 +14,7 @@ import { Colors } from "../../constants/Colors";
 import { FEEDBACK_FACES } from "../../constants/FeedbackFaces";
 import { Fonts } from "../../constants/Fonts";
 import { Type } from "../../constants/Typography";
+import { useSheetPadding } from "../../hooks/useLayout";
 import { useTranslation } from "../../i18n/useTranslation";
 import { submitFeedback } from "../../services/feedbackApi";
 import { StepsButton } from "../ui/StepsButton";
@@ -34,6 +35,7 @@ export function FeedbackModal({
   onSent: (message: string) => void;
 }) {
   const { t, rtlText } = useTranslation();
+  const sheetPadding = useSheetPadding(30);
   const [rating, setRating] = useState<number | null>(null);
   const [message, setMessage] = useState("");
 
@@ -57,7 +59,7 @@ export function FeedbackModal({
         style={styles.backdrop}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        <View style={styles.sheet}>
+        <View style={[styles.sheet, { paddingBottom: sheetPadding }]}>
           <View style={styles.header}>
             <Text style={styles.title}>{t.feedback.title}</Text>
             <Touchable onPress={onClose} hitSlop={10}>
@@ -111,7 +113,6 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 26,
     paddingHorizontal: 20,
     paddingTop: 22,
-    paddingBottom: 30,
   },
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   title: { fontFamily: Fonts.extraBold, fontSize: 20, color: Colors.bark },

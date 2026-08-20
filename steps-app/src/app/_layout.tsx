@@ -9,6 +9,7 @@ import {
 } from "@expo-google-fonts/nunito";
 import { useFonts } from "expo-font";
 import { Stack, usePathname, useRouter, useSegments } from "expo-router";
+import { StatusBar } from "expo-status-bar";
 import * as Notifications from "expo-notifications";
 import { useEffect, useRef, useState } from "react";
 import { I18nManager, View } from "react-native";
@@ -167,6 +168,9 @@ export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <View style={{ flex: 1 }}>
+        {/* Dark icons: the app is cream throughout, and under edge-to-edge
+            the status bar itself is transparent. */}
+        <StatusBar style="dark" />
         <Stack
           screenOptions={{
             headerShown: false,

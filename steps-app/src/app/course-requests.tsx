@@ -156,7 +156,7 @@ export default function CourseRequestsScreen() {
   ];
 
   return (
-    <Screen>
+    <Screen safeBottom>
       <ScreenFadeIn style={styles.flex}>
         <AdminHeader
           title={courseName ?? t.courses.requestsTitle}

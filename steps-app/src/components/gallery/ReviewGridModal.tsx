@@ -2,6 +2,7 @@ import { Alert, FlatList, Image, Modal, StyleSheet, Text, View } from "react-nat
 
 import { Colors } from "../../constants/Colors";
 import { Fonts } from "../../constants/Fonts";
+import { useLayout } from "../../hooks/useLayout";
 import { useTranslation } from "../../i18n/useTranslation";
 import { GalleryEvent, Photo, resolvePhotoUrl } from "../../services/galleryApi";
 import { EmptyState } from "./EmptyState";
@@ -31,10 +32,18 @@ export function ReviewGridModal({
   onDeletePhoto,
 }: ReviewGridModalProps) {
   const { t } = useTranslation();
+  // Opaque fullscreen modal: it owns both insets itself, since no SafeAreaView
+  // wraps it and edge-to-edge puts the system bars over its corners.
+  const { insets } = useLayout();
 
   return (
     <Modal visible animationType="slide" onRequestClose={onClose}>
-      <View style={styles.container}>
+      <View
+        style={[
+          styles.container,
+          { paddingTop: insets.top + 12, paddingBottom: insets.bottom },
+        ]}
+      >
         <View style={styles.header}>
           <View style={styles.headerText}>
             <Text style={styles.title}>{event.name}</Text>
@@ -110,7 +119,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.background,
-    paddingTop: 60,
     paddingHorizontal: 16,
   },
   header: {

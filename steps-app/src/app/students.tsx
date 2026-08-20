@@ -242,7 +242,7 @@ export default function StudentsScreen() {
   });
 
   return (
-    <Screen>
+    <Screen safeBottom>
       <ScreenFadeIn style={styles.flex}>
         <AdminHeader title={t.students.title} subtitle={t.students.subtitle} />
 

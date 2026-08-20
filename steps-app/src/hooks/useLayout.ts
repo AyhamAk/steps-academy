@@ -38,9 +38,31 @@ export function useLayout() {
       paddingLeft: Math.max(gutter, insets.left),
       paddingRight: Math.max(gutter, insets.right),
     },
+    /**
+     * Height the Android navigation bar (or the iOS home indicator) occupies.
+     *
+     * Edge-to-edge is on from Expo SDK 54 onwards, so anything anchored to the
+     * bottom of the window draws underneath the system bar unless it reserves
+     * this much room. Roughly 48dp with three-button navigation, 16dp with
+     * gestures, and 0 where there is no bar at all.
+     */
+    bottomInset: insets.bottom,
     /** Tablets: stop content sprawling to the full width of the screen. */
     maxContentWidth: isWide ? 600 : undefined,
   };
+}
+
+/**
+ * Bottom padding for a sheet anchored to the bottom of the screen.
+ *
+ * Sheets need this even though they live in their own `Modal`: with
+ * edge-to-edge enabled React Native forces every modal window translucent, so
+ * a sheet's last row of buttons sits under the navigation bar exactly like the
+ * tab bar did.
+ */
+export function useSheetPadding(base: number): number {
+  const { bottom } = useSafeAreaInsets();
+  return base + bottom;
 }
 
 /**

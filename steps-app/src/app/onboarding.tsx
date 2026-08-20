@@ -105,7 +105,7 @@ export default function OnboardingScreen() {
   const message = formError ?? error;
 
   return (
-    <Screen>
+    <Screen safeBottom>
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === "ios" ? "padding" : undefined}

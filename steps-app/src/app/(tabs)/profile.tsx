@@ -4,7 +4,6 @@ import { router } from "expo-router";
 import { useMemo, useState } from "react";
 import { Alert, Linking, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { ChangePasswordModal } from "../../components/profile/ChangePasswordModal";
 import { ContactAcademyModal } from "../../components/profile/ContactAcademyModal";
@@ -34,7 +33,6 @@ import { Touchable } from "../../components/ui/Touchable";
 
 export default function ProfileScreen() {
   const { user, logout, deleteAccount, isLoading } = useAuth();
-  const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
   const { t, isRTL, rtlText } = useTranslation();
   const locale = useLocaleStore((state) => state.locale);
@@ -174,7 +172,7 @@ export default function ProfileScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingTop: insets.top + 12, paddingBottom: tabBarHeight + 24 },
+          { paddingTop: 12, paddingBottom: tabBarHeight + 24 },
         ]}
       >
         <ScreenFadeIn>

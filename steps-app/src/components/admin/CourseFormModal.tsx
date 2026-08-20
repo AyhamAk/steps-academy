@@ -13,6 +13,7 @@ import {
 import { Colors } from "../../constants/Colors";
 import { Fonts } from "../../constants/Fonts";
 import { Type } from "../../constants/Typography";
+import { useSheetPadding } from "../../hooks/useLayout";
 import { useTranslation } from "../../i18n/useTranslation";
 import { Course, CourseInput } from "../../services/coursesApi";
 import { WEEK_DAYS, WeekDay } from "../../services/scheduleApi";
@@ -45,6 +46,7 @@ export function CourseFormModal({
   onSubmit,
 }: CourseFormModalProps) {
   const { t, rtlText } = useTranslation();
+  const sheetPadding = useSheetPadding(28);
   const [name, setName] = useState("");
   const [nameAr, setNameAr] = useState("");
   const [nameHe, setNameHe] = useState("");
@@ -138,7 +140,7 @@ export function CourseFormModal({
         style={styles.backdrop}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        <View style={styles.sheet}>
+        <View style={[styles.sheet, { paddingBottom: sheetPadding }]}>
           <View style={styles.header}>
             <Text style={styles.title}>
               {course ? t.coursesAdmin.editTitle : t.coursesAdmin.createTitle}
@@ -372,7 +374,6 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 24,
     paddingHorizontal: 20,
     paddingTop: 20,
-    paddingBottom: 28,
     maxHeight: "90%",
   },
   header: {
