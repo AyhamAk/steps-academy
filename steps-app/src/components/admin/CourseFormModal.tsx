@@ -46,7 +46,11 @@ export function CourseFormModal({
 }: CourseFormModalProps) {
   const { t, rtlText } = useTranslation();
   const [name, setName] = useState("");
+  const [nameAr, setNameAr] = useState("");
+  const [nameHe, setNameHe] = useState("");
   const [description, setDescription] = useState("");
+  const [descriptionAr, setDescriptionAr] = useState("");
+  const [descriptionHe, setDescriptionHe] = useState("");
   const [instructor, setInstructor] = useState("");
   const [weekDays, setWeekDays] = useState<WeekDay[]>([]);
   const [hour, setHour] = useState("");
@@ -62,7 +66,11 @@ export function CourseFormModal({
   useEffect(() => {
     if (!visible) return;
     setName(course?.name ?? "");
+    setNameAr(course?.nameAr ?? "");
+    setNameHe(course?.nameHe ?? "");
     setDescription(course?.description ?? "");
+    setDescriptionAr(course?.descriptionAr ?? "");
+    setDescriptionHe(course?.descriptionHe ?? "");
     setInstructor(course?.instructor ?? "");
     setWeekDays(course?.weekDays ?? []);
     const [h, m] = (course?.startTime ?? "").split(":");
@@ -106,7 +114,11 @@ export function CourseFormModal({
 
     onSubmit({
       name: name.trim(),
+      nameAr: nameAr.trim() || null,
+      nameHe: nameHe.trim() || null,
       description: description.trim() || null,
+      descriptionAr: descriptionAr.trim() || null,
+      descriptionHe: descriptionHe.trim() || null,
       instructor: instructor.trim() || null,
       weekDays,
       startTime: hasTime
@@ -179,6 +191,28 @@ export function CourseFormModal({
               style={[styles.input, rtlText]}
             />
 
+            {/* Left blank, a parent reading in that language sees the name
+                above — which is how every Arabic screen ended up showing
+                "Swimming Lessons". */}
+            <Text style={[styles.label, rtlText]}>{t.coursesAdmin.fieldNameAr}</Text>
+            <TextInput
+              value={nameAr}
+              onChangeText={setNameAr}
+              placeholder={t.coursesAdmin.translationPlaceholder}
+              placeholderTextColor={Colors.textLight}
+              style={[styles.input, styles.rtlInput]}
+            />
+
+            <Text style={[styles.label, rtlText]}>{t.coursesAdmin.fieldNameHe}</Text>
+            <TextInput
+              value={nameHe}
+              onChangeText={setNameHe}
+              placeholder={t.coursesAdmin.translationPlaceholder}
+              placeholderTextColor={Colors.textLight}
+              style={[styles.input, styles.rtlInput]}
+            />
+            <Text style={[styles.hint, rtlText]}>{t.coursesAdmin.translationHint}</Text>
+
             <Text style={[styles.label, rtlText]}>{t.coursesAdmin.fieldDescription}</Text>
             <TextInput
               value={description}
@@ -186,6 +220,26 @@ export function CourseFormModal({
               placeholder={t.coursesAdmin.descriptionPlaceholder}
               placeholderTextColor={Colors.textLight}
               style={[styles.input, styles.textArea, rtlText]}
+              multiline
+            />
+
+            <Text style={[styles.label, rtlText]}>{t.coursesAdmin.fieldDescriptionAr}</Text>
+            <TextInput
+              value={descriptionAr}
+              onChangeText={setDescriptionAr}
+              placeholder={t.coursesAdmin.translationPlaceholder}
+              placeholderTextColor={Colors.textLight}
+              style={[styles.input, styles.textArea, styles.rtlInput]}
+              multiline
+            />
+
+            <Text style={[styles.label, rtlText]}>{t.coursesAdmin.fieldDescriptionHe}</Text>
+            <TextInput
+              value={descriptionHe}
+              onChangeText={setDescriptionHe}
+              placeholder={t.coursesAdmin.translationPlaceholder}
+              placeholderTextColor={Colors.textLight}
+              style={[styles.input, styles.textArea, styles.rtlInput]}
               multiline
             />
 
@@ -378,6 +432,9 @@ const styles = StyleSheet.create({
     color: Colors.bark,
   },
   textArea: { minHeight: 84, textAlignVertical: "top" },
+  // These fields always hold RTL text, whatever language the admin's own
+  // interface is in.
+  rtlInput: { textAlign: "right", writingDirection: "rtl" },
   flex: { flex: 1 },
   dayTile: {
     flex: 1,

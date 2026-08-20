@@ -109,8 +109,15 @@ model User {
 /// A class or activity families can enrol a child in. Admin-managed.
 model Course {
   id          String    @id @default(uuid())
+  /// The name as the academy typed it, and the fallback for any locale that
+  /// has no translation. Parents saw "Swimming Lessons" in an otherwise
+  /// Arabic screen because this was the only name a course had.
   name        String
+  nameAr      String?
+  nameHe      String?
   description String?
+  descriptionAr String?
+  descriptionHe String?
   emoji       String    @default("🎓")
   instructor  String?
   /// Which days it runs on, e.g. ["sun","wed"]. Structured rather than free

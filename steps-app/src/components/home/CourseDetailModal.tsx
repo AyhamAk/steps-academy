@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { ActivityIndicator, Modal, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { Colors } from "../../constants/Colors";
@@ -6,6 +7,8 @@ import { Type } from "../../constants/Typography";
 import { useTranslation } from "../../i18n/useTranslation";
 import { Course } from "../../services/coursesApi";
 import { formatCourseDates, formatCourseDays, hasCourseEnded } from "../../utils/courseSchedule";
+import { courseIcon } from "../../utils/courseIcon";
+import { courseDescription, courseName } from "../../utils/courseText";
 import { StepsButton } from "../ui/StepsButton";
 import { Touchable } from "../ui/Touchable";
 
@@ -17,11 +20,19 @@ type CourseDetailModalProps = {
   onCancel: (enrollmentId: string, isApproved: boolean) => void;
 };
 
-function DetailRow({ icon, label, value }: { icon: string; label: string; value: string }) {
+function DetailRow({
+  icon,
+  label,
+  value,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  value: string;
+}) {
   const { isRTL, rtlText } = useTranslation();
   return (
     <View style={[styles.detailRow, isRTL && styles.rowReverse]}>
-      <Text style={styles.detailIcon}>{icon}</Text>
+      <Ionicons name={icon} size={18} color={Colors.textLight} style={styles.detailIcon} />
       <View style={styles.flex}>
         <Text style={[styles.detailLabel, rtlText]}>{label}</Text>
         <Text style={[styles.detailValue, rtlText]}>{value}</Text>
@@ -41,7 +52,7 @@ export function CourseDetailModal({
   onRequest,
   onCancel,
 }: CourseDetailModalProps) {
-  const { t, isRTL, rtlText } = useTranslation();
+  const { t, isRTL, rtlText, locale } = useTranslation();
   if (!course) return null;
 
   const accent = course.accentColor ?? Colors.terracotta;
@@ -61,10 +72,10 @@ export function CourseDetailModal({
 
           <View style={[styles.header, isRTL && styles.rowReverse]}>
             <View style={[styles.iconBubble, { backgroundColor: `${accent}22` }]}>
-              <Text style={styles.icon}>{course.emoji}</Text>
+              <Ionicons name={courseIcon(course.emoji)} size={24} color={accent} />
             </View>
             <View style={styles.flex}>
-              <Text style={[styles.title, rtlText]}>{course.name}</Text>
+              <Text style={[styles.title, rtlText]}>{courseName(course, locale)}</Text>
               {course.instructor ? (
                 <Text style={[styles.instructor, rtlText]}>
                   {t.courses.withInstructor(course.instructor)}
@@ -77,15 +88,21 @@ export function CourseDetailModal({
           </View>
 
           <ScrollView showsVerticalScrollIndicator={false} style={styles.body}>
-            {course.description ? (
-              <Text style={[styles.description, rtlText]}>{course.description}</Text>
+            {courseDescription(course, locale) ? (
+              <Text style={[styles.description, rtlText]}>
+                {courseDescription(course, locale)}
+              </Text>
             ) : null}
 
             <View style={styles.details}>
-              {days ? <DetailRow icon="🗓" label={t.courses.detailDays} value={days} /> : null}
-              {dates ? <DetailRow icon="📆" label={t.courses.detailDates} value={dates} /> : null}
+              {days ? (
+                <DetailRow icon="time-outline" label={t.courses.detailDays} value={days} />
+              ) : null}
+              {dates ? (
+                <DetailRow icon="calendar-outline" label={t.courses.detailDates} value={dates} />
+              ) : null}
               <DetailRow
-                icon="👥"
+                icon="people-outline"
                 label={t.courses.detailPlaces}
                 value={
                   course.spotsLeft === null
@@ -182,7 +199,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  icon: { fontSize: 27 },
   title: { fontFamily: Fonts.extraBold, fontSize: 19, color: Colors.bark },
   instructor: { ...Type.caption, color: Colors.textLight, marginTop: 2 },
   close: { fontSize: 20, color: Colors.textLight },
@@ -203,7 +219,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
   },
-  detailIcon: { fontSize: 17, width: 24, textAlign: "center" },
+  detailIcon: { width: 24, textAlign: "center" },
   detailLabel: {
     ...Type.caption,
     fontSize: 11,

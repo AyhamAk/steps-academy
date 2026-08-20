@@ -10,7 +10,6 @@ import Animated, {
 } from "react-native-reanimated";
 
 import { Colors } from "../../constants/Colors";
-import { gridCardWidth, useLayout } from "../../hooks/useLayout";
 import { useReduceMotionSetting } from "../../hooks/useReduceMotionSetting";
 
 type SkeletonBlockProps = {
@@ -107,22 +106,24 @@ export function SkeletonEventList({ count = 3 }: { count?: number }) {
   );
 }
 
-/** Course-card shaped placeholders, matching the real horizontal card strip. */
-export function SkeletonCourseRow({ count = 2 }: { count?: number }) {
-  // Same maths as the real cards, so placeholders sit exactly where the
-  // content will land instead of jumping when it arrives.
-  const { width, gutter, cardGap, columns } = useLayout();
-  const cardWidth = gridCardWidth({ width, gutter, cardGap, columns });
-
+/**
+ * Placeholders for the course list — full-width rows, shaped like the real
+ * ones so the content doesn't jump when it lands. Was a horizontal card
+ * strip, until the courses themselves became a vertical list.
+ */
+export function SkeletonCourseRow({ count = 3 }: { count?: number }) {
   return (
-    <View style={styles.courseRow}>
+    <View style={styles.courseList}>
       {Array.from({ length: count }).map((_, index) => (
-        <View key={index} style={[styles.courseCard, { width: cardWidth }]}>
-          <SkeletonBlock width={34} height={34} borderRadius={10} style={styles.courseGap} />
-          <SkeletonBlock width="80%" height={15} style={styles.courseGap} />
-          <SkeletonBlock width="60%" height={12} style={styles.courseGap} />
-          <SkeletonBlock width="45%" height={12} style={styles.courseGapWide} />
-          <SkeletonBlock width="100%" height={40} borderRadius={10} />
+        <View key={index} style={styles.scheduleRow}>
+          <SkeletonBlock width={4} height={40} borderRadius={2} />
+          <SkeletonBlock width={40} height={40} borderRadius={12} />
+          <View style={styles.scheduleText}>
+            <SkeletonBlock width="55%" height={15} style={styles.courseGap} />
+            <SkeletonBlock width="70%" height={12} style={styles.courseGap} />
+            <SkeletonBlock width="45%" height={12} />
+          </View>
+          <SkeletonBlock width={64} height={28} borderRadius={999} />
         </View>
       ))}
     </View>
@@ -271,25 +272,15 @@ const styles = StyleSheet.create({
   thumbGap: {
     marginEnd: 8,
   },
-  courseRow: {
-    flexDirection: "row",
-    gap: 12,
-  },
-  courseCard: {
-    // Width is computed per device at the call site; minHeight keeps the row
-    // stable without clipping the content that replaces it.
-    minHeight: 240,
+  courseList: {
     backgroundColor: Colors.card,
-    borderRadius: 18,
+    borderRadius: 20,
     borderWidth: 1,
     borderColor: Colors.border,
-    padding: 16,
+    overflow: "hidden",
   },
   courseGap: {
     marginBottom: 8,
-  },
-  courseGapWide: {
-    marginBottom: 16,
   },
   scheduleRow: {
     flexDirection: "row",

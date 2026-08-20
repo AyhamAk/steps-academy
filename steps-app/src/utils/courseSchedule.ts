@@ -14,11 +14,14 @@ export function formatCourseDays(course: Course, t: Translations): string | null
   return parts.length > 0 ? parts.join(" · ") : null;
 }
 
-/** "1 Sep – 30 Nov", or a single date if only one end is set. */
+/** "1 September – 30 November", or a single date if only one end is set. */
 export function formatCourseDates(course: Course, t: Translations): string | null {
+  // Full month names, never truncated. Cutting Arabic to three letters turned
+  // سبتمبر into سبت, which is the word for Saturday — the date range read as a
+  // weekday. Nothing guarantees a locale's months stay distinct once clipped.
   const short = (iso: string) => {
     const date = parseIsoDate(iso);
-    return `${date.getDate()} ${t.common.months[date.getMonth()].slice(0, 3)}`;
+    return `${date.getDate()} ${t.common.months[date.getMonth()]}`;
   };
   if (course.startDate && course.endDate) return `${short(course.startDate)} – ${short(course.endDate)}`;
   if (course.startDate) return t.courses.startsOn(short(course.startDate));

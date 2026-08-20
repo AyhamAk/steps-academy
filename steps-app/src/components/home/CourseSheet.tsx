@@ -15,6 +15,8 @@ import {
 import { track } from "../../services/analytics";
 import { Child } from "../../store/authStore";
 import { formatCourseDates, formatCourseDays } from "../../utils/courseSchedule";
+import { courseIcon } from "../../utils/courseIcon";
+import { courseName } from "../../utils/courseText";
 import IconTile from "../ui/IconTile";
 import { StepsButton } from "../ui/StepsButton";
 import { Touchable } from "../ui/Touchable";
@@ -36,7 +38,7 @@ function SheetShell({
   children: React.ReactNode;
   isBusy: boolean;
 }) {
-  const { t, isRTL } = useTranslation();
+  const { t, isRTL, locale } = useTranslation();
   const accent = course.accentColor ?? Colors.terracotta;
   const meta = [formatCourseDays(course, t), formatCourseDates(course, t)]
     .filter(Boolean)
@@ -47,11 +49,11 @@ function SheetShell({
       <View style={styles.sheet}>
         <View style={[styles.header, isRTL && styles.rowReverse]}>
           <IconTile tint={accent} size={48}>
-            <Text style={styles.emoji}>{course.emoji}</Text>
+            <Ionicons name={courseIcon(course.emoji)} size={24} color={accent} />
           </IconTile>
           <View style={styles.flex}>
             <Text style={styles.name} numberOfLines={2}>
-              {course.name}
+              {courseName(course, locale)}
             </Text>
             {meta ? (
               <Text style={styles.meta} numberOfLines={2}>
@@ -118,7 +120,7 @@ export function JoinCourseSheet({
   onClose: () => void;
   onJoined: () => void;
 }) {
-  const { t, isRTL } = useTranslation();
+  const { t, isRTL, locale } = useTranslation();
   const [childId, setChildId] = useState<string | null>(null);
   const [outcome, setOutcome] = useState<{ joined: boolean; childName: string } | null>(null);
   const [failed, setFailed] = useState(false);
@@ -168,8 +170,8 @@ export function JoinCourseSheet({
             title={outcome.joined ? t.courses.joinedTitle : t.courses.waitlistedTitle}
             body={
               outcome.joined
-                ? t.courses.joinedMessage(outcome.childName, course.name)
-                : t.courses.waitlistedMessage(outcome.childName, course.name)
+                ? t.courses.joinedMessage(outcome.childName, courseName(course, locale))
+                : t.courses.waitlistedMessage(outcome.childName, courseName(course, locale))
             }
             onClose={onClose}
           />
@@ -251,7 +253,7 @@ export function LeaveCourseSheet({
   onClose: () => void;
   onLeft: () => void;
 }) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const [done, setDone] = useState(false);
   const [failed, setFailed] = useState(false);
 
@@ -285,8 +287,8 @@ export function LeaveCourseSheet({
             title={isApproved ? t.myCourses.leftTitle : t.myCourses.withdrawnTitle}
             body={
               isApproved
-                ? t.myCourses.leftMessage(enrollment.studentName, course.name)
-                : t.myCourses.withdrawnMessage(enrollment.studentName, course.name)
+                ? t.myCourses.leftMessage(enrollment.studentName, courseName(course, locale))
+                : t.myCourses.withdrawnMessage(enrollment.studentName, courseName(course, locale))
             }
             onClose={onClose}
           />
@@ -295,8 +297,8 @@ export function LeaveCourseSheet({
             <View style={[styles.notice, { backgroundColor: `${Colors.clay}1A` }]}>
               <Text style={[styles.noticeText, { color: Colors.clay }]}>
                 {isApproved
-                  ? t.myCourses.leaveMessage(enrollment.studentName, course.name)
-                  : t.myCourses.withdrawMessage(enrollment.studentName, course.name)}
+                  ? t.myCourses.leaveMessage(enrollment.studentName, courseName(course, locale))
+                  : t.myCourses.withdrawMessage(enrollment.studentName, courseName(course, locale))}
               </Text>
             </View>
 
@@ -335,7 +337,6 @@ const styles = StyleSheet.create({
   rowReverse: { flexDirection: "row-reverse" },
   centred: { alignItems: "center" },
   header: { flexDirection: "row", alignItems: "center", gap: 14 },
-  emoji: { fontSize: 26 },
   name: {
     fontFamily: Fonts.extraBold,
     fontSize: 20,

@@ -8,6 +8,8 @@ import { Fonts } from "../../constants/Fonts";
 import { useTranslation } from "../../i18n/useTranslation";
 import { Course, listCourses, MyEnrollment } from "../../services/coursesApi";
 import { formatCourseDates, formatCourseDays } from "../../utils/courseSchedule";
+import { courseIcon } from "../../utils/courseIcon";
+import { courseDescription, courseName } from "../../utils/courseText";
 import { LeaveCourseSheet } from "../home/CourseSheet";
 import IconTile from "../ui/IconTile";
 import SectionLabel from "../ui/SectionLabel";
@@ -54,7 +56,7 @@ function MetaRow({
  * of each — previously they could only see status on the Home cards.
  */
 export function MyCoursesSection() {
-  const { t, isRTL } = useTranslation();
+  const { t, isRTL, locale } = useTranslation();
   const queryClient = useQueryClient();
 
   const { data: courses } = useQuery({ queryKey: ["courses"], queryFn: listCourses });
@@ -88,11 +90,11 @@ export function MyCoursesSection() {
               <View style={styles.body}>
                 <View style={[styles.head, isRTL && styles.rowReverse]}>
                   <IconTile tint={accent} size={44}>
-                    <Text style={styles.emoji}>{course.emoji}</Text>
+                    <Ionicons name={courseIcon(course.emoji)} size={22} color={accent} />
                   </IconTile>
                   <View style={styles.flex}>
                     <Text style={styles.name} numberOfLines={1} maxFontSizeMultiplier={1.3}>
-                      {course.name}
+                      {courseName(course, locale)}
                     </Text>
                     <Text style={styles.child} numberOfLines={1} maxFontSizeMultiplier={1.4}>
                       {enrollment.studentName}
@@ -113,9 +115,9 @@ export function MyCoursesSection() {
                 />
                 <MetaRow icon="calendar-outline" parts={[formatCourseDates(course, t)]} />
 
-                {course.description ? (
+                {courseDescription(course, locale) ? (
                   <Text style={styles.description} numberOfLines={2} maxFontSizeMultiplier={1.4}>
-                    {course.description}
+                    {courseDescription(course, locale)}
                   </Text>
                 ) : null}
 
@@ -157,7 +159,6 @@ const styles = StyleSheet.create({
   accent: { width: 4 },
   body: { flex: 1, padding: 16 },
   head: { flexDirection: "row", alignItems: "center", gap: 12 },
-  emoji: { fontSize: 24 },
   name: {
     fontFamily: Fonts.bold,
     fontSize: 17,

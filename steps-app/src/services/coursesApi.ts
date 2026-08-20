@@ -12,8 +12,13 @@ export type MyEnrollment = {
 
 export type Course = {
   id: string;
+  /** The academy's own wording, and the fallback when a locale has no translation. */
   name: string;
+  nameAr: string | null;
+  nameHe: string | null;
   description: string | null;
+  descriptionAr: string | null;
+  descriptionHe: string | null;
   emoji: string;
   instructor: string | null;
   /** Days it runs on, e.g. ["sun","wed"]. Structured so it can be translated. */
@@ -98,7 +103,11 @@ export async function enrollmentSummary() {
 
 export type CourseInput = {
   name: string;
+  nameAr?: string | null;
+  nameHe?: string | null;
   description?: string | null;
+  descriptionAr?: string | null;
+  descriptionHe?: string | null;
   emoji?: string;
   instructor?: string | null;
   weekDays?: WeekDay[];

@@ -1,3 +1,4 @@
+import { ltrIsolate, NBSP } from "../utils/bidi";
 import { api } from "./api";
 
 export type WeekDay = "sun" | "mon" | "tue" | "wed" | "thu";
@@ -26,13 +27,21 @@ export type ActivityInput = {
   accentColor?: string | null;
 };
 
-/** "08:30" → "8:30 AM". Kept on the client so storage stays sortable. */
+/**
+ * "08:30" → "8:30 AM". Kept on the client so storage stays sortable.
+ *
+ * The result is bidi-isolated and joined with a non-breaking space, because
+ * this string is nearly always shown inside an Arabic or Hebrew line: without
+ * the isolate the surrounding RTL run reordered it ("AM" landing between the
+ * hour and the minutes), and without the NBSP a wrap could orphan "PM" on a
+ * line of its own.
+ */
 export function formatTime(startTime: string): string {
   const [rawHour, minute] = startTime.split(":");
   const hour = Number(rawHour);
   const suffix = hour < 12 ? "AM" : "PM";
   const display = hour % 12 === 0 ? 12 : hour % 12;
-  return `${display}:${minute} ${suffix}`;
+  return ltrIsolate(`${display}:${minute}${NBSP}${suffix}`);
 }
 
 export async function getWeekSchedule() {

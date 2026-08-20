@@ -118,10 +118,20 @@ export function WeeklyScheduleSection() {
               <Text style={styles.emoji}>{activity.emoji}</Text>
               <View style={styles.info}>
                 <Text style={[styles.name, rtlText]} maxFontSizeMultiplier={1.3}>{activity.name}</Text>
-                <Text style={[styles.meta, rtlText]} maxFontSizeMultiplier={1.4}>
-                  {formatTime(activity.startTime)} ·{" "}
-                  {t.home.scheduleDuration(activity.durationMinutes)}
-                </Text>
+                {/* The time and the duration are separate Text nodes, each
+                    resolving its own direction. As one joined string the
+                    Latin time was reordered by the surrounding Arabic run. */}
+                <View style={[styles.metaRow, isRTL && styles.rowReverse]}>
+                  <Text style={styles.metaLtr} maxFontSizeMultiplier={1.4}>
+                    {formatTime(activity.startTime)}
+                  </Text>
+                  <Text style={styles.meta} maxFontSizeMultiplier={1.4}>
+                    ·
+                  </Text>
+                  <Text style={styles.meta} maxFontSizeMultiplier={1.4}>
+                    {t.home.scheduleDuration(activity.durationMinutes)}
+                  </Text>
+                </View>
               </View>
             </View>
           ))
@@ -222,9 +232,14 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: Colors.bark,
   },
+  metaRow: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 2 },
   meta: {
     ...Type.caption,
     color: Colors.textLight,
-    marginTop: 2,
+  },
+  metaLtr: {
+    ...Type.caption,
+    color: Colors.textLight,
+    writingDirection: "ltr",
   },
 });

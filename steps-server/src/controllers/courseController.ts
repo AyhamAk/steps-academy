@@ -57,7 +57,11 @@ export async function listCourses(req: Request, res: Response) {
     courses: courses.map((course) => ({
       id: course.id,
       name: course.name,
+      nameAr: course.nameAr,
+      nameHe: course.nameHe,
       description: course.description,
+      descriptionAr: course.descriptionAr,
+      descriptionHe: course.descriptionHe,
       emoji: course.emoji,
       instructor: course.instructor,
       weekDays: course.weekDays,

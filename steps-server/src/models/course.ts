@@ -27,7 +27,11 @@ const enrollmentContext = {
 
 type CourseInput = {
   name: string;
+  nameAr?: string | null;
+  nameHe?: string | null;
   description?: string | null;
+  descriptionAr?: string | null;
+  descriptionHe?: string | null;
   emoji?: string;
   instructor?: string | null;
   weekDays?: WeekDay[];
@@ -44,7 +48,13 @@ export const CourseModel = {
     return prisma.course.create({
       data: {
         name: input.name.trim(),
+        // Blank translations are stored as null, so the app's fallback to
+        // `name` triggers on an empty admin field as well as a missing one.
+        nameAr: input.nameAr?.trim() || null,
+        nameHe: input.nameHe?.trim() || null,
         description: input.description ?? null,
+        descriptionAr: input.descriptionAr?.trim() || null,
+        descriptionHe: input.descriptionHe?.trim() || null,
         emoji: input.emoji?.trim() || "🎓",
         instructor: input.instructor ?? null,
         weekDays: input.weekDays ?? [],
@@ -64,7 +74,15 @@ export const CourseModel = {
         where: { id },
         data: {
           ...(input.name !== undefined ? { name: input.name.trim() } : {}),
+          ...(input.nameAr !== undefined ? { nameAr: input.nameAr?.trim() || null } : {}),
+          ...(input.nameHe !== undefined ? { nameHe: input.nameHe?.trim() || null } : {}),
           ...(input.description !== undefined ? { description: input.description } : {}),
+          ...(input.descriptionAr !== undefined
+            ? { descriptionAr: input.descriptionAr?.trim() || null }
+            : {}),
+          ...(input.descriptionHe !== undefined
+            ? { descriptionHe: input.descriptionHe?.trim() || null }
+            : {}),
           ...(input.emoji !== undefined ? { emoji: input.emoji || "🎓" } : {}),
           ...(input.instructor !== undefined ? { instructor: input.instructor } : {}),
           ...(input.weekDays !== undefined ? { weekDays: input.weekDays } : {}),

@@ -66,6 +66,13 @@ export function StepsButton({
     ]).start();
   }, [shimmerOnMount, reduceMotion, layout.width]);
 
+  // The clipping layer has to follow whatever radius the caller set, not the
+  // pill radius of the base style. A caller squaring the corners off (the
+  // logout button uses 16) otherwise got a fully rounded layer inside a
+  // near-square one, which reads as a second box drawn inside the button.
+  const flatStyle = StyleSheet.flatten(style) ?? {};
+  const radius = typeof flatStyle.borderRadius === "number" ? flatStyle.borderRadius : 50;
+
   const isOutline = variant === "outline";
   const backgroundColor = isOutline
     ? "transparent"
@@ -136,7 +143,7 @@ export function StepsButton({
           style,
         ]}
       >
-        <View style={styles.rippleClip} pointerEvents="none">
+        <View style={[styles.rippleClip, { borderRadius: radius }]} pointerEvents="none">
           {shimmerOnMount && !reduceMotion && layout.width > 0 ? (
             <Animated.View
               style={[
@@ -215,7 +222,6 @@ const styles = StyleSheet.create({
   },
   rippleClip: {
     ...StyleSheet.absoluteFillObject,
-    borderRadius: 50,
     overflow: "hidden",
   },
   ripple: {
