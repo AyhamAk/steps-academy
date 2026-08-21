@@ -126,11 +126,13 @@ function usePushRegistration(token: string | null, userId: string | null) {
 // the same screen as tapping its in-app equivalent in the notifications list.
 /**
  * Polls for new notifications and raises a system banner for each one.
-  *
- * Remote push cannot work until the build carries a Firebase config, so this
- * covers the case that matters day to day: the app is open, something
- * happens, and the parent should see a banner rather than only a number on a
- * bell they might not look at.
+ *
+ * Covers the case remote push cannot: the app is open, something happens, and
+ * the parent should see a banner rather than only a number on a bell they may
+ * not look at.
+ *
+ * Must be called from inside the QueryClientProvider — see NotificationBanners
+ * below.
  */
 function useNotificationBanners(token: string | null) {
   const { t } = useTranslation();
@@ -154,6 +156,19 @@ function useNotificationBanners(token: string | null) {
   useEffect(() => {
     if (!token) void resetSeenNotifications();
   }, [token]);
+}
+
+/**
+ * Renders nothing; exists so the banner poller runs *inside* the
+ * QueryClientProvider.
+ *
+ * Calling the hook from RootLayout put a useQuery in the same component that
+ * renders the provider, so it resolved no client and threw on launch — the app
+ * closed itself the moment it opened.
+ */
+function NotificationBanners({ token }: { token: string | null }) {
+  useNotificationBanners(token);
+  return null;
 }
 
 function useNotificationTapNavigation() {
@@ -194,7 +209,6 @@ export default function RootLayout() {
   useRTLReconciliation(ready);
   const userId = useAuthStore((state) => state.user?.id ?? null);
   usePushRegistration(token, userId);
-  useNotificationBanners(token);
   useNotificationTapNavigation();
 
   if (!ready) {
@@ -207,6 +221,7 @@ export default function RootLayout() {
         {/* Dark icons: the app is cream throughout, and under edge-to-edge
             the status bar itself is transparent. */}
         <StatusBar style="dark" />
+        <NotificationBanners token={token} />
         <Stack
           screenOptions={{
             headerShown: false,
