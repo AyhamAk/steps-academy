@@ -113,13 +113,20 @@ function useRTLReconciliation(ready: boolean) {
  * token at all — the server had nowhere to send their notifications, so they
  * silently received none.
  */
-function usePushRegistration(token: string | null, userId: string | null) {
+function usePushRegistration(
+  token: string | null,
+  userId: string | null,
+  onPushReady: (ready: boolean) => void
+) {
   useEffect(() => {
     if (!token || !userId) return;
     registerForPushNotificationsAsync().then((pushToken) => {
+      // Whether this device can receive server push decides whether the local
+      // poller below needs to do anything at all.
+      onPushReady(!!pushToken);
       if (pushToken) updatePushTokenRequest(pushToken).catch(() => {});
     });
-  }, [token, userId]);
+  }, [token, userId, onPushReady]);
 }
 
 // A tap on a push notification (app backgrounded or killed) should land on
@@ -134,13 +141,13 @@ function usePushRegistration(token: string | null, userId: string | null) {
  * Must be called from inside the QueryClientProvider — see NotificationBanners
  * below.
  */
-function useNotificationBanners(token: string | null) {
+function useNotificationBanners(token: string | null, enabled: boolean) {
   const { t } = useTranslation();
 
   const { data } = useQuery({
     queryKey: ["notifications"],
     queryFn: getNotifications,
-    enabled: !!token,
+    enabled: !!token && enabled,
     refetchInterval: 30_000,
     // Keep polling in the background so a banner can still arrive while the
     // parent is on another screen.
@@ -166,8 +173,8 @@ function useNotificationBanners(token: string | null) {
  * renders the provider, so it resolved no client and threw on launch — the app
  * closed itself the moment it opened.
  */
-function NotificationBanners({ token }: { token: string | null }) {
-  useNotificationBanners(token);
+function NotificationBanners({ token, enabled }: { token: string | null; enabled: boolean }) {
+  useNotificationBanners(token, enabled);
   return null;
 }
 
@@ -208,7 +215,10 @@ export default function RootLayout() {
   useUsageTracking(ready);
   useRTLReconciliation(ready);
   const userId = useAuthStore((state) => state.user?.id ?? null);
-  usePushRegistration(token, userId);
+  // The server pushes for every notification it creates, so local banners are
+  // a fallback for devices that cannot receive push — not a second copy of it.
+  const [canReceivePush, setCanReceivePush] = useState(false);
+  usePushRegistration(token, userId, setCanReceivePush);
   useNotificationTapNavigation();
 
   if (!ready) {
@@ -221,7 +231,7 @@ export default function RootLayout() {
         {/* Dark icons: the app is cream throughout, and under edge-to-edge
             the status bar itself is transparent. */}
         <StatusBar style="dark" />
-        <NotificationBanners token={token} />
+        <NotificationBanners token={token} enabled={!canReceivePush} />
         <Stack
           screenOptions={{
             headerShown: false,
