@@ -39,3 +39,10 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# FCM / Play service account keys. These can send push to every user and
+# upload builds as you - never commit one. google-services.json is fine and
+# is deliberately tracked; these are not.
+*-service-account*.json
+service-account*.json
+steps-*-firebase-adminsdk-*.json
