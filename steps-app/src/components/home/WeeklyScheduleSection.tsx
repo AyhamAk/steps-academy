@@ -79,7 +79,14 @@ function NowLine({
 }) {
   return (
     <View style={[styles.nowRow, isRTL && styles.rowReverse]}>
-      <Text style={[styles.nowLabel, isRTL ? styles.timeRTL : styles.timeLTR]}>{label}</Text>
+      <Text
+        style={[styles.nowLabel, isRTL ? styles.timeRTL : styles.timeLTR]}
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        minimumFontScale={0.8}
+      >
+        {label}
+      </Text>
       <View style={styles.rail}>
         {lineStyle ? <View style={[styles.railLine, lineStyle]} /> : null}
         {/* A ring, not another filled dot. Same-colour, same-size circles
@@ -237,6 +244,9 @@ export function WeeklyScheduleSection() {
                     isRTL ? styles.timeRTL : styles.timeLTR,
                     isPast && styles.past,
                   ]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.8}
                   maxFontSizeMultiplier={1.3}
                 >
                   {formatTimeColumn(activity.startTime, t)}
@@ -332,7 +342,7 @@ const styles = StyleSheet.create({
   // Fixed gutter: the times line up as one column you can scan straight down,
   // which is the whole point of leading with them.
   time: {
-    width: 66,
+    width: 78,
     fontFamily: Fonts.bold,
     fontSize: 13.5,
     lineHeight: 20,
@@ -393,7 +403,7 @@ const styles = StyleSheet.create({
   // full height of the row, exactly as it does on an activity row.
   nowRow: { flexDirection: "row", gap: 10 },
   nowLabel: {
-    width: 66,
+    width: 78,
     fontFamily: Fonts.bold,
     fontSize: 12,
     lineHeight: 20,

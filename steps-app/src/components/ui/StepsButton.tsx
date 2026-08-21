@@ -138,6 +138,11 @@ export function StepsButton({
             borderWidth: isOutline ? 1.5 : 0,
             borderColor: Colors.primary,
             shadowOpacity: isOutline ? 0 : 0.2,
+            // Android ignores shadowOpacity and draws from elevation alone.
+            // On the outline button the fill is 5% terracotta, so that
+            // shadow showed straight through it as a second, lighter block
+            // inside the pill — the "box in a box".
+            elevation: isOutline ? 0 : 3,
           },
           isInactive && styles.inactive,
           style,

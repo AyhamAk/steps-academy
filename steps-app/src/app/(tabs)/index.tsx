@@ -889,7 +889,10 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   carouselSlide: {
-    height: 150,
+    // minHeight, not height: at a larger font scale or in Arabic the
+    // headline takes a second line and a fixed 150 clipped the CTA off the
+    // bottom, since the slide also clips its overflow.
+    minHeight: 150,
     borderRadius: 24,
     padding: 20,
     justifyContent: "center",
@@ -944,6 +947,7 @@ const styles = StyleSheet.create({
   carouselCtaText: {
     fontFamily: Fonts.bold,
     fontSize: 13,
+    lineHeight: 18,
     color: "#FFFFFF",
   },
   carouselDots: {

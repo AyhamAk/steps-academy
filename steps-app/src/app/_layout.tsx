@@ -1,6 +1,6 @@
 import "../../global.css";
 
-import { QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider, useQuery } from "@tanstack/react-query";
 import {
   Nunito_400Regular,
   Nunito_600SemiBold,
@@ -10,6 +10,9 @@ import {
 import { useFonts } from "expo-font";
 import { Stack, usePathname, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import { useTranslation } from "../i18n/useTranslation";
+import { getNotifications } from "../services/notificationsApi";
+import { raiseBannersForNew, resetSeenNotifications } from "../services/localNotifications";
 import * as Notifications from "expo-notifications";
 import { useEffect, useRef, useState } from "react";
 import { I18nManager, View } from "react-native";
@@ -121,6 +124,38 @@ function usePushRegistration(token: string | null, userId: string | null) {
 
 // A tap on a push notification (app backgrounded or killed) should land on
 // the same screen as tapping its in-app equivalent in the notifications list.
+/**
+ * Polls for new notifications and raises a system banner for each one.
+  *
+ * Remote push cannot work until the build carries a Firebase config, so this
+ * covers the case that matters day to day: the app is open, something
+ * happens, and the parent should see a banner rather than only a number on a
+ * bell they might not look at.
+ */
+function useNotificationBanners(token: string | null) {
+  const { t } = useTranslation();
+
+  const { data } = useQuery({
+    queryKey: ["notifications"],
+    queryFn: getNotifications,
+    enabled: !!token,
+    refetchInterval: 30_000,
+    // Keep polling in the background so a banner can still arrive while the
+    // parent is on another screen.
+    refetchIntervalInBackground: false,
+  });
+
+  useEffect(() => {
+    if (!token || !data) return;
+    void raiseBannersForNew(data.notifications, t);
+  }, [token, data, t]);
+
+  // A different account must not inherit the previous one's banner history.
+  useEffect(() => {
+    if (!token) void resetSeenNotifications();
+  }, [token]);
+}
+
 function useNotificationTapNavigation() {
   const router = useRouter();
   useEffect(() => {
@@ -159,6 +194,7 @@ export default function RootLayout() {
   useRTLReconciliation(ready);
   const userId = useAuthStore((state) => state.user?.id ?? null);
   usePushRegistration(token, userId);
+  useNotificationBanners(token);
   useNotificationTapNavigation();
 
   if (!ready) {
