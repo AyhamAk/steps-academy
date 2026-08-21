@@ -50,6 +50,11 @@ export async function logoutRequest() {
   await api.post("/api/auth/logout");
 }
 
-export async function updatePushTokenRequest(pushToken: string) {
-  await api.patch("/api/auth/push-token", { pushToken });
+export async function updatePushTokenRequest(pushToken: string, locale: string) {
+  await api.patch("/api/auth/push-token", { pushToken, locale });
+}
+
+/** Push copy is written server-side, so the server has to know the language. */
+export async function updateLocaleRequest(locale: string) {
+  await api.patch("/api/auth/locale", { locale });
 }

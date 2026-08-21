@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 
 import { processAndUploadImage } from "../lib/imageUpload";
 import { sendPushToUsers } from "../lib/push";
+import { albumPublished } from "../lib/pushCopy";
 import { getSignedGetUrl } from "../lib/r2";
 import { DEFAULT_PAGE_SIZE, EventModel } from "../models/event";
 import { NotificationModel } from "../models/notification";
@@ -98,28 +99,9 @@ export async function createEvent(req: Request, res: Response) {
     createdBy: req.userId!,
   });
 
-  // Only the guardians of children who were actually at the event. Telling
-  // every parent in the academy about an album their child is not in is noise,
-  // and it hints at which children attended what.
-  const guardianIds = new Set<string>();
-  for (const studentId of students.map((student) => student.id)) {
-    const guardians = await StudentModel.listGuardians(studentId);
-    for (const guardian of guardians) guardianIds.add(guardian.id);
-  }
-
-  if (guardianIds.size > 0) {
-    const recipients = await UserModel.listByIds([...guardianIds]);
-    await NotificationModel.createForUsers([...guardianIds], {
-      type: "event",
-      eventName: event.name,
-      eventId: event.id,
-    });
-    await sendPushToUsers(recipients, {
-      title: "New album",
-      body: event.name,
-      data: { type: "event", eventId: event.id },
-    });
-  }
+  // Deliberately silent. An event is created empty and the admin then uploads
+  // into it, so announcing here told families about an album with no photos in
+  // it. Families are told once, from publishEvent, when the admin is finished.
 
   res.status(201).json({
     event: { ...serializeEvent(event), photoCount: 0, previewUrls: [], attendees: event.attendees ?? [] },
@@ -264,8 +246,40 @@ export async function uploadPhotos(req: Request, res: Response) {
     photos.push(await serializePhoto(photo.id));
   }
 
-  // Notify once per tagged child for this whole batch — not once per photo,
-  // which would spam a parent with 20 notifications for a 20-photo upload.
+  // Deliberately silent. The client uploads one photo per request, so
+  // notifying here sent a parent one notification per photo — twenty for a
+  // twenty-photo album. publishEvent tells them once, when the admin is done.
+
+  res.status(201).json({ photos });
+}
+
+/**
+ * Tells families about a finished album.
+ *
+ * Publishing is its own step because neither of the moments before it means
+ * "this is ready to look at": the event is created empty, and photos arrive
+ * one request at a time. The admin decides when it is finished.
+ *
+ * Guarded by notifiedAt, so tapping Done twice — or reopening a finished album
+ * and closing it again — cannot notify the same families a second time.
+ */
+export async function publishEvent(req: Request, res: Response) {
+  const event = await EventModel.findById(param(req, "eventId"));
+  if (!event) {
+    return res.status(404).json({ message: "Event not found" });
+  }
+  if (event.notifiedAt) {
+    return res.json({ published: false, reason: "already-published" });
+  }
+
+  const photoCount = await PhotoModel.countByEvent(event.id);
+  if (photoCount === 0) {
+    return res.status(400).json({ message: "Add photos before publishing the album" });
+  }
+
+  // Only guardians of children who were actually at the event. Telling every
+  // parent about an album their child is not in is noise, and it hints at
+  // which children attended what.
   for (const student of event.attendees) {
     const guardians = await StudentModel.listGuardians(student.id);
     if (guardians.length === 0) continue;
@@ -274,17 +288,14 @@ export async function uploadPhotos(req: Request, res: Response) {
       guardians.map((guardian) => guardian.id),
       { type: "photo", childName: student.name, eventId: event.id }
     );
-    await sendPushToUsers(guardians, {
-      title: `New photos of ${student.name}`,
-      body:
-        photos.length === 1
-          ? `1 new photo from ${event.name}`
-          : `${photos.length} new photos from ${event.name}`,
-      data: { type: "photo", eventId: event.id },
-    });
+    await sendPushToUsers(guardians, (locale) => ({
+      ...albumPublished(event.name, locale),
+      data: { type: "event", eventId: event.id },
+    }));
   }
 
-  res.status(201).json({ photos });
+  await EventModel.markNotified(event.id);
+  res.json({ published: true });
 }
 
 export async function listEventPhotos(req: Request, res: Response) {

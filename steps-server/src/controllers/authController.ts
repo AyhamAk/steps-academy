@@ -174,12 +174,28 @@ export async function deleteAccount(req: Request, res: Response) {
 }
 
 export async function updatePushToken(req: Request, res: Response) {
-  const { pushToken } = req.body as { pushToken?: string };
+  const { pushToken, locale } = req.body as { pushToken?: string; locale?: string };
   if (!pushToken || typeof pushToken !== "string") {
     return res.status(400).json({ message: "pushToken is required" });
   }
   await UserModel.updatePushToken(req.userId!, pushToken);
+  // Sent alongside the token because push copy is rendered by the operating
+  // system and cannot be translated on arrival — it has to leave here in the
+  // language the parent reads.
+  if (locale === "en" || locale === "ar" || locale === "he") {
+    await UserModel.updateLocale(req.userId!, locale);
+  }
   res.json({ message: "Push token saved" });
+}
+
+/** Sent when the parent changes language, so push copy follows them. */
+export async function updateLocale(req: Request, res: Response) {
+  const { locale } = req.body as { locale?: string };
+  if (locale !== "en" && locale !== "ar" && locale !== "he") {
+    return res.status(400).json({ message: "locale must be en, ar or he" });
+  }
+  await UserModel.updateLocale(req.userId!, locale);
+  res.json({ message: "Locale saved" });
 }
 
 export async function changePassword(req: Request, res: Response) {

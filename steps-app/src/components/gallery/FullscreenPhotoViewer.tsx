@@ -5,7 +5,6 @@ import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  Image,
   Modal,
   NativeScrollEvent,
   NativeSyntheticEvent,
@@ -25,6 +24,7 @@ import { track } from "../../services/analytics";
 import { useTranslation } from "../../i18n/useTranslation";
 import { matchedTagNames, Photo, resolvePhotoUrl } from "../../services/galleryApi";
 import { Touchable } from "../ui/Touchable";
+import { ZoomableImage } from "./ZoomableImage";
 
 type FullscreenPhotoViewerProps = {
   photos: Photo[] | null;
@@ -46,12 +46,12 @@ export function FullscreenPhotoViewer({
   const { t, isRTL } = useTranslation();
   const { width } = useWindowDimensions();
   const [index, setIndex] = useState(initialIndex);
-  const [fit, setFit] = useState<"contain" | "cover">("contain");
   const [busy, setBusy] = useState<"download" | "share" | null>(null);
+  // A zoomed photo owns its own drags; the pager would otherwise swipe away.
+  const [isZoomed, setIsZoomed] = useState(false);
   const insets = useSafeAreaInsets();
   const scrollRef = useRef<ScrollView>(null);
   const didInitialScroll = useRef(false);
-  const lastTap = useRef(0);
   const openedAt = useRef(0);
   const swipes = useRef(0);
 
@@ -85,16 +85,6 @@ export function FullscreenPhotoViewer({
   const handleMomentumEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     swipes.current += 1;
     setIndex(Math.round(e.nativeEvent.contentOffset.x / width));
-  };
-
-  const handleTap = () => {
-    const now = Date.now();
-    if (now - lastTap.current < 280) {
-      setFit((prev) => (prev === "contain" ? "cover" : "contain"));
-      lastTap.current = 0;
-    } else {
-      lastTap.current = now;
-    }
   };
 
   const downloadToCache = () =>
@@ -148,6 +138,7 @@ export function FullscreenPhotoViewer({
           horizontal
           pagingEnabled
           showsHorizontalScrollIndicator={false}
+          scrollEnabled={!isZoomed}
           onMomentumScrollEnd={handleMomentumEnd}
           onLayout={() => {
             if (didInitialScroll.current) return;
@@ -158,13 +149,12 @@ export function FullscreenPhotoViewer({
           }}
         >
           {photos.map((photo) => (
-            <Touchable key={photo.id} onPress={handleTap} style={{ width }}>
-              <Image
-                source={{ uri: resolvePhotoUrl(photo.url) }}
-                style={styles.image}
-                resizeMode={fit}
-              />
-            </Touchable>
+            <ZoomableImage
+              key={photo.id}
+              uri={resolvePhotoUrl(photo.url)}
+              width={width}
+              onZoomChange={setIsZoomed}
+            />
           ))}
         </ScrollView>
 
@@ -261,9 +251,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#000000",
   },
   rowReverse: { flexDirection: "row-reverse" },
-  image: {
-    flex: 1,
-  },
   topBar: {
     position: "absolute",
     start: 0,

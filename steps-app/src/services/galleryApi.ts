@@ -127,6 +127,18 @@ export async function uploadEventPhoto(
   return data.photos[0];
 }
 
+/**
+ * Announces a finished album to the families of the children in it.
+ *
+ * Safe to call more than once - the server only notifies the first time.
+ */
+export async function publishEvent(eventId: string) {
+  const { data } = await api.post<{ published: boolean }>(
+    `/api/gallery/events/${eventId}/publish`
+  );
+  return data.published;
+}
+
 export async function listEventPhotosAdmin(eventId: string) {
   const { data } = await api.get<{ event: EventSummary; photos: Photo[] }>(
     `/api/gallery/events/${eventId}/photos`

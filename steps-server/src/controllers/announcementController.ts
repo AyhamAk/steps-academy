@@ -4,6 +4,7 @@ import { AnnouncementModel } from "../models/announcement";
 import { NotificationModel } from "../models/notification";
 import { UserModel } from "../models/user";
 import { sendPushToUsers } from "../lib/push";
+import { announcementPosted } from "../lib/pushCopy";
 
 export async function createAnnouncement(req: Request, res: Response) {
   const { text } = req.body as { text?: string };
@@ -25,11 +26,7 @@ export async function createAnnouncement(req: Request, res: Response) {
   await NotificationModel.createForUsers(parents.map((parent) => parent.id), {
     type: "announcement",
   });
-  await sendPushToUsers(parents, {
-    title: "New announcement",
-    body: announcement.text.length > 150 ? `${announcement.text.slice(0, 150)}...` : announcement.text,
-    data: { type: "announcement" },
-  });
+  await sendPushToUsers(parents, (locale) => announcementPosted(announcement.text, locale));
 
   res.status(201).json({ announcement });
 }

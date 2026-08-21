@@ -16,6 +16,7 @@ import { raiseBannersForNew, resetSeenNotifications } from "../services/localNot
 import * as Notifications from "expo-notifications";
 import { useEffect, useRef, useState } from "react";
 import { I18nManager, View } from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 import { AnimatedIntro } from "../components/ui/AnimatedIntro";
 import { queryClient } from "../lib/queryClient";
@@ -23,7 +24,7 @@ import { Colors } from "../constants/Colors";
 import { AUTH_ENABLED } from "../constants/flags";
 import { applyLocaleDirection } from "../i18n/applyLocaleDirection";
 import { registerForPushNotificationsAsync } from "../services/pushNotifications";
-import { updatePushTokenRequest } from "../services/authApi";
+import { updateLocaleRequest, updatePushTokenRequest } from "../services/authApi";
 import { startAnalytics, track } from "../services/analytics";
 import { useAuthStore } from "../store/authStore";
 import { isRTLLocale, useLocaleStore } from "../store/localeStore";
@@ -116,6 +117,7 @@ function useRTLReconciliation(ready: boolean) {
 function usePushRegistration(
   token: string | null,
   userId: string | null,
+  locale: string,
   onPushReady: (ready: boolean) => void
 ) {
   useEffect(() => {
@@ -124,9 +126,23 @@ function usePushRegistration(
       // Whether this device can receive server push decides whether the local
       // poller below needs to do anything at all.
       onPushReady(!!pushToken);
-      if (pushToken) updatePushTokenRequest(pushToken).catch(() => {});
+      if (pushToken) updatePushTokenRequest(pushToken, locale).catch(() => {});
     });
-  }, [token, userId, onPushReady]);
+  }, [token, userId, locale, onPushReady]);
+}
+
+/**
+ * Keeps the server's idea of the parent's language in step with the app's.
+ *
+ * Push copy is rendered by the operating system, so it has to be written in
+ * the right language before it is sent — the device cannot translate it on
+ * arrival the way in-app text is translated.
+ */
+function useLocaleSync(token: string | null, locale: string) {
+  useEffect(() => {
+    if (!token) return;
+    updateLocaleRequest(locale).catch(() => {});
+  }, [token, locale]);
 }
 
 // A tap on a push notification (app backgrounded or killed) should land on
@@ -218,7 +234,9 @@ export default function RootLayout() {
   // The server pushes for every notification it creates, so local banners are
   // a fallback for devices that cannot receive push — not a second copy of it.
   const [canReceivePush, setCanReceivePush] = useState(false);
-  usePushRegistration(token, userId, setCanReceivePush);
+  const locale = useLocaleStore((state) => state.locale);
+  usePushRegistration(token, userId, locale, setCanReceivePush);
+  useLocaleSync(token, locale);
   useNotificationTapNavigation();
 
   if (!ready) {
@@ -227,7 +245,9 @@ export default function RootLayout() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <View style={{ flex: 1 }}>
+      {/* Required by react-native-gesture-handler: without it the pinch-to-zoom
+          gestures in the photo viewer never fire on Android. */}
+      <GestureHandlerRootView style={{ flex: 1 }}>
         {/* Dark icons: the app is cream throughout, and under edge-to-edge
             the status bar itself is transparent. */}
         <StatusBar style="dark" />
@@ -239,7 +259,7 @@ export default function RootLayout() {
           }}
         />
         {isIntroDone ? null : <AnimatedIntro onDone={() => setIsIntroDone(true)} />}
-      </View>
+      </GestureHandlerRootView>
     </QueryClientProvider>
   );
 }

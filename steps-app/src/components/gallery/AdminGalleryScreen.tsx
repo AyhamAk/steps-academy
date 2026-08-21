@@ -23,6 +23,7 @@ import {
   listEventPhotosAdmin,
   listEvents,
   Photo,
+  publishEvent,
   setGalleryQuote,
   uploadEventPhoto,
 } from "../../services/galleryApi";
@@ -122,6 +123,17 @@ export function AdminGalleryScreen() {
   };
 
   const closeReview = () => {
+    // Done is what tells families the album exists. Creating the event and
+    // uploading into it are both mid-edit states — announcing at either point
+    // meant a notification about an empty album, then one per photo.
+    //
+    // Fire-and-forget: the admin should not wait on a fan-out, and the server
+    // ignores a second publish, so a reopened album cannot notify twice.
+    const eventId = reviewEvent?.id;
+    if (eventId && reviewPhotos.length > 0) {
+      publishEvent(eventId).catch(() => {});
+    }
+
     setReviewEvent(null);
     setReviewPhotos([]);
     setUploads([]);

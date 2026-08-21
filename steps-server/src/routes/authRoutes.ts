@@ -9,6 +9,7 @@ import {
   me,
   register,
   updateMe,
+  updateLocale,
   updatePushToken,
 } from "../controllers/authController";
 import { checkInvite } from "../controllers/inviteController";
@@ -28,6 +29,7 @@ router.patch("/me", requireAuth, updateMe);
 router.delete("/me", requireAuth, deleteAccount);
 router.patch("/password", requireAuth, changePassword);
 router.patch("/push-token", requireAuth, updatePushToken);
+router.patch("/locale", requireAuth, updateLocale);
 router.post("/logout", requireAuth, logout);
 
 export default router;

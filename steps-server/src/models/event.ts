@@ -44,6 +44,16 @@ export const EventModel = {
     return event ? withAttendees(event) : null;
   },
 
+  /**
+   * Records that families have been told about this album.
+   *
+   * Only ever set once — the check lives in the caller, and this stamps the
+   * time so a second Done tap has something to find.
+   */
+  async markNotified(id: string): Promise<void> {
+    await prisma.event.update({ where: { id }, data: { notifiedAt: new Date() } });
+  },
+
   async listAll(limit = DEFAULT_PAGE_SIZE, offset = 0): Promise<EventWithAttendees[]> {
     const events = await prisma.event.findMany({
       orderBy: { date: "desc" },

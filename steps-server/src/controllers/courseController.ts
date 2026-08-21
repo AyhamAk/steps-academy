@@ -2,6 +2,12 @@ import { EnrollmentStatus } from "@prisma/client";
 import { Request, Response } from "express";
 
 import { sendPushToUsers } from "../lib/push";
+import {
+  childLeftCourse,
+  coursePlaceConfirmed,
+  coursePlaceDeclined,
+  waitlistRequest,
+} from "../lib/pushCopy";
 import { CourseModel, EnrollmentModel, EnrollmentWithContext } from "../models/course";
 import { NotificationModel } from "../models/notification";
 import { StudentModel } from "../models/student";
@@ -193,11 +199,9 @@ export async function requestEnrollment(req: Request, res: Response) {
   if (enrollment.status === "pending") {
     const admins = await UserModel.listAdmins();
     if (admins.length > 0) {
-      await sendPushToUsers(admins, {
-        title: "New waiting list request",
-        body: `${enrollment.student.name} is waiting for a place in ${enrollment.course.name}.`,
-        data: { type: "course" },
-      });
+      await sendPushToUsers(admins, (locale) =>
+        waitlistRequest(enrollment.student.name, enrollment.course.name, locale)
+      );
     }
   }
 
@@ -229,11 +233,9 @@ export async function cancelEnrollment(req: Request, res: Response) {
   if (wasApproved) {
     const admins = await UserModel.listAdmins();
     if (admins.length > 0) {
-      await sendPushToUsers(admins, {
-        title: "A child left a course",
-        body: `${enrollment.student.name} is no longer enrolled in ${enrollment.course.name}.`,
-        data: { type: "course" },
-      });
+      await sendPushToUsers(admins, (locale) =>
+        childLeftCourse(enrollment.student.name, enrollment.course.name, locale)
+      );
     }
   }
 
@@ -290,13 +292,12 @@ export async function decideEnrollment(req: Request, res: Response) {
         courseName: enrollment.course.name,
       }
     );
-    await sendPushToUsers(guardians, {
-      title: status === "approved" ? "Course request approved 🎉" : "Course request declined",
-      body:
+    await sendPushToUsers(guardians, (locale) => {
+      const copy =
         status === "approved"
-          ? `${enrollment.student.name} is enrolled in ${enrollment.course.name}.`
-          : `${enrollment.student.name}'s request for ${enrollment.course.name} wasn't approved.`,
-      data: { type: "course", courseId: enrollment.courseId },
+          ? coursePlaceConfirmed(enrollment.student.name, enrollment.course.name, locale)
+          : coursePlaceDeclined(enrollment.student.name, enrollment.course.name, locale);
+      return { ...copy, data: { type: "course", courseId: enrollment.courseId } };
     });
   }
 

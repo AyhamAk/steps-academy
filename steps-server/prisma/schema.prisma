@@ -84,6 +84,9 @@ model User {
   googleId         String?
   role             Role     @default(parent)
   pushToken        String?
+  /// Language the app was last used in, so push copy can be written in it.
+  /// Null falls back to English.
+  locale           String?
   /**
    * What the parent said their child is called at sign-up. A claim only —
    * it grants nothing. An admin reads it to know who to link, then links a
@@ -209,6 +212,11 @@ model Event {
   date      String
   // Admin-written note shown to parents on the event's gallery. One per event.
   caption   String?
+  /// When the album was published to families. Null means the admin is still
+  /// working on it: an event is created empty and photos arrive one request at
+  /// a time, so notifying on either would tell a parent about an album that is
+  /// still half-built — once per photo.
+  notifiedAt DateTime?
   createdBy String
   creator   User     @relation(fields: [createdBy], references: [id])
   createdAt DateTime @default(now())

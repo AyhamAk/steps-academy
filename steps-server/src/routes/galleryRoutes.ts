@@ -16,6 +16,7 @@ import {
   updateEvent,
   updateEventAttendees,
   updateEventCaption,
+  publishEvent,
   uploadPhotos,
 } from "../controllers/galleryController";
 import { adminOnly, requireAuth } from "../middleware/auth";
@@ -40,6 +41,8 @@ router.post(
   uploadPhotos
 );
 router.get("/events/:eventId/photos", requireAuth, adminOnly, listEventPhotos);
+// Announcing a finished album is its own step - see publishEvent.
+router.post("/events/:eventId/publish", requireAuth, adminOnly, publishEvent);
 router.patch("/events/:eventId/caption", requireAuth, adminOnly, updateEventCaption);
 router.patch("/events/:eventId/attendees", requireAuth, adminOnly, updateEventAttendees);
 

@@ -58,6 +58,14 @@ export const UserModel = {
   },
 
   /** `token: null` clears it — used on logout so a stale device stops receiving pushes. */
+  async updateLocale(id: string, locale: string): Promise<void> {
+    try {
+      await prisma.user.update({ where: { id }, data: { locale } });
+    } catch {
+      // A missing user just means nothing to record.
+    }
+  },
+
   async updatePushToken(id: string, pushToken: string | null): Promise<User | null> {
     try {
       return await prisma.user.update({ where: { id }, data: { pushToken } });
