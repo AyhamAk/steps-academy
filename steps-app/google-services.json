@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "749140018552",
+    "project_id": "steps-2a502",
+    "storage_bucket": "steps-2a502.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:749140018552:android:4d974f2e5885731ae5b48d",
+        "android_client_info": {
+          "package_name": "com.stepsacademy.steps"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBBMNQdVZ49YSiwU50irfSEY2tsAq6bRak"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -23,6 +23,7 @@
     "android": {
       "package": "com.stepsacademy.steps",
       "versionCode": 1,
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "backgroundColor": "#FFFDF8",
         "foregroundImage": "./assets/android-icon-foreground.png",
