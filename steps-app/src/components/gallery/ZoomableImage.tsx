@@ -1,27 +1,29 @@
-import { Image, StyleSheet } from "react-native";
-import { Gesture, GestureDetector } from "react-native-gesture-handler";
-import Animated, {
-  runOnJS,
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-} from "react-native-reanimated";
+import { useMemo, useRef } from "react";
+import { Animated, Image, PanResponder, StyleSheet } from "react-native";
 
 const MAX_SCALE = 4;
 const DOUBLE_TAP_SCALE = 2;
+const DOUBLE_TAP_MS = 280;
+
+const distanceBetween = (touches: { pageX: number; pageY: number }[]) => {
+  const [a, b] = touches;
+  return Math.hypot(a.pageX - b.pageX, a.pageY - b.pageY);
+};
 
 /**
  * One photo in the fullscreen viewer, with pinch-to-zoom.
  *
  * Zoom used to be a double tap that flipped resizeMode between contain and
  * cover — which crops rather than magnifies, so it could never show detail.
- * This is the gesture people already know from Instagram and Photos: two
- * fingers to zoom, one to move around once zoomed, and a double tap as a
- * shortcut.
+ * This is the gesture people know from Instagram and Photos: two fingers to
+ * zoom, one to move around once zoomed, double tap as a shortcut.
  *
- * While zoomed, the pan gesture has to win over the pager underneath it or
- * dragging the photo would swipe to the next one instead. Back at 1× the
- * pager takes over again, so swiping between photos still works.
+ * Built on PanResponder rather than react-native-gesture-handler on purpose.
+ * gesture-handler is a native module, so adding it breaks every client whose
+ * binary predates it and forces a rebuild on both platforms — which is not
+ * possible on iOS here without a paid Apple account. PanResponder ships in
+ * React Native itself, so this works in any existing build and can go out
+ * over the air.
  */
 export function ZoomableImage({
   uri,
@@ -33,83 +35,123 @@ export function ZoomableImage({
   /** Lets the viewer lock its pager while a photo is zoomed in. */
   onZoomChange: (zoomed: boolean) => void;
 }) {
-  const scale = useSharedValue(1);
-  const savedScale = useSharedValue(1);
-  const translateX = useSharedValue(0);
-  const translateY = useSharedValue(0);
-  const savedX = useSharedValue(0);
-  const savedY = useSharedValue(0);
+  const scale = useRef(new Animated.Value(1)).current;
+  const translateX = useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(0)).current;
 
-  const reset = () => {
-    "worklet";
-    scale.value = withTiming(1);
-    savedScale.value = 1;
-    translateX.value = withTiming(0);
-    translateY.value = withTiming(0);
-    savedX.value = 0;
-    savedY.value = 0;
-    runOnJS(onZoomChange)(false);
-  };
+  // Committed values, read at the start of the next gesture. Animated.Value
+  // has no synchronous getter that is safe to rely on mid-gesture.
+  const committed = useRef({ scale: 1, x: 0, y: 0 });
+  const pinchStartDistance = useRef(0);
+  const panStart = useRef({ x: 0, y: 0 });
+  const lastTapAt = useRef(0);
 
-  const pinch = Gesture.Pinch()
-    .onUpdate((event) => {
-      // Clamped at both ends: below 1 the photo would float away from the
-      // frame, and past 4 it is only pixels.
-      scale.value = Math.min(Math.max(savedScale.value * event.scale, 0.8), MAX_SCALE);
-    })
-    .onEnd(() => {
-      if (scale.value <= 1) {
-        reset();
-        return;
-      }
-      savedScale.value = scale.value;
-      runOnJS(onZoomChange)(true);
-    });
+  const panResponder = useMemo(
+    () =>
+      PanResponder.create({
+        // Claim a second finger immediately; a single finger only once there
+        // is something to pan around, so the pager keeps its swipe at 1×.
+        onStartShouldSetPanResponder: (event) =>
+          event.nativeEvent.touches.length === 2 || committed.current.scale > 1,
+        onMoveShouldSetPanResponder: (event) =>
+          event.nativeEvent.touches.length === 2 || committed.current.scale > 1,
 
-  const pan = Gesture.Pan()
-    // Two fingers means the pinch is still in charge; one finger only pans
-    // once there is something to pan around.
-    .minPointers(1)
-    .onUpdate((event) => {
-      if (scale.value <= 1) return;
-      translateX.value = savedX.value + event.translationX;
-      translateY.value = savedY.value + event.translationY;
-    })
-    .onEnd(() => {
-      savedX.value = translateX.value;
-      savedY.value = translateY.value;
-    });
+        onPanResponderGrant: (event) => {
+          const touches = event.nativeEvent.touches;
+          if (touches.length === 2) {
+            pinchStartDistance.current = distanceBetween(touches);
+            return;
+          }
+          panStart.current = { x: committed.current.x, y: committed.current.y };
 
-  const doubleTap = Gesture.Tap()
-    .numberOfTaps(2)
-    .onEnd(() => {
-      if (scale.value > 1) {
-        reset();
-        return;
-      }
-      scale.value = withTiming(DOUBLE_TAP_SCALE);
-      savedScale.value = DOUBLE_TAP_SCALE;
-      runOnJS(onZoomChange)(true);
-    });
+          const now = Date.now();
+          if (now - lastTapAt.current < DOUBLE_TAP_MS) {
+            lastTapAt.current = 0;
+            toggleDoubleTap();
+          } else {
+            lastTapAt.current = now;
+          }
+        },
 
-  // Pinch and pan run together so a two-finger gesture can zoom and reposition
-  // at once; the double tap is exclusive so it cannot fire mid-pinch.
-  const gesture = Gesture.Exclusive(doubleTap, Gesture.Simultaneous(pinch, pan));
+        onPanResponderMove: (event, gesture) => {
+          const touches = event.nativeEvent.touches;
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [
-      { translateX: translateX.value },
-      { translateY: translateY.value },
-      { scale: scale.value },
-    ],
-  }));
+          if (touches.length === 2) {
+            if (pinchStartDistance.current === 0) {
+              pinchStartDistance.current = distanceBetween(touches);
+              return;
+            }
+            const ratio = distanceBetween(touches) / pinchStartDistance.current;
+            // Clamped both ways: under 1 the photo drifts out of its frame,
+            // over 4 there is nothing left but pixels.
+            const next = Math.min(Math.max(committed.current.scale * ratio, 0.8), MAX_SCALE);
+            scale.setValue(next);
+            return;
+          }
+
+          if (committed.current.scale <= 1) return;
+          translateX.setValue(panStart.current.x + gesture.dx);
+          translateY.setValue(panStart.current.y + gesture.dy);
+        },
+
+        onPanResponderRelease: (event, gesture) => {
+          pinchStartDistance.current = 0;
+
+          // @ts-expect-error _value is the only synchronous read available.
+          const currentScale: number = scale._value ?? committed.current.scale;
+
+          if (currentScale <= 1) {
+            reset();
+            return;
+          }
+          committed.current = {
+            scale: currentScale,
+            x: panStart.current.x + gesture.dx,
+            y: panStart.current.y + gesture.dy,
+          };
+          onZoomChange(true);
+        },
+
+        onPanResponderTerminationRequest: () => false,
+      }),
+    []
+  );
+
+  function reset() {
+    committed.current = { scale: 1, x: 0, y: 0 };
+    Animated.parallel([
+      Animated.timing(scale, { toValue: 1, duration: 180, useNativeDriver: true }),
+      Animated.timing(translateX, { toValue: 0, duration: 180, useNativeDriver: true }),
+      Animated.timing(translateY, { toValue: 0, duration: 180, useNativeDriver: true }),
+    ]).start();
+    onZoomChange(false);
+  }
+
+  function toggleDoubleTap() {
+    if (committed.current.scale > 1) {
+      reset();
+      return;
+    }
+    committed.current = { scale: DOUBLE_TAP_SCALE, x: 0, y: 0 };
+    Animated.timing(scale, {
+      toValue: DOUBLE_TAP_SCALE,
+      duration: 180,
+      useNativeDriver: true,
+    }).start();
+    onZoomChange(true);
+  }
 
   return (
-    <GestureDetector gesture={gesture}>
-      <Animated.View style={[styles.frame, { width }, animatedStyle]}>
-        <Image source={{ uri }} style={styles.image} resizeMode="contain" />
-      </Animated.View>
-    </GestureDetector>
+    <Animated.View
+      {...panResponder.panHandlers}
+      style={[
+        styles.frame,
+        { width },
+        { transform: [{ translateX }, { translateY }, { scale }] },
+      ]}
+    >
+      <Image source={{ uri }} style={styles.image} resizeMode="contain" />
+    </Animated.View>
   );
 }
 

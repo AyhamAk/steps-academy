@@ -16,7 +16,6 @@ import { raiseBannersForNew, resetSeenNotifications } from "../services/localNot
 import * as Notifications from "expo-notifications";
 import { useEffect, useRef, useState } from "react";
 import { I18nManager, View } from "react-native";
-import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 import { AnimatedIntro } from "../components/ui/AnimatedIntro";
 import { queryClient } from "../lib/queryClient";
@@ -245,9 +244,7 @@ export default function RootLayout() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      {/* Required by react-native-gesture-handler: without it the pinch-to-zoom
-          gestures in the photo viewer never fire on Android. */}
-      <GestureHandlerRootView style={{ flex: 1 }}>
+      <View style={{ flex: 1 }}>
         {/* Dark icons: the app is cream throughout, and under edge-to-edge
             the status bar itself is transparent. */}
         <StatusBar style="dark" />
@@ -259,7 +256,7 @@ export default function RootLayout() {
           }}
         />
         {isIntroDone ? null : <AnimatedIntro onDone={() => setIsIntroDone(true)} />}
-      </GestureHandlerRootView>
+      </View>
     </QueryClientProvider>
   );
 }
