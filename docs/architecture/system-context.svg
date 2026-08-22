@@ -1,0 +1,187 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 900" width="1440" height="900" role="img" aria-label="Steps system context diagram">
+  <title>Steps — system context</title>
+  <desc>Two owned systems, steps-app and steps-server, and the external services they integrate with.</desc>
+
+  <style>
+    .bg    { fill: #FFFDF8; }
+    .tier  { fill: #F5EFE4; stroke: #E5DCC8; stroke-width: 1; }
+    .tierlab { font: 600 12px Nunito, system-ui, sans-serif; fill: #8C7B65; letter-spacing: 1.2px; }
+    .name  { font: 700 16px Nunito, system-ui, sans-serif; fill: #2C2416; }
+    .sub   { font: 400 12px Nunito, system-ui, sans-serif; fill: #6F6250; }
+    .nameL { font: 700 16px Nunito, system-ui, sans-serif; fill: #FFFDF8; }
+    .subL  { font: 400 12px Nunito, system-ui, sans-serif; fill: #F5EFE4; }
+    .edge  { stroke: #8C7B65; stroke-width: 1.6; fill: none; marker-end: url(#arrow); }
+    .edgeP { stroke: #C4756A; stroke-width: 1.6; fill: none; stroke-dasharray: 6 5; marker-end: url(#arrowP); }
+    .lab   { font: 400 11px Nunito, system-ui, sans-serif; fill: #6F6250; }
+    .labP  { font: 400 11px Nunito, system-ui, sans-serif; fill: #C4756A; }
+    .tag   { font: 700 9px Nunito, system-ui, sans-serif; fill: #2C2416; letter-spacing: .5px; }
+    .box   { stroke-width: 1.5; }
+  </style>
+
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#8C7B65"/>
+    </marker>
+    <marker id="arrowP" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#C4756A"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="1440" height="900"/>
+
+  <rect class="tier" x="440" y="28" width="580" height="94" rx="14" opacity=".55"/>
+  <rect class="tier" x="452" y="152" width="556" height="428" rx="16" opacity=".8"/>
+  <text class="tierlab" x="452" y="20">ACTORS</text>
+  <text class="tierlab" x="452" y="146">OWNED SYSTEMS</text>
+  <text class="tierlab" x="100" y="146">EXTERNAL SERVICES</text>
+
+  <path class="edge" d="M 650 110 L 650 173"/>
+  <text class="lab" x="392" y="132">On-device · views photos, courses, schedule</text>
+
+  <path class="edge" d="M 890 110 L 890 173"/>
+  <text class="lab" x="900" y="132">On-device · uploads photos, manages courses</text>
+
+  <path class="edge" d="M 830 40 L 830 18 L 40 18 L 40 545 L 476 545"/>
+  <text class="lab" x="60" y="12">HTTPS · basic auth, reads dashboard HTML page</text>
+
+  <path class="edge" d="M 980 90 L 1410 90 L 1410 792 L 1384 792"/>
+  <text class="lab" x="1000" y="82">HTTPS · webfont for the dashboard page</text>
+
+  <path class="edge" d="M 476 200 L 304 200"/>
+  <text class="lab" x="306" y="192">OAuth 2.0 · id token request</text>
+
+  <path class="edge" d="M 476 280 L 304 280"/>
+  <text class="lab" x="306" y="272">HTTPS · OTA bundle check, build artefacts</text>
+
+  <path class="edge" d="M 476 335 L 304 335"/>
+  <text class="lab" x="306" y="327">HTTPS deep link · invite code message</text>
+
+  <path class="edge" d="M 730 340 L 730 406"/>
+  <text class="lab" x="742" y="366">HTTPS/JSON REST /api/* · bearer JWT;</text>
+  <text class="lab" x="742" y="381">photos as multipart upload</text>
+
+  <path class="edge" d="M 980 320 L 1390 320 L 1390 440 L 1344 440"/>
+  <text class="lab" x="1000" y="312">HTTPS · device registration, Expo push token</text>
+
+  <path class="edge" d="M 476 530 L 60 530 L 60 215 L 96 215"/>
+  <text class="lab" x="80" y="248">HTTPS · verifies Google id token</text>
+
+  <path class="edge" d="M 600 560 L 600 676"/>
+  <text class="lab" x="386" y="600">SQL over TLS · users, children,</text>
+  <text class="lab" x="386" y="615">events, enrolments, notifications</text>
+
+  <path class="edge" d="M 840 560 L 840 676"/>
+  <text class="lab" x="852" y="600">S3 API over HTTPS · photo bytes,</text>
+  <text class="lab" x="852" y="615">signed GET urls</text>
+
+  <path class="edge" d="M 980 450 L 1096 450"/>
+  <text class="lab" x="984" y="442">HTTPS/JSON · push messages</text>
+
+  <path class="edge" d="M 520 560 L 520 620 L 340 620 L 340 676"/>
+  <text class="lab" x="176" y="655">HTTPS · seed placeholder images</text>
+
+  <path class="edge" d="M 1220 485 L 1220 501"/>
+  <text class="lab" x="1232" y="499">HTTPS · Android delivery</text>
+
+  <path class="edgeP" d="M 1344 470 L 1370 470 L 1370 622 L 1346 622"/>
+  <text class="labP" x="1020" y="626">HTTPS · iOS delivery</text>
+
+  <path class="edge" d="M 304 460 L 476 460"/>
+  <text class="lab" x="306" y="452">Deploy · container, env vars, runs migrations</text>
+
+  <g>
+    <rect class="box" x="560" y="40" width="180" height="70" rx="12" fill="#F5EFE4" stroke="#2C2416"/>
+    <text class="name" x="650" y="72" text-anchor="middle">Parent</text>
+    <text class="sub"  x="650" y="92" text-anchor="middle">Family using the app</text>
+  </g>
+  <g>
+    <rect class="box" x="800" y="40" width="180" height="70" rx="12" fill="#F5EFE4" stroke="#2C2416"/>
+    <text class="name" x="890" y="72" text-anchor="middle">Admin</text>
+    <text class="sub"  x="890" y="92" text-anchor="middle">Academy staff member</text>
+  </g>
+
+  <g>
+    <rect class="box" x="480" y="175" width="500" height="165" rx="14" fill="#E07A3A" stroke="#B85C28"/>
+    <text class="nameL" x="730" y="235" text-anchor="middle">steps-app</text>
+    <text class="subL"  x="730" y="258" text-anchor="middle">Expo React Native client</text>
+  </g>
+  <g>
+    <rect class="box" x="480" y="410" width="500" height="150" rx="14" fill="#E07A3A" stroke="#B85C28"/>
+    <text class="nameL" x="730" y="470" text-anchor="middle">steps-server</text>
+    <text class="subL"  x="730" y="493" text-anchor="middle">Express REST api</text>
+  </g>
+
+  <g>
+    <rect class="box" x="100" y="170" width="204" height="65" rx="11" fill="#7B9EC4" stroke="#607B99"/>
+    <text class="nameL" x="202" y="196" text-anchor="middle">Google identity</text>
+    <text class="subL"  x="202" y="216" text-anchor="middle">Sign-in and token checks</text>
+  </g>
+  <g>
+    <rect class="box" x="100" y="250" width="204" height="65" rx="11" fill="#7B9EC4" stroke="#607B99"/>
+    <text class="nameL" x="202" y="276" text-anchor="middle">Expo and EAS</text>
+    <text class="subL"  x="202" y="296" text-anchor="middle">Builds and OTA updates</text>
+  </g>
+  <g>
+    <rect class="box" x="100" y="330" width="204" height="65" rx="11" fill="#D4A843" stroke="#B08A2E"/>
+    <text class="name" x="202" y="356" text-anchor="middle">WhatsApp</text>
+    <text class="sub"  x="202" y="376" text-anchor="middle">Invite hand-off</text>
+  </g>
+  <g>
+    <rect class="box" x="100" y="430" width="204" height="65" rx="11" fill="#7B9EC4" stroke="#607B99"/>
+    <text class="nameL" x="202" y="456" text-anchor="middle">Railway</text>
+    <text class="subL"  x="202" y="476" text-anchor="middle">Hosts the api</text>
+  </g>
+
+  <g>
+    <rect class="box" x="1100" y="420" width="244" height="65" rx="11" fill="#D4A843" stroke="#B08A2E"/>
+    <text class="name" x="1222" y="446" text-anchor="middle">Expo push service</text>
+    <text class="sub"  x="1222" y="466" text-anchor="middle">Fan-out to device clouds</text>
+  </g>
+  <g>
+    <rect class="box" x="1100" y="505" width="244" height="65" rx="11" fill="#D4A843" stroke="#B08A2E"/>
+    <text class="name" x="1222" y="531" text-anchor="middle">Firebase messaging</text>
+    <text class="sub"  x="1222" y="551" text-anchor="middle">Android delivery</text>
+  </g>
+  <g opacity=".5">
+    <rect class="box" x="1100" y="590" width="244" height="65" rx="11" fill="#C4756A" stroke="#C4756A" stroke-dasharray="6 5"/>
+    <text class="nameL" x="1222" y="616" text-anchor="middle">Apple push service</text>
+    <text class="subL"  x="1222" y="636" text-anchor="middle">iOS delivery</text>
+  </g>
+
+  <g>
+    <rect class="box" x="240" y="680" width="200" height="65" rx="11" fill="#D4A843" stroke="#B08A2E"/>
+    <text class="name" x="340" y="702" text-anchor="middle">picsum.photos</text>
+    <text class="sub"  x="340" y="720" text-anchor="middle">Seed placeholder images</text>
+    <rect x="297" y="726" width="86" height="15" rx="7" fill="#FFFDF8" stroke="#B08A2E"/>
+    <text class="tag" x="340" y="737" text-anchor="middle">FLAGGED OFF</text>
+  </g>
+  <g>
+    <rect class="box" x="500" y="680" width="200" height="65" rx="11" fill="#5B8A5E" stroke="#476C49"/>
+    <text class="nameL" x="600" y="706" text-anchor="middle">Supabase Postgres</text>
+    <text class="subL"  x="600" y="726" text-anchor="middle">Primary datastore</text>
+  </g>
+  <g>
+    <rect class="box" x="740" y="680" width="200" height="65" rx="11" fill="#5B8A5E" stroke="#476C49"/>
+    <text class="nameL" x="840" y="706" text-anchor="middle">Cloudflare R2</text>
+    <text class="subL"  x="840" y="726" text-anchor="middle">Private photo storage</text>
+  </g>
+  <g>
+    <rect class="box" x="1180" y="760" width="204" height="65" rx="11" fill="#D4A843" stroke="#B08A2E"/>
+    <text class="name" x="1282" y="786" text-anchor="middle">Google Fonts</text>
+    <text class="sub"  x="1282" y="806" text-anchor="middle">Dashboard page webfont</text>
+  </g>
+
+  <g>
+    <rect x="100" y="790" width="470" height="88" rx="12" fill="#F5EFE4" stroke="#E5DCC8"/>
+    <text class="tierlab" x="118" y="812">LEGEND</text>
+    <line x1="120" y1="834" x2="160" y2="834" stroke="#8C7B65" stroke-width="1.6"/>
+    <rect x="166" y="826" width="16" height="16" rx="4" fill="#5B8A5E"/>
+    <text class="sub" x="190" y="838">Live — code on disk and running</text>
+    <line x1="120" y1="860" x2="160" y2="860" stroke="#8C7B65" stroke-width="1.6"/>
+    <rect x="166" y="852" width="16" height="16" rx="4" fill="#D4A843"/>
+    <text class="sub" x="190" y="864">Scaffolded — present but flagged off</text>
+    <line x1="390" y1="860" x2="430" y2="860" stroke="#C4756A" stroke-width="1.6" stroke-dasharray="6 5"/>
+    <rect x="436" y="852" width="16" height="16" rx="4" fill="#C4756A" opacity=".5"/>
+    <text class="sub" x="460" y="864">Planned</text>
+  </g>
+</svg>

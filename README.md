@@ -104,3 +104,7 @@ An account becomes an **admin** only if its email is listed in the server's `ADM
 
 - `npx tsc --noEmit` in each project for a fast typecheck.
 - `npx expo export --platform ios --output-dir <tmp>` in `steps-app/` fully bundles every route and fails loudly on a real error (more trustworthy than the dev server's lazy loading).
+
+## Architecture
+
+[System context diagram](docs/architecture/system-context.md) — every external service Steps talks to and what crosses each wire. Open `docs/architecture/system-context.html` in a browser for the rendered version.
