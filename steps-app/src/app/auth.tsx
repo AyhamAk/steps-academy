@@ -20,6 +20,7 @@ import { StepsButton } from "../components/ui/StepsButton";
 import { LanguagePicker } from "../components/ui/LanguagePicker";
 import { StepsLogo } from "../components/ui/StepsLogo";
 import { Touchable } from "../components/ui/Touchable";
+import { GOOGLE_SIGN_IN_ENABLED } from "../constants/flags";
 import { Colors } from "../constants/Colors";
 import { Fonts } from "../constants/Fonts";
 import { useAuth } from "../hooks/useAuth";
@@ -162,7 +163,12 @@ export default function AuthScreen() {
 
   const message = formError ?? error;
 
-  /** Google sits below the form as an alternative, not as the headline choice. */
+  /**
+   * Google sits below the form as an alternative, not as the headline choice.
+   * Hidden by GOOGLE_SIGN_IN_ENABLED until the OAuth client carries the Play
+   * App Signing SHA-1 — the request hook above still runs, because hooks
+   * cannot be conditional, but nothing ever prompts.
+   */
   const googleBlock = (
     <>
       <View style={styles.dividerRow}>
@@ -221,7 +227,7 @@ export default function AuthScreen() {
 
                 <StepsButton label={t.auth.signIn} onPress={handleLogin} loading={isLoading} />
 
-                {googleBlock}
+                {GOOGLE_SIGN_IN_ENABLED ? googleBlock : null}
 
                 <Touchable onPress={() => router.push("/onboarding")} style={styles.linkButton}>
                   <Text style={styles.link}>

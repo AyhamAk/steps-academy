@@ -75,6 +75,13 @@ export async function login(req: Request, res: Response) {
 }
 
 export async function googleAuth(req: Request, res: Response) {
+  // 404 rather than 403: while the feature is off, the endpoint should not
+  // advertise that it exists. The app hides its button behind the matching
+  // GOOGLE_SIGN_IN_ENABLED flag.
+  if (!env.googleSignInEnabled) {
+    return res.status(404).json({ message: "Not found" });
+  }
+
   const { idToken, inviteCode } = req.body as { idToken?: string; inviteCode?: string };
 
   if (!idToken) {
@@ -88,6 +95,13 @@ export async function googleAuth(req: Request, res: Response) {
     });
     const payload = ticket.getPayload();
     if (!payload?.email) {
+      return res.status(401).json({ message: "Invalid Google token" });
+    }
+    // An unverified address is not proof of anything. Below, an existing
+    // account is matched on email alone — so without this check, a Google
+    // account carrying a parent's address would be handed that parent's
+    // session.
+    if (payload.email_verified !== true) {
       return res.status(401).json({ message: "Invalid Google token" });
     }
 
@@ -111,6 +125,11 @@ export async function googleAuth(req: Request, res: Response) {
         role,
       });
       await InviteModel.redeem(invite.id, user.id, invite.studentId);
+    } else if (!user.googleId) {
+      // First time this email/password account has come in through Google.
+      // Record the link rather than leaving the two identities matched only
+      // by a string comparison on every future sign-in.
+      await UserModel.linkGoogleId(user.id, payload.sub);
     }
 
     const token = signToken({ userId: user.id });

@@ -113,8 +113,10 @@
 
   <g>
     <rect class="box" x="100" y="170" width="204" height="65" rx="11" fill="#7B9EC4" stroke="#607B99"/>
-    <text class="nameL" x="202" y="196" text-anchor="middle">Google identity</text>
-    <text class="subL"  x="202" y="216" text-anchor="middle">Sign-in and token checks</text>
+    <text class="nameL" x="202" y="192" text-anchor="middle">Google identity</text>
+    <text class="subL"  x="202" y="209" text-anchor="middle">Sign-in and token checks</text>
+    <rect x="159" y="216" width="86" height="15" rx="7" fill="#FFFDF8" stroke="#607B99"/>
+    <text class="tag" x="202" y="227" text-anchor="middle">FLAGGED OFF</text>
   </g>
   <g>
     <rect class="box" x="100" y="250" width="204" height="65" rx="11" fill="#7B9EC4" stroke="#607B99"/>

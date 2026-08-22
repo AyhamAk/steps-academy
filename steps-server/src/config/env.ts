@@ -31,6 +31,12 @@ export const env = {
   jwtExpiresIn: process.env.JWT_EXPIRES_IN ?? "30d",
   googleClientId: process.env.GOOGLE_CLIENT_ID ?? "",
   /**
+   * Google sign-in is off until the Android OAuth client carries the Play App
+   * Signing SHA-1, which only exists after the first bundle upload. Defaults
+   * to off, so an unset variable is the safe state rather than the open one.
+   */
+  googleSignInEnabled: process.env.GOOGLE_SIGN_IN_ENABLED === "true",
+  /**
    * A Google ID token's audience is whichever client ID requested it, so a
    * sign-in from iOS carries the iOS client ID — not the web one. Verifying
    * against a single ID fails for every platform except that one.

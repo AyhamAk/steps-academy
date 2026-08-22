@@ -74,7 +74,7 @@ flowchart TB
 | Expo push service | steps-app, steps-server | out (both) | HTTPS/JSON | App: device registration, receives Expo push token. Server: push messages — title, body, data, channelId, priority | Expo push token per device; no server secret | live |
 | Firebase Cloud Messaging | Expo push service | out | HTTPS | Android notification delivery | FCM V1 service account key held by Expo; `google-services.json` in the build — `app.json` `android.googleServicesFile` | live |
 | Apple Push Notification service | Expo push service | out | HTTPS | iOS notification delivery | APNs key — **none issued**; no Apple Developer Program membership, no iOS credential on the EAS credentials page | planned |
-| Google identity | steps-app, steps-server | out (both) | OAuth 2.0 over HTTPS | App: id token request via `expo-auth-session`. Server: verifies that id token | `EXPO_PUBLIC_GOOGLE_*_CLIENT_ID` — `src/app/auth.tsx:139-143`; `GOOGLE_CLIENT_ID` — `src/controllers/authController.ts:3,11` | live |
+| Google identity | steps-app, steps-server | out (both) | OAuth 2.0 over HTTPS | App: id token request via `expo-auth-session`. Server: verifies that id token | `EXPO_PUBLIC_GOOGLE_*_CLIENT_ID` — `src/app/auth.tsx:139-143`; `GOOGLE_CLIENT_ID` — `src/controllers/authController.ts:3,11` | scaffolded |
 | Expo / EAS | steps-app | out | HTTPS | OTA bundle check and download; build artefacts and credentials | EAS project id `c42cd810-…` — `app.json` `extra.eas.projectId`, `updates.url` | live |
 | Railway | steps-server | in (deploy) | Platform deploy | Container build from git, environment variables, `prestart` runs `prisma migrate deploy` | Railway account; `RAILWAY_*` read for diagnostics — `src/config/env.ts` | live |
 | WhatsApp | steps-app | out | HTTPS deep link | Invite code and child name in a prefilled message | None — hands off to the installed app — `src/app/invite-send.tsx:102` | live |
@@ -85,7 +85,7 @@ flowchart TB
 
 Three services were described in the request in a state the code no longer matches. Status above is taken from the code, as instructed.
 
-- **`AUTH_ENABLED` is `true`**, not false — `steps-app/src/constants/flags.ts:5`. Google identity and the JWT-bearing arrow are **live**, not scaffolded.
+- **`AUTH_ENABLED` is `true`**, not false — `steps-app/src/constants/flags.ts`. The JWT-bearing arrow is **live**. Google identity is **scaffolded**: the code is complete on both sides, but it has never completed in a real build, because Play re-signs the app and the OAuth client cannot carry the Play App Signing SHA-1 until after the first upload (`README.md:7`, `PROJECT_CONTEXT.md:59-61`). The button is now hidden behind `GOOGLE_SIGN_IN_ENABLED` and the server route returns 404 while `GOOGLE_SIGN_IN_ENABLED` is unset.
 - **The user store is Prisma against Postgres**, not an in-memory `Map` — 15 `prisma.` calls in `src/models/user.ts`, 18 applied migrations. Postgres is **live**, not planned.
 - **TanStack Query is used in 22 files.** It remains correctly excluded from the diagram: it is a client library, not a third party over a wire.
 

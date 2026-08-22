@@ -58,6 +58,15 @@ export const UserModel = {
   },
 
   /** `token: null` clears it — used on logout so a stale device stops receiving pushes. */
+  /** Records that an existing account has been linked to a Google identity. */
+  async linkGoogleId(id: string, googleId: string): Promise<void> {
+    try {
+      await prisma.user.update({ where: { id }, data: { googleId } });
+    } catch {
+      // Losing the link is not worth failing the sign-in over.
+    }
+  },
+
   async updateLocale(id: string, locale: string): Promise<void> {
     try {
       await prisma.user.update({ where: { id }, data: { locale } });
