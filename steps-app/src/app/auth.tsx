@@ -5,9 +5,6 @@ import * as WebBrowser from "expo-web-browser";
 import { PropsWithChildren, useEffect, useRef, useState } from "react";
 import {
   Animated,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -15,6 +12,7 @@ import {
   View,
 } from "react-native";
 
+import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
 import { Screen } from "../components/Screen";
 import { StepsButton } from "../components/ui/StepsButton";
 import { LanguagePicker } from "../components/ui/LanguagePicker";
@@ -186,62 +184,57 @@ export default function AuthScreen() {
 
   return (
     <Screen safeBottom>
-      <KeyboardAvoidingView
+      <KeyboardAwareScrollView
         style={styles.flex}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
       >
-        <ScrollView
-          contentContainerStyle={styles.content}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          <StepsLogo />
+        <StepsLogo />
 
-          {mode === "login" ? (
-            <AnimatedPanel>
-              <View style={styles.stack}>
-                <Text style={styles.heading}>{t.auth.signInHeading}</Text>
+        {mode === "login" ? (
+          <AnimatedPanel>
+            <View style={styles.stack}>
+              <Text style={styles.heading}>{t.auth.signInHeading}</Text>
 
-                <AuthInput
-                  placeholder={t.auth.emailPlaceholder}
-                  placeholderTextColor={Colors.textLight}
-                  value={email}
-                  onChangeText={(v) => {
-                    setEmail(v);
-                    setFormError(null);
-                  }}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  keyboardType="email-address"
-                />
-                <PasswordInput
-                  placeholder={t.auth.passwordPlaceholder}
-                  value={password}
-                  onChangeText={(v) => {
-                    setPassword(v);
-                    setFormError(null);
-                  }}
-                />
+              <AuthInput
+                placeholder={t.auth.emailPlaceholder}
+                placeholderTextColor={Colors.textLight}
+                value={email}
+                onChangeText={(v) => {
+                  setEmail(v);
+                  setFormError(null);
+                }}
+                autoCapitalize="none"
+                autoCorrect={false}
+                keyboardType="email-address"
+              />
+              <PasswordInput
+                placeholder={t.auth.passwordPlaceholder}
+                value={password}
+                onChangeText={(v) => {
+                  setPassword(v);
+                  setFormError(null);
+                }}
+              />
 
-                {message ? <Text style={styles.error}>{message}</Text> : null}
+              {message ? <Text style={styles.error}>{message}</Text> : null}
 
-                <StepsButton label={t.auth.signIn} onPress={handleLogin} loading={isLoading} />
+              <StepsButton label={t.auth.signIn} onPress={handleLogin} loading={isLoading} />
 
-                {GOOGLE_SIGN_IN_ENABLED ? googleBlock : null}
+              {GOOGLE_SIGN_IN_ENABLED ? googleBlock : null}
 
-                <Touchable onPress={() => router.push("/onboarding")} style={styles.linkButton}>
-                  <Text style={styles.link}>
-                    {t.auth.noAccount} <Text style={styles.linkAccent}>{t.invite.haveCode}</Text>
-                  </Text>
-                </Touchable>
-              </View>
-            </AnimatedPanel>
-          ) : null}
-          <View style={styles.languageBlock}>
-            <LanguagePicker compact />
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+              <Touchable onPress={() => router.push("/onboarding")} style={styles.linkButton}>
+                <Text style={styles.link}>
+                  {t.auth.noAccount} <Text style={styles.linkAccent}>{t.invite.haveCode}</Text>
+                </Text>
+              </Touchable>
+            </View>
+          </AnimatedPanel>
+        ) : null}
+        <View style={styles.languageBlock}>
+          <LanguagePicker compact />
+        </View>
+      </KeyboardAwareScrollView>
     </Screen>
   );
 }

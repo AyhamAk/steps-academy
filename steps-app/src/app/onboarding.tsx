@@ -2,9 +2,6 @@ import { router } from "expo-router";
 import { useState } from "react";
 import {
   ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
   StyleSheet,
   Switch,
   Text,
@@ -12,6 +9,7 @@ import {
   View,
 } from "react-native";
 
+import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
 import { Screen } from "../components/Screen";
 import { StepsButton } from "../components/ui/StepsButton";
 import { StepsLogo } from "../components/ui/StepsLogo";
@@ -106,128 +104,123 @@ export default function OnboardingScreen() {
 
   return (
     <Screen safeBottom>
-      <KeyboardAvoidingView
+      <KeyboardAwareScrollView
         style={styles.flex}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
       >
-        <ScrollView
-          contentContainerStyle={styles.content}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          <StepsLogo />
-          <Text style={styles.stepLabel}>{t.invite.stepOf(step, TOTAL_STEPS)}</Text>
+        <StepsLogo />
+        <Text style={styles.stepLabel}>{t.invite.stepOf(step, TOTAL_STEPS)}</Text>
 
-          {step === 1 ? (
-            <>
-              <Text style={[styles.title, rtlText]}>{t.invite.enterCodeTitle}</Text>
-              <Text style={[styles.subtitle, rtlText]}>{t.invite.enterCodeSubtitle}</Text>
-              <TextInput
-                style={styles.codeInput}
-                placeholder={t.invite.codePlaceholder}
-                placeholderTextColor={Colors.textLight}
-                value={code}
-                onChangeText={setCode}
-                autoCapitalize="characters"
-                autoCorrect={false}
-                maxLength={9}
-              />
-              <StepsButton
-                label={isChecking ? t.invite.checking : t.invite.checkCode}
-                onPress={handleCheckCode}
-                loading={isChecking}
-                style={styles.primaryButton}
-              />
-            </>
-          ) : null}
+        {step === 1 ? (
+          <>
+            <Text style={[styles.title, rtlText]}>{t.invite.enterCodeTitle}</Text>
+            <Text style={[styles.subtitle, rtlText]}>{t.invite.enterCodeSubtitle}</Text>
+            <TextInput
+              style={styles.codeInput}
+              placeholder={t.invite.codePlaceholder}
+              placeholderTextColor={Colors.textLight}
+              value={code}
+              onChangeText={setCode}
+              autoCapitalize="characters"
+              autoCorrect={false}
+              maxLength={9}
+            />
+            <StepsButton
+              label={isChecking ? t.invite.checking : t.invite.checkCode}
+              onPress={handleCheckCode}
+              loading={isChecking}
+              style={styles.primaryButton}
+            />
+          </>
+        ) : null}
 
-          {step === 2 && childName ? (
-            <>
-              <Text style={[styles.title, rtlText]}>
-                {t.invite.confirmChildTitle(childName)}
-              </Text>
-              <Text style={[styles.subtitle, rtlText]}>{t.invite.confirmChildSubtitle}</Text>
+        {step === 2 && childName ? (
+          <>
+            <Text style={[styles.title, rtlText]}>
+              {t.invite.confirmChildTitle(childName)}
+            </Text>
+            <Text style={[styles.subtitle, rtlText]}>{t.invite.confirmChildSubtitle}</Text>
 
-              <Text style={[styles.sectionLabel, rtlText]}>{t.invite.yourDetailsTitle}</Text>
-              <TextInput
-                style={styles.input}
-                placeholder={t.auth.namePlaceholder}
-                placeholderTextColor={Colors.textLight}
-                value={name}
-                onChangeText={setName}
-              />
-              <TextInput
-                style={styles.input}
-                placeholder={t.auth.emailPlaceholder}
-                placeholderTextColor={Colors.textLight}
-                value={email}
-                onChangeText={setEmail}
-                autoCapitalize="none"
-                keyboardType="email-address"
-              />
-              <TextInput
-                style={styles.input}
-                placeholder={t.auth.passwordPlaceholder}
-                placeholderTextColor={Colors.textLight}
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-              />
-              <StepsButton
-                label={t.invite.checkCode}
-                onPress={handleDetails}
-                style={styles.primaryButton}
-              />
-              <Touchable onPress={goBack} style={styles.linkButton}>
-                <Text style={styles.link}>{t.invite.notRightChild}</Text>
-              </Touchable>
-            </>
-          ) : null}
-
-          {step === 3 ? (
-            <>
-              <Text style={[styles.title, rtlText]}>{t.invite.finishTitle}</Text>
-
-              <View style={styles.switchRow}>
-                <Switch
-                  value={hasConsented}
-                  onValueChange={setHasConsented}
-                  trackColor={{ true: Colors.forest, false: Colors.border }}
-                />
-                <Text style={[styles.switchLabel, rtlText]}>{t.invite.consentLabel}</Text>
-              </View>
-
-              <View style={styles.switchRow}>
-                <Switch
-                  value={wantsNotifications}
-                  onValueChange={setWantsNotifications}
-                  trackColor={{ true: Colors.forest, false: Colors.border }}
-                />
-                <Text style={[styles.switchLabel, rtlText]}>{t.invite.notifyLabel}</Text>
-              </View>
-
-              <StepsButton
-                label={t.invite.createAccount}
-                onPress={handleCreate}
-                loading={isLoading}
-                style={styles.primaryButton}
-              />
-            </>
-          ) : null}
-
-          {isLoading && step === 3 ? (
-            <ActivityIndicator color={Colors.terracotta} style={styles.spinner} />
-          ) : null}
-
-          {message ? <Text style={styles.error}>{message}</Text> : null}
-
-          {step !== 2 ? (
+            <Text style={[styles.sectionLabel, rtlText]}>{t.invite.yourDetailsTitle}</Text>
+            <TextInput
+              style={styles.input}
+              placeholder={t.auth.namePlaceholder}
+              placeholderTextColor={Colors.textLight}
+              value={name}
+              onChangeText={setName}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder={t.auth.emailPlaceholder}
+              placeholderTextColor={Colors.textLight}
+              value={email}
+              onChangeText={setEmail}
+              autoCapitalize="none"
+              keyboardType="email-address"
+            />
+            <TextInput
+              style={styles.input}
+              placeholder={t.auth.passwordPlaceholder}
+              placeholderTextColor={Colors.textLight}
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+            />
+            <StepsButton
+              label={t.invite.checkCode}
+              onPress={handleDetails}
+              style={styles.primaryButton}
+            />
             <Touchable onPress={goBack} style={styles.linkButton}>
-              <Text style={styles.link}>{t.common.back}</Text>
+              <Text style={styles.link}>{t.invite.notRightChild}</Text>
             </Touchable>
-          ) : null}
-        </ScrollView>
-      </KeyboardAvoidingView>
+          </>
+        ) : null}
+
+        {step === 3 ? (
+          <>
+            <Text style={[styles.title, rtlText]}>{t.invite.finishTitle}</Text>
+
+            <View style={styles.switchRow}>
+              <Switch
+                value={hasConsented}
+                onValueChange={setHasConsented}
+                trackColor={{ true: Colors.forest, false: Colors.border }}
+              />
+              <Text style={[styles.switchLabel, rtlText]}>{t.invite.consentLabel}</Text>
+            </View>
+
+            <View style={styles.switchRow}>
+              <Switch
+                value={wantsNotifications}
+                onValueChange={setWantsNotifications}
+                trackColor={{ true: Colors.forest, false: Colors.border }}
+              />
+              <Text style={[styles.switchLabel, rtlText]}>{t.invite.notifyLabel}</Text>
+            </View>
+
+            <StepsButton
+              label={t.invite.createAccount}
+              onPress={handleCreate}
+              loading={isLoading}
+              style={styles.primaryButton}
+            />
+          </>
+        ) : null}
+
+        {isLoading && step === 3 ? (
+          <ActivityIndicator color={Colors.terracotta} style={styles.spinner} />
+        ) : null}
+
+        {message ? <Text style={styles.error}>{message}</Text> : null}
+
+        {step !== 2 ? (
+          <Touchable onPress={goBack} style={styles.linkButton}>
+            <Text style={styles.link}>{t.common.back}</Text>
+          </Touchable>
+        ) : null}
+      </KeyboardAwareScrollView>
     </Screen>
   );
 }
