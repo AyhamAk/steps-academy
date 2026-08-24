@@ -49,3 +49,6 @@ yarn-error.*
 # ── OS junk ──
 .DS_Store
 Thumbs.db
+
+# ── Tester invite codes (live production credentials, never commit) ──
+TESTER-CODES.md
