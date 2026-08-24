@@ -217,24 +217,37 @@ export function FullscreenPhotoViewer({
             </View>
           ) : null}
 
+          {/* Saving is the reason most parents open a photo at all, so it gets
+              the terracotta the rest of the app uses for its primary action.
+              Sharing sits beside it as the outline variant rather than a second
+              filled button — two equally loud buttons make neither one read as
+              the obvious thing to press. */}
           <View style={[styles.actions, isRTL && styles.rowReverse]}>
-            <Touchable style={styles.actionButton} onPress={handleDownload} disabled={!!busy}>
+            <Touchable
+              style={[styles.actionButton, styles.saveButton]}
+              onPress={handleDownload}
+              disabled={!!busy}
+            >
               {busy === "download" ? (
                 <ActivityIndicator color={Colors.cream} />
               ) : (
                 <View style={[styles.actionInner, isRTL && styles.rowReverse]}>
                   <Ionicons name="download-outline" size={18} color={Colors.cream} />
-                  <Text style={styles.actionText}>{t.gallery.save}</Text>
+                  <Text style={[styles.actionText, styles.saveText]}>{t.gallery.save}</Text>
                 </View>
               )}
             </Touchable>
-            <Touchable style={styles.actionButton} onPress={handleShare} disabled={!!busy}>
+            <Touchable
+              style={[styles.actionButton, styles.shareButton]}
+              onPress={handleShare}
+              disabled={!!busy}
+            >
               {busy === "share" ? (
-                <ActivityIndicator color={Colors.cream} />
+                <ActivityIndicator color={Colors.terracottaLight} />
               ) : (
                 <View style={[styles.actionInner, isRTL && styles.rowReverse]}>
-                  <Ionicons name="share-outline" size={18} color={Colors.cream} />
-                  <Text style={styles.actionText}>{t.gallery.share}</Text>
+                  <Ionicons name="share-outline" size={18} color={Colors.terracottaLight} />
+                  <Text style={[styles.actionText, styles.shareText]}>{t.gallery.share}</Text>
                 </View>
               )}
             </Touchable>
@@ -265,7 +278,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: "rgba(0,0,0,0.45)",
+    backgroundColor: "rgba(44,36,22,0.55)",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -273,7 +286,7 @@ const styles = StyleSheet.create({
     minHeight: 32,
     paddingHorizontal: 14,
     borderRadius: 999,
-    backgroundColor: "rgba(0,0,0,0.45)",
+    backgroundColor: "rgba(44,36,22,0.55)",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -291,7 +304,7 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(0,0,0,0.45)",
+    backgroundColor: "rgba(44,36,22,0.55)",
   },
   arrowStart: { start: 12 },
   arrowEnd: { end: 12 },
@@ -307,7 +320,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 6,
     alignSelf: "center",
-    backgroundColor: "rgba(0,0,0,0.55)",
+    backgroundColor: "rgba(44,36,22,0.65)",
     borderRadius: 999,
     paddingHorizontal: 14,
     paddingVertical: 8,
@@ -334,14 +347,29 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 48,
     borderRadius: 14,
-    backgroundColor: "rgba(255,255,255,0.14)",
     alignItems: "center",
     justifyContent: "center",
   },
+  saveButton: {
+    backgroundColor: Colors.terracotta,
+    shadowColor: Colors.terracottaDeep,
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
+  },
+  // Scrimmed rather than transparent: an outline button over a bright photo
+  // has nothing to hold its label legible.
+  shareButton: {
+    backgroundColor: "rgba(44,36,22,0.55)",
+    borderWidth: 1.5,
+    borderColor: Colors.terracotta,
+  },
   actionInner: { flexDirection: "row", alignItems: "center", gap: 8 },
   actionText: {
-    color: Colors.cream,
     fontFamily: Fonts.semiBold,
     fontSize: 15,
   },
+  saveText: { color: Colors.cream },
+  shareText: { color: Colors.terracottaLight },
 });
