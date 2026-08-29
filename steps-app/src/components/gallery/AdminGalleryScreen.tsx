@@ -5,13 +5,13 @@ import {
   ActivityIndicator,
   Alert,
   Image,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from "react-native";
 
+import { KeyboardAwareScrollView } from "../KeyboardAwareScrollView";
 import { Colors } from "../../constants/Colors";
 import { Fonts } from "../../constants/Fonts";
 import { Type } from "../../constants/Typography";
@@ -230,7 +230,7 @@ export function AdminGalleryScreen() {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.content}>
+    <KeyboardAwareScrollView contentContainerStyle={styles.content}>
       <ScreenFadeIn>
       <StepsHeader title={t.gallery.pageTitle} subtitle={t.gallery.adminSubtitle} />
 
@@ -397,7 +397,7 @@ export function AdminGalleryScreen() {
         onClose={() => setTagEditorPhoto(null)}
         onTagsChanged={handleTagsChanged}
       />
-    </ScrollView>
+    </KeyboardAwareScrollView>
   );
 }
 

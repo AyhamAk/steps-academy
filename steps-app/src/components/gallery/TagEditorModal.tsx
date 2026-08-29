@@ -2,9 +2,7 @@ import { useState } from "react";
 import {
   ActivityIndicator,
   Image,
-  KeyboardAvoidingView,
   Modal,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -29,7 +27,7 @@ type TagEditorModalProps = {
 
 export function TagEditorModal({ photo, suggestions, onClose, onTagsChanged }: TagEditorModalProps) {
   const { t } = useTranslation();
-  const sheetPadding = useSheetPadding(16);
+  const { sheetPadding, keyboardPadding } = useSheetPadding(16);
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -68,10 +66,7 @@ export function TagEditorModal({ photo, suggestions, onClose, onTagsChanged }: T
 
   return (
     <Modal visible={!!photo} animationType="slide" onRequestClose={onClose} transparent>
-      <KeyboardAvoidingView
-        style={styles.backdrop}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-      >
+      <View style={[styles.backdrop, { paddingBottom: keyboardPadding }]}>
         <View style={[styles.sheet, { paddingBottom: sheetPadding }]}>
           <View style={styles.header}>
             <Text style={styles.title}>{t.gallery.taggedKids}</Text>
@@ -125,7 +120,7 @@ export function TagEditorModal({ photo, suggestions, onClose, onTagsChanged }: T
 
           {busy ? <ActivityIndicator style={{ marginTop: 12 }} color={Colors.primary} /> : null}
         </View>
-      </KeyboardAvoidingView>
+      </View>
     </Modal>
   );
 }

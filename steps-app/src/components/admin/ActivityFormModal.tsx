@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
 import {
-  KeyboardAvoidingView,
   Modal,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -41,7 +39,7 @@ export function ActivityFormModal({
   onSubmit,
 }: ActivityFormModalProps) {
   const { t, rtlText } = useTranslation();
-  const sheetPadding = useSheetPadding(28);
+  const { sheetPadding, keyboardPadding } = useSheetPadding(28);
   const [name, setName] = useState("");
   const [emoji, setEmoji] = useState("🌟");
   const [hour, setHour] = useState("09");
@@ -85,10 +83,7 @@ export function ActivityFormModal({
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <KeyboardAvoidingView
-        style={styles.backdrop}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-      >
+      <View style={[styles.backdrop, { paddingBottom: keyboardPadding }]}>
         <View style={[styles.sheet, { paddingBottom: sheetPadding }]}>
           <View style={styles.header}>
             <Text style={styles.title}>
@@ -205,7 +200,7 @@ export function ActivityFormModal({
             />
           </ScrollView>
         </View>
-      </KeyboardAvoidingView>
+      </View>
     </Modal>
   );
 }

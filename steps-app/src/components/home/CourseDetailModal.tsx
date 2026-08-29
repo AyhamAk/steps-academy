@@ -54,7 +54,7 @@ export function CourseDetailModal({
   onCancel,
 }: CourseDetailModalProps) {
   const { t, isRTL, rtlText, locale } = useTranslation();
-  const sheetPadding = useSheetPadding(30);
+  const { sheetPadding } = useSheetPadding(30);
   if (!course) return null;
 
   const accent = course.accentColor ?? Colors.terracotta;

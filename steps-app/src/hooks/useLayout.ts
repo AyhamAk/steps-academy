@@ -1,6 +1,8 @@
 import { useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { useKeyboardInset } from "./useKeyboardInset";
+
 /**
  * Every measurement a screen needs to fit the device it is actually on.
  *
@@ -53,16 +55,31 @@ export function useLayout() {
 }
 
 /**
- * Bottom padding for a sheet anchored to the bottom of the screen.
+ * Bottom padding for a sheet anchored to the bottom of the screen, and for the
+ * backdrop that has to lift it clear of the keyboard.
  *
- * Sheets need this even though they live in their own `Modal`: with
- * edge-to-edge enabled React Native forces every modal window translucent, so
- * a sheet's last row of buttons sits under the navigation bar exactly like the
- * tab bar did.
+ * Sheets need the first number even though they live in their own `Modal`:
+ * with edge-to-edge enabled React Native forces every modal window
+ * translucent, so a sheet's last row of buttons sits under the navigation bar
+ * exactly like the tab bar did.
+ *
+ * They need the second because that same edge-to-edge window no longer resizes
+ * when the keyboard opens. Padding the backdrop — which holds the sheet at
+ * `flex-end` — pushes the sheet up by exactly the height the keyboard covers.
+ * While the keyboard is up the navigation bar is behind it, so the safe-area
+ * inset is dropped rather than added on top; keeping both padded twice.
  */
-export function useSheetPadding(base: number): number {
+export function useSheetPadding(base: number): {
+  sheetPadding: number;
+  keyboardPadding: number;
+} {
   const { bottom } = useSafeAreaInsets();
-  return base + bottom;
+  const { height: keyboardHeight } = useKeyboardInset();
+
+  return {
+    sheetPadding: base + (keyboardHeight > 0 ? 0 : bottom),
+    keyboardPadding: keyboardHeight,
+  };
 }
 
 /**

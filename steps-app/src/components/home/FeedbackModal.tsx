@@ -1,9 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import {
-  KeyboardAvoidingView,
   Modal,
-  Platform,
   StyleSheet,
   Text,
   TextInput,
@@ -35,7 +33,7 @@ export function FeedbackModal({
   onSent: (message: string) => void;
 }) {
   const { t, rtlText } = useTranslation();
-  const sheetPadding = useSheetPadding(30);
+  const { sheetPadding, keyboardPadding } = useSheetPadding(30);
   const [rating, setRating] = useState<number | null>(null);
   const [message, setMessage] = useState("");
 
@@ -55,10 +53,7 @@ export function FeedbackModal({
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <KeyboardAvoidingView
-        style={styles.backdrop}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-      >
+      <View style={[styles.backdrop, { paddingBottom: keyboardPadding }]}>
         <View style={[styles.sheet, { paddingBottom: sheetPadding }]}>
           <View style={styles.header}>
             <Text style={styles.title}>{t.feedback.title}</Text>
@@ -100,7 +95,7 @@ export function FeedbackModal({
           />
           {send.isError ? <Text style={styles.error}>{t.feedback.failed}</Text> : null}
         </View>
-      </KeyboardAvoidingView>
+      </View>
     </Modal>
   );
 }

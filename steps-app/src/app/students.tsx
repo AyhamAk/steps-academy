@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -23,6 +23,7 @@ import { StepsButton } from "../components/ui/StepsButton";
 import { Touchable } from "../components/ui/Touchable";
 import { Colors } from "../constants/Colors";
 import { Fonts } from "../constants/Fonts";
+import { useKeyboardInset, useKeyboardReveal } from "../hooks/useKeyboardInset";
 import { useTranslation } from "../i18n/useTranslation";
 import {
   createStudent,
@@ -226,6 +227,23 @@ export default function StudentsScreen() {
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounced(search, 300);
 
+  // The guardian picker's search field renders inside a card in this list, so
+  // it can sit anywhere on screen — including under the keyboard.
+  const listRef = useRef<FlatList>(null);
+  const { height: keyboardHeight, topY } = useKeyboardInset();
+  const keyboard = useKeyboardReveal(topY, (y) =>
+    listRef.current?.scrollToOffset({ offset: y, animated: true })
+  );
+
+  useEffect(() => {
+    if (keyboardHeight === 0) {
+      keyboard.forget();
+      return;
+    }
+    const frame = requestAnimationFrame(keyboard.reveal);
+    return () => cancelAnimationFrame(frame);
+  }, [keyboardHeight]);
+
   const { data, isError, isFetching } = useQuery({
     queryKey: ["students", debouncedSearch],
     queryFn: () => listStudents({ search: debouncedSearch || undefined }),
@@ -315,11 +333,15 @@ export default function StudentsScreen() {
           />
         ) : (
           <FlatList
+            ref={listRef}
             data={students}
             keyExtractor={(student) => student.id}
             renderItem={({ item }) => <StudentCard student={item} />}
-            contentContainerStyle={styles.list}
+            contentContainerStyle={[styles.list, { paddingBottom: 32 + keyboardHeight }]}
             keyboardShouldPersistTaps="handled"
+            scrollEventThrottle={16}
+            onScroll={keyboard.onScroll}
+            onTouchEnd={keyboard.onTouchEnd}
             // Long lists stay smooth: offscreen rows are dropped rather than
             // kept mounted, which matters once this is hundreds of children.
             removeClippedSubviews

@@ -1,9 +1,7 @@
 import { useState } from "react";
 import {
   ActivityIndicator,
-  KeyboardAvoidingView,
   Modal,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -43,7 +41,7 @@ export function EventPickerModal({
   onCreated,
 }: EventPickerModalProps) {
   const { t } = useTranslation();
-  const sheetPadding = useSheetPadding(32);
+  const { sheetPadding, keyboardPadding } = useSheetPadding(32);
   const [mode, setMode] = useState<"list" | "create">("list");
   const [name, setName] = useState("");
   const [date, setDate] = useState(todayIso());
@@ -84,10 +82,7 @@ export function EventPickerModal({
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={handleClose} transparent>
-      <KeyboardAvoidingView
-        style={styles.backdrop}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-      >
+      <View style={[styles.backdrop, { paddingBottom: keyboardPadding }]}>
         <View style={[styles.sheet, { paddingBottom: sheetPadding }]}>
           <View style={styles.header}>
             <Text style={styles.title}>
@@ -199,7 +194,7 @@ export function EventPickerModal({
             </ScrollView>
           )}
         </View>
-      </KeyboardAvoidingView>
+      </View>
     </Modal>
   );
 }

@@ -1,7 +1,9 @@
+import { useEffect, useRef } from "react";
 import { Alert, FlatList, Image, Modal, StyleSheet, Text, View } from "react-native";
 
 import { Colors } from "../../constants/Colors";
 import { Fonts } from "../../constants/Fonts";
+import { useKeyboardInset, useKeyboardReveal } from "../../hooks/useKeyboardInset";
 import { useLayout } from "../../hooks/useLayout";
 import { useTranslation } from "../../i18n/useTranslation";
 import { GalleryEvent, Photo, resolvePhotoUrl } from "../../services/galleryApi";
@@ -36,12 +38,29 @@ export function ReviewGridModal({
   // wraps it and edge-to-edge puts the system bars over its corners.
   const { insets } = useLayout();
 
+  // The caption editor is this list's header, and the empty branch renders it
+  // in a plain View with nowhere to scroll, so both need lifting by hand.
+  const listRef = useRef<FlatList>(null);
+  const { height: keyboardHeight, topY } = useKeyboardInset();
+  const keyboard = useKeyboardReveal(topY, (y) =>
+    listRef.current?.scrollToOffset({ offset: y, animated: true })
+  );
+
+  useEffect(() => {
+    if (keyboardHeight === 0) {
+      keyboard.forget();
+      return;
+    }
+    const frame = requestAnimationFrame(keyboard.reveal);
+    return () => cancelAnimationFrame(frame);
+  }, [keyboardHeight]);
+
   return (
     <Modal visible animationType="slide" onRequestClose={onClose}>
       <View
         style={[
           styles.container,
-          { paddingTop: insets.top + 12, paddingBottom: insets.bottom },
+          { paddingTop: insets.top + 12, paddingBottom: insets.bottom + keyboardHeight },
         ]}
       >
         <View style={styles.header}>
@@ -76,10 +95,15 @@ export function ReviewGridModal({
           </>
         ) : (
           <FlatList
+            ref={listRef}
             data={photos}
             keyExtractor={(photo) => photo.id}
             numColumns={3}
             contentContainerStyle={styles.grid}
+            keyboardShouldPersistTaps="handled"
+            scrollEventThrottle={16}
+            onScroll={keyboard.onScroll}
+            onTouchEnd={keyboard.onTouchEnd}
             ListHeaderComponent={
               <EventCaptionEditor
                 eventId={event.id}

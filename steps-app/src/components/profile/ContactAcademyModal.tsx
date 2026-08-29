@@ -16,7 +16,7 @@ type ContactAcademyModalProps = {
 
 export function ContactAcademyModal({ visible, onClose, onError }: ContactAcademyModalProps) {
   const { t, isRTL, rtlText } = useTranslation();
-  const sheetPadding = useSheetPadding(32);
+  const { sheetPadding } = useSheetPadding(32);
 
   const open = async (url: string) => {
     try {

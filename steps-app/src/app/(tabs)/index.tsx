@@ -4,11 +4,9 @@ import { router } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Image,
-  KeyboardAvoidingView,
   Modal,
   NativeScrollEvent,
   NativeSyntheticEvent,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -51,7 +49,7 @@ import { Fonts } from "../../constants/Fonts";
 import { Type } from "../../constants/Typography";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 
-import { useLayout } from "../../hooks/useLayout";
+import { useLayout, useSheetPadding } from "../../hooks/useLayout";
 import { useReduceMotionSetting } from "../../hooks/useReduceMotionSetting";
 import { Translations } from "../../i18n/translations";
 import { useTranslation } from "../../i18n/useTranslation";
@@ -297,6 +295,7 @@ function AnnouncementQuickAddModal({
   const [text, setText] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { sheetPadding, keyboardPadding } = useSheetPadding(32);
 
   const handlePost = async () => {
     if (!text.trim()) {
@@ -318,11 +317,8 @@ function AnnouncementQuickAddModal({
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <KeyboardAvoidingView
-        style={styles.modalBackdrop}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-      >
-        <View style={styles.modalSheet}>
+      <View style={[styles.modalBackdrop, { paddingBottom: keyboardPadding }]}>
+        <View style={[styles.modalSheet, { paddingBottom: sheetPadding }]}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>{t.home.addAnnouncement}</Text>
             <Touchable onPress={onClose}>
@@ -347,7 +343,7 @@ function AnnouncementQuickAddModal({
             style={styles.modalButton}
           />
         </View>
-      </KeyboardAvoidingView>
+      </View>
     </Modal>
   );
 }
@@ -1162,7 +1158,6 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 24,
     paddingHorizontal: 20,
     paddingTop: 20,
-    paddingBottom: 32,
   },
   modalHeader: {
     flexDirection: "row",

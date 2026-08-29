@@ -40,7 +40,7 @@ function SheetShell({
   isBusy: boolean;
 }) {
   const { t, isRTL, locale } = useTranslation();
-  const sheetPadding = useSheetPadding(28);
+  const { sheetPadding } = useSheetPadding(28);
   const accent = course.accentColor ?? Colors.terracotta;
   const meta = [formatCourseDays(course, t), formatCourseDates(course, t)]
     .filter(Boolean)

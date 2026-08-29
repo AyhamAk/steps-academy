@@ -1,9 +1,7 @@
 import { useEffect, useState } from "react";
 import {
   Alert,
-  KeyboardAvoidingView,
   Modal,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -42,7 +40,7 @@ export function EventEditModal({
   onDeleted: (eventId: string) => void;
 }) {
   const { t, isRTL, rtlText } = useTranslation();
-  const sheetPadding = useSheetPadding(24);
+  const { sheetPadding, keyboardPadding } = useSheetPadding(24);
   const [name, setName] = useState("");
   const [date, setDate] = useState("");
   const [attendeeIds, setAttendeeIds] = useState<string[]>([]);
@@ -114,10 +112,7 @@ export function EventEditModal({
 
   return (
     <Modal visible animationType="slide" transparent onRequestClose={onClose}>
-      <KeyboardAvoidingView
-        style={styles.backdrop}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-      >
+      <View style={[styles.backdrop, { paddingBottom: keyboardPadding }]}>
         <View style={[styles.sheet, { paddingBottom: sheetPadding }]}>
           <View style={[styles.header, isRTL && styles.rowReverse]}>
             <Text style={styles.title}>{t.gallery.editAlbum}</Text>
@@ -200,7 +195,7 @@ export function EventEditModal({
             </Touchable>
           </ScrollView>
         </View>
-      </KeyboardAvoidingView>
+      </View>
     </Modal>
   );
 }

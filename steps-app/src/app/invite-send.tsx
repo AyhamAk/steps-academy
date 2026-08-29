@@ -1,8 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as Linking from "expo-linking";
 import { useMemo, useState } from "react";
-import { Alert, ScrollView, Share, StyleSheet, Text, TextInput, View } from "react-native";
+import { Alert, Share, StyleSheet, Text, TextInput, View } from "react-native";
 
+import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
 import { Screen } from "../components/Screen";
 import { DataErrorState } from "../components/ui/DataErrorState";
 import { SkeletonBlock } from "../components/ui/Skeleton";
@@ -122,7 +123,7 @@ export default function InviteSendScreen() {
     <Screen safeBottom>
       <StepsHeader title={t.invite.sendTitle} subtitle={t.invite.sendSubtitle} showBack />
 
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <KeyboardAwareScrollView contentContainerStyle={styles.content}>
         <View style={styles.importCard}>
           <Text style={[styles.cardTitle, rtlText]}>{t.invite.importTitle}</Text>
           <Text style={[styles.hint, rtlText]}>{t.invite.importHint}</Text>
@@ -191,7 +192,7 @@ export default function InviteSendScreen() {
             );
           })
         )}
-      </ScrollView>
+      </KeyboardAwareScrollView>
     </Screen>
   );
 }

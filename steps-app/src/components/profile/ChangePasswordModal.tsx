@@ -1,9 +1,7 @@
 import axios from "axios";
 import { useState } from "react";
 import {
-  KeyboardAvoidingView,
   Modal,
-  Platform,
   StyleSheet,
   Text,
   TextInput,
@@ -26,7 +24,7 @@ type ChangePasswordModalProps = {
 
 export function ChangePasswordModal({ visible, onClose, onSuccess }: ChangePasswordModalProps) {
   const { t, rtlText } = useTranslation();
-  const sheetPadding = useSheetPadding(32);
+  const { sheetPadding, keyboardPadding } = useSheetPadding(32);
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -75,10 +73,7 @@ export function ChangePasswordModal({ visible, onClose, onSuccess }: ChangePassw
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={close}>
-      <KeyboardAvoidingView
-        style={styles.backdrop}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-      >
+      <View style={[styles.backdrop, { paddingBottom: keyboardPadding }]}>
         <View style={[styles.sheet, { paddingBottom: sheetPadding }]}>
           <View style={styles.header}>
             <Text style={styles.title}>{t.profile.changePasswordTitle}</Text>
@@ -132,7 +127,7 @@ export function ChangePasswordModal({ visible, onClose, onSuccess }: ChangePassw
             style={styles.button}
           />
         </View>
-      </KeyboardAvoidingView>
+      </View>
     </Modal>
   );
 }
