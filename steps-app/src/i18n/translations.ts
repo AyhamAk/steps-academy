@@ -309,6 +309,10 @@ Download the app and enter this code to set up your account.`,
     statusRejected: "Declined",
     statusCancelled: "Withdrawn",
     courseFullCannotApprove: "This course is already full",
+    courseFullTitle: "This course is full",
+    courseFullBody: (approved: number, capacity: number) =>
+      `${approved} of ${capacity} places are taken. Approve anyway and go over capacity?`,
+    approveAnyway: "Approve anyway",
   },
   scheduleAdmin: {
     title: "Weekly Schedule",
@@ -952,6 +956,10 @@ export const ar: Translations = {
     statusRejected: "مرفوض",
     statusCancelled: "مسحوب",
     courseFullCannotApprove: "هذه الدورة ممتلئة بالفعل",
+    courseFullTitle: "هذه الدورة ممتلئة",
+    courseFullBody: (approved: number, capacity: number) =>
+      `تم شغل ${approved} من ${capacity} مقعداً. هل توافق على أي حال وتتجاوز السعة؟`,
+    approveAnyway: "الموافقة على أي حال",
   },
   scheduleAdmin: {
     title: "الجدول الأسبوعي",
@@ -1599,6 +1607,10 @@ export const he: Translations = {
     statusRejected: "נדחה",
     statusCancelled: "בוטל",
     courseFullCannotApprove: "הקורס כבר מלא",
+    courseFullTitle: "הקורס מלא",
+    courseFullBody: (approved: number, capacity: number) =>
+      `${approved} מתוך ${capacity} מקומות תפוסים. לאשר בכל זאת ולחרוג מהקיבולת?`,
+    approveAnyway: "לאשר בכל זאת",
   },
   scheduleAdmin: {
     title: "לוח זמנים שבועי",

@@ -65,14 +65,43 @@ function RequestCard({ request }: { request: EnrollmentRequest }) {
   };
 
   const decide = useMutation({
-    mutationFn: (status: "approved" | "rejected") => decideEnrollment(request.id, status),
+    mutationFn: ({
+      status,
+      allowOverCapacity,
+    }: {
+      status: "approved" | "rejected";
+      allowOverCapacity?: boolean;
+    }) => decideEnrollment(request.id, status, { allowOverCapacity }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["enrollments"] }),
-    onError: (error: { response?: { data?: { message?: string } } }) =>
-      Alert.alert(
-        t.courses.requestsCouldntLoad,
-        error?.response?.data?.message ?? t.common.tryAgain,
-        [{ text: t.common.ok }]
-      ),
+    onError: (error: {
+      response?: {
+        data?: { message?: string; code?: string; approved?: number; capacity?: number };
+      };
+    }) => {
+      const data = error?.response?.data;
+
+      // A full course is the academy's call, not a dead end. Refusing outright
+      // left the admin unable to answer the request at all, so offer to go
+      // ahead rather than making them find another way round it.
+      if (data?.code === "course_full") {
+        Alert.alert(
+          t.courses.courseFullTitle,
+          t.courses.courseFullBody(data.approved ?? 0, data.capacity ?? 0),
+          [
+            { text: t.common.cancel, style: "cancel" },
+            {
+              text: t.courses.approveAnyway,
+              onPress: () => decide.mutate({ status: "approved", allowOverCapacity: true }),
+            },
+          ]
+        );
+        return;
+      }
+
+      Alert.alert(t.courses.requestsCouldntLoad, data?.message ?? t.common.tryAgain, [
+        { text: t.common.ok },
+      ]);
+    },
   });
 
   const decidedDate = request.decidedAt ? new Date(request.decidedAt).toLocaleDateString() : null;
@@ -107,9 +136,9 @@ function RequestCard({ request }: { request: EnrollmentRequest }) {
           <Touchable
             style={[styles.button, styles.decline]}
             disabled={decide.isPending}
-            onPress={() => decide.mutate("rejected")}
+            onPress={() => decide.mutate({ status: "rejected" })}
           >
-            {decide.isPending && decide.variables === "rejected" ? (
+            {decide.isPending && decide.variables?.status === "rejected" ? (
               <ActivityIndicator color={Colors.clay} />
             ) : (
               <Text style={[styles.buttonText, styles.declineText]}>{t.courses.decline}</Text>
@@ -118,9 +147,9 @@ function RequestCard({ request }: { request: EnrollmentRequest }) {
           <Touchable
             style={[styles.button, styles.approve]}
             disabled={decide.isPending}
-            onPress={() => decide.mutate("approved")}
+            onPress={() => decide.mutate({ status: "approved" })}
           >
-            {decide.isPending && decide.variables === "approved" ? (
+            {decide.isPending && decide.variables?.status === "approved" ? (
               <ActivityIndicator color={Colors.cream} />
             ) : (
               <Text style={styles.buttonText}>{t.courses.approve}</Text>

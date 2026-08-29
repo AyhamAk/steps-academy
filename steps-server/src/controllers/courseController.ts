@@ -260,7 +260,11 @@ export async function listEnrollments(req: Request, res: Response) {
 }
 
 export async function decideEnrollment(req: Request, res: Response) {
-  const { status, note } = req.body as { status?: string; note?: string };
+  const { status, note, allowOverCapacity } = req.body as {
+    status?: string;
+    note?: string;
+    allowOverCapacity?: boolean;
+  };
   if (status !== "approved" && status !== "rejected") {
     return res.status(400).json({ message: "status must be 'approved' or 'rejected'" });
   }
@@ -270,10 +274,23 @@ export async function decideEnrollment(req: Request, res: Response) {
 
   // Capacity is only enforced at approval time — requests may exceed it, the
   // admin decides who gets the remaining places.
-  if (status === "approved" && existing.course.capacity > 0) {
+  //
+  // Being full is a warning, not a wall. A parent can request a place in a
+  // course that is already full, so refusing outright left the admin unable to
+  // act on that request at all and the family waiting on an answer that could
+  // never come. The academy, not the row count, decides whether one more child
+  // fits — so the block only holds until they say to go ahead.
+  if (status === "approved" && existing.course.capacity > 0 && !allowOverCapacity) {
     const approved = await CourseModel.countApproved(existing.courseId);
     if (existing.status !== "approved" && approved >= existing.course.capacity) {
-      return res.status(409).json({ message: "This course is already full" });
+      return res.status(409).json({
+        // The client needs to tell this apart from every other 409 to know it
+        // may offer to go ahead anyway.
+        code: "course_full",
+        message: "This course is already full",
+        capacity: existing.course.capacity,
+        approved,
+      });
     }
   }
 

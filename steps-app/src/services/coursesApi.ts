@@ -87,11 +87,12 @@ export async function listEnrollments(filter: { status?: EnrollmentStatus; cours
 export async function decideEnrollment(
   enrollmentId: string,
   status: "approved" | "rejected",
-  note?: string
+  /** Set once the admin has confirmed they mean to exceed the course capacity. */
+  options?: { note?: string; allowOverCapacity?: boolean }
 ) {
   const { data } = await api.patch<{ enrollment: EnrollmentRequest }>(
     `/api/courses/enrollments/${enrollmentId}`,
-    { status, note }
+    { status, note: options?.note, allowOverCapacity: options?.allowOverCapacity }
   );
   return data.enrollment;
 }
