@@ -1,3 +1,6 @@
+// Must stay first — Sentry instruments modules as they are imported.
+import "./instrument";
+
 import cors from "cors";
 import express from "express";
 import helmet from "helmet";

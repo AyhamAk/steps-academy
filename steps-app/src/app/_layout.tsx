@@ -17,8 +17,11 @@ import * as Notifications from "expo-notifications";
 import { useEffect, useRef, useState } from "react";
 import { I18nManager, View } from "react-native";
 
+import * as Sentry from "@sentry/react-native";
+
 import { AnimatedIntro } from "../components/ui/AnimatedIntro";
 import { queryClient } from "../lib/queryClient";
+import { initSentry, setSentryUser } from "../lib/sentry";
 import { Colors } from "../constants/Colors";
 import { AUTH_ENABLED } from "../constants/flags";
 import { applyLocaleDirection } from "../i18n/applyLocaleDirection";
@@ -211,7 +214,11 @@ function useNotificationTapNavigation() {
   }, [router]);
 }
 
-export default function RootLayout() {
+// Called at module scope, before React mounts, so a crash during the very first
+// render is still reported. It is a no-op without a DSN.
+initSentry();
+
+function RootLayout() {
   const [fontsLoaded] = useFonts({
     Nunito_400Regular,
     Nunito_600SemiBold,
@@ -238,6 +245,10 @@ export default function RootLayout() {
   useLocaleSync(token, locale);
   useNotificationTapNavigation();
 
+  useEffect(() => {
+    setSentryUser(userId);
+  }, [userId]);
+
   if (!ready) {
     return null;
   }
@@ -260,3 +271,7 @@ export default function RootLayout() {
     </QueryClientProvider>
   );
 }
+
+// `Sentry.wrap` installs the error boundary and touch/navigation breadcrumbs.
+// It has to sit on the exported root component, not inside it.
+export default Sentry.wrap(RootLayout);
