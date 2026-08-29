@@ -274,8 +274,17 @@ export const EnrollmentModel = {
     });
   },
 
-  async countPending(): Promise<number> {
-    return prisma.courseEnrollment.count({ where: { status: "pending" } });
+  /**
+   * Pending requests — across every course, or within one.
+   *
+   * Scoping matters wherever the number sits beside a single course: the
+   * academy-wide count shown on one course's screen claims that course has
+   * requests waiting when they belong to a different one.
+   */
+  async countPending(courseId?: string): Promise<number> {
+    return prisma.courseEnrollment.count({
+      where: { status: "pending", ...(courseId ? { courseId } : {}) },
+    });
   },
 
   /** Every enrolment for a parent's children, for showing status on the cards. */

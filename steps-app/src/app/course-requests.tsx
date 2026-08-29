@@ -169,7 +169,10 @@ export default function CourseRequestsScreen() {
     courseId?: string;
     courseName?: string;
   }>();
-  const [filter, setFilter] = useState<Filter>("pending");
+  // Opened from a course, this screen answers "who is in this course?", so it
+  // opens on everyone. Opened from the dashboard it is a triage board for
+  // requests waiting on a decision, and those come first.
+  const [filter, setFilter] = useState<Filter>(courseId ? "all" : "pending");
 
   const { data, isError } = useQuery({
     queryKey: ["enrollments", filter, courseId ?? "all-courses"],

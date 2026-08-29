@@ -253,7 +253,9 @@ export async function listEnrollments(req: Request, res: Response) {
   const courseId = typeof req.query.courseId === "string" ? req.query.courseId : undefined;
   const [enrollments, pendingCount] = await Promise.all([
     EnrollmentModel.listAll({ status, courseId }),
-    EnrollmentModel.countPending(),
+    // Scoped to the course being viewed when there is one, so the badge counts
+    // what is actually on this screen rather than the whole academy.
+    EnrollmentModel.countPending(courseId),
   ]);
 
   res.json({ enrollments: enrollments.map(serializeEnrollment), pendingCount });
