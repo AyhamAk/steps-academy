@@ -46,6 +46,26 @@ export const NotificationModel = {
     return prisma.notification.count({ where: { userId, read: false } });
   },
 
+  /**
+   * Unread counts for several users at once, for the badge number that rides
+   * along with a push. One grouped query rather than one per recipient — a
+   * whole-academy announcement fans out to every parent.
+   *
+   * Users with nothing unread are simply absent from the map, which is what
+   * `groupBy` returns.
+   */
+  async unreadCountsFor(userIds: string[]): Promise<Map<string, number>> {
+    if (userIds.length === 0) return new Map();
+
+    const rows = await prisma.notification.groupBy({
+      by: ["userId"],
+      where: { userId: { in: userIds }, read: false },
+      _count: { _all: true },
+    });
+
+    return new Map(rows.map((row) => [row.userId, row._count._all]));
+  },
+
   async markAllRead(userId: string): Promise<void> {
     await prisma.notification.updateMany({ where: { userId, read: false }, data: { read: true } });
   },

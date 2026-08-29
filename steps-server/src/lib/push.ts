@@ -1,3 +1,4 @@
+import { NotificationModel } from "../models/notification";
 import { User } from "../models/user";
 import { PushLocale, toPushLocale } from "./pushCopy";
 
@@ -38,6 +39,20 @@ export async function sendPushToUsers(
 
   if (recipients.length === 0) return;
 
+  // iPhone shows this number on the app icon and leaves it there until
+  // something changes it, so sending a flat 1 told a parent with five unread
+  // notifications that they had one. Android ignores it — the launcher draws
+  // its own count from the channel.
+  //
+  // Guarded like everything else here: a failed count must not cost the
+  // notification itself.
+  let unread = new Map<string, number>();
+  try {
+    unread = await NotificationModel.unreadCountsFor(recipients.map((user) => user.id));
+  } catch (err) {
+    console.error("Push notification badge counts failed:", err);
+  }
+
   const messages = recipients.map((user) => {
     const content =
       typeof payload === "function" ? payload(toPushLocale(user.locale)) : payload;
@@ -54,7 +69,7 @@ export async function sendPushToUsers(
       // High priority is what wakes the device to display it; the default
       // ("normal") lets Android hold it until the next maintenance window.
       priority: "high",
-      badge: 1,
+      badge: unread.get(user.id) ?? 1,
     };
   });
 
