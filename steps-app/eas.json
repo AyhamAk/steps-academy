@@ -37,9 +37,7 @@
   "submit": {
     "production": {
       "ios": {
-        "appleId": "APPLE_ID_EMAIL",
-        "ascAppId": "ASC_APP_ID",
-        "appleTeamId": "APPLE_TEAM_ID"
+        "appleId": "aklaani509@gmail.com"
       }
     }
   }
