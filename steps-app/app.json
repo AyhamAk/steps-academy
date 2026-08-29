@@ -54,8 +54,7 @@
           "icon": "./assets/android-icon-foreground.png",
           "color": "#D4A843"
         }
-      ],
-      "@sentry/react-native"
+      ]
     ],
     "extra": {
       "router": {},
