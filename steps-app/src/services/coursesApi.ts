@@ -28,6 +28,14 @@ export type Course = {
   /** Calendar range, "YYYY-MM-DD". */
   startDate: string | null;
   endDate: string | null;
+  /**
+   * The age range this course is for, in whole years. Both null when the
+   * academy has not set one — such a course shows in every age band rather
+   * than none. Optional on the type as well as nullable, because an API that
+   * predates this field simply omits it.
+   */
+  ageMinYears?: number | null;
+  ageMaxYears?: number | null;
   capacity: number;
   accentColor: string | null;
   isActive: boolean;
@@ -115,6 +123,8 @@ export type CourseInput = {
   startTime?: string | null;
   startDate?: string | null;
   endDate?: string | null;
+  ageMinYears?: number | null;
+  ageMaxYears?: number | null;
   capacity?: number;
   accentColor?: string | null;
   isActive?: boolean;

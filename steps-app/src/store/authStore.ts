@@ -5,7 +5,11 @@ import { createJSONStorage, persist } from "zustand/middleware";
 export type Role = "admin" | "parent";
 
 /** A child this account is a guardian of. Assigned by an admin, never self-declared. */
-export type Child = { id: string; name: string };
+/**
+ * `birthDate` is only present once the API carrying it has been deployed, so
+ * every reader must cope with it being absent rather than assuming a date.
+ */
+export type Child = { id: string; name: string; birthDate?: string | null };
 
 export type AuthUser = {
   id: string;

@@ -43,7 +43,7 @@ export function CourseFormModal({
   onClose,
   onSubmit,
 }: CourseFormModalProps) {
-  const { t, rtlText } = useTranslation();
+  const { t, isRTL, rtlText } = useTranslation();
   const { sheetPadding, keyboardPadding } = useSheetPadding(28);
   const [name, setName] = useState("");
   const [nameAr, setNameAr] = useState("");
@@ -58,6 +58,8 @@ export function CourseFormModal({
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [capacity, setCapacity] = useState("");
+  const [ageMin, setAgeMin] = useState("");
+  const [ageMax, setAgeMax] = useState("");
   const [emoji, setEmoji] = useState("🎓");
   const [accentColor, setAccentColor] = useState<string>(Colors.terracotta);
   const [error, setError] = useState<string | null>(null);
@@ -79,6 +81,8 @@ export function CourseFormModal({
     setStartDate(course?.startDate ?? "");
     setEndDate(course?.endDate ?? "");
     setCapacity(course?.capacity ? String(course.capacity) : "");
+    setAgeMin(course?.ageMinYears != null ? String(course.ageMinYears) : "");
+    setAgeMax(course?.ageMaxYears != null ? String(course.ageMaxYears) : "");
     setEmoji(course?.emoji ?? "🎓");
     setAccentColor(course?.accentColor ?? Colors.terracotta);
     setError(null);
@@ -94,6 +98,15 @@ export function CourseFormModal({
       setError(t.coursesAdmin.capacityInvalid);
       return;
     }
+    // Either bound may be left blank; only a pair that contradicts itself is
+    // an error. The server checks this too — this is just the faster answer.
+    const parsedAgeMin = ageMin.trim() ? Number(ageMin) : null;
+    const parsedAgeMax = ageMax.trim() ? Number(ageMax) : null;
+    if (parsedAgeMin != null && parsedAgeMax != null && parsedAgeMax < parsedAgeMin) {
+      setError(t.coursesAdmin.agesInvalid);
+      return;
+    }
+
     // A time is optional, but a half-entered one isn't.
     const hasTime = hour.trim() !== "" || minute.trim() !== "";
     const h = Number(hour), m = Number(minute);
@@ -126,6 +139,8 @@ export function CourseFormModal({
         : null,
       startDate: startDate.trim() || null,
       endDate: endDate.trim() || null,
+      ageMinYears: parsedAgeMin,
+      ageMaxYears: parsedAgeMax,
       capacity: parsedCapacity,
       emoji,
       accentColor,
@@ -342,6 +357,33 @@ export function CourseFormModal({
             />
             <Text style={[styles.hint, rtlText]}>{t.coursesAdmin.capacityHint}</Text>
 
+            <Text style={[styles.label, rtlText]}>{t.coursesAdmin.fieldAges}</Text>
+            <View style={[styles.ageRow, isRTL && styles.ageRowRTL]}>
+              <TextInput
+                value={ageMin}
+                onChangeText={(value) => {
+                  setAgeMin(value.replace(/[^0-9]/g, ""));
+                  setError(null);
+                }}
+                placeholder={t.coursesAdmin.agesMinPlaceholder}
+                placeholderTextColor={Colors.textLight}
+                keyboardType="number-pad"
+                style={[styles.input, styles.ageInput, rtlText]}
+              />
+              <TextInput
+                value={ageMax}
+                onChangeText={(value) => {
+                  setAgeMax(value.replace(/[^0-9]/g, ""));
+                  setError(null);
+                }}
+                placeholder={t.coursesAdmin.agesMaxPlaceholder}
+                placeholderTextColor={Colors.textLight}
+                keyboardType="number-pad"
+                style={[styles.input, styles.ageInput, rtlText]}
+              />
+            </View>
+            <Text style={[styles.hint, rtlText]}>{t.coursesAdmin.agesHint}</Text>
+
             {error ? <Text style={styles.error}>{error}</Text> : null}
 
             <StepsButton
@@ -358,6 +400,18 @@ export function CourseFormModal({
 }
 
 const styles = StyleSheet.create({
+  // Two bounds on one line — they are one field, and stacking them made the
+  // sheet longer without making either clearer.
+  ageRow: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  ageRowRTL: {
+    flexDirection: "row-reverse",
+  },
+  ageInput: {
+    flex: 1,
+  },
   backdrop: {
     flex: 1,
     backgroundColor: "rgba(44, 36, 22, 0.4)",

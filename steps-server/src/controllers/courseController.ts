@@ -74,6 +74,8 @@ export async function listCourses(req: Request, res: Response) {
       startTime: course.startTime,
       startDate: course.startDate,
       endDate: course.endDate,
+      ageMinYears: course.ageMinYears,
+      ageMaxYears: course.ageMaxYears,
       capacity: course.capacity,
       accentColor: course.accentColor,
       isActive: course.isActive,
@@ -118,6 +120,19 @@ function validateCourse(body: Record<string, unknown>): string | null {
   const { startDate, endDate } = body as { startDate?: string; endDate?: string };
   if (startDate && endDate && endDate < startDate) {
     return "endDate cannot be before startDate";
+  }
+  // Ages are whole years and optional. 18 is well past anything this academy
+  // runs, and exists only to reject a typed-in year or date.
+  for (const key of ["ageMinYears", "ageMaxYears"] as const) {
+    const value = body[key];
+    if (value === undefined || value === null) continue;
+    if (typeof value !== "number" || !Number.isInteger(value) || value < 0 || value > 18) {
+      return `${key} must be a whole number of years between 0 and 18`;
+    }
+  }
+  const { ageMinYears, ageMaxYears } = body as { ageMinYears?: number; ageMaxYears?: number };
+  if (ageMinYears != null && ageMaxYears != null && ageMaxYears < ageMinYears) {
+    return "ageMaxYears cannot be below ageMinYears";
   }
   return null;
 }

@@ -131,6 +131,11 @@ model Course {
   /// Calendar range, "YYYY-MM-DD" — the term the course actually runs for.
   startDate   String?
   endDate     String?
+  /// Whole years, inclusive of the lower bound. Both nullable: a course that
+  /// declares no ages belongs to the academy as a whole and shows in every
+  /// age band, rather than vanishing because nobody filled the field in.
+  ageMinYears Int?
+  ageMaxYears Int?
   /// 0 means unlimited. Approved enrolments count against it.
   capacity    Int       @default(0)
   accentColor String?

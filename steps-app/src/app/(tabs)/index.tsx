@@ -55,7 +55,7 @@ import { Translations } from "../../i18n/translations";
 import { useTranslation } from "../../i18n/useTranslation";
 import { Announcement, createAnnouncement, getLatestAnnouncement } from "../../services/announcementsApi";
 import { listCourses } from "../../services/coursesApi";
-import { getWeekSchedule } from "../../services/scheduleApi";
+import { getWeekSchedule, WEEK_DAYS } from "../../services/scheduleApi";
 import { adminOverview } from "../../services/studentsApi";
 import {
   getNextEvent,
@@ -67,6 +67,10 @@ import {
 import { useAuthStore } from "../../store/authStore";
 import { formatIsoDate, formatRelativeTime, parseIsoDate } from "../../utils/date";
 import { Touchable } from "../../components/ui/Touchable";
+import { AcademyGrid } from "../../components/home/AcademyGrid";
+import { NewPhotosRow } from "../../components/home/NewPhotosRow";
+import { ProgramCard } from "../../components/home/ProgramCard";
+import { AGE_BANDS, bandForChild } from "../../utils/ageBand";
 
 type SalutationKey = "goodMorning" | "goodAfternoon" | "goodEvening" | "goodNight";
 
@@ -348,7 +352,22 @@ function AnnouncementQuickAddModal({
   );
 }
 
-function ChildStrip({ children }: { children: { id: string; name: string }[] }) {
+/**
+ * The parent's children as selectable pills.
+ *
+ * A single child still renders its pill — it names who the screen is about,
+ * which the greeting alone leaves implicit once a parent has more than one.
+ * Selection is the only thing that moves; the rest of Home reads it.
+ */
+function ChildStrip({
+  children,
+  selectedId,
+  onSelect,
+}: {
+  children: { id: string; name: string }[];
+  selectedId: string | null;
+  onSelect: (id: string) => void;
+}) {
   if (children.length === 0) return null;
   return (
     <ScrollView
@@ -356,14 +375,23 @@ function ChildStrip({ children }: { children: { id: string; name: string }[] }) 
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={styles.childStrip}
     >
-      {children.map((child) => (
-        <View key={child.id} style={styles.childChip}>
-          <View style={styles.childAvatar}>
-            <Text style={styles.childAvatarEmoji}>🐘</Text>
-          </View>
-          <Text style={styles.childChipName}>{child.name}</Text>
-        </View>
-      ))}
+      {children.map((child) => {
+        const isSelected = child.id === selectedId;
+        return (
+          <Touchable
+            key={child.id}
+            onPress={() => onSelect(child.id)}
+            style={[styles.childChip, isSelected && styles.childChipSelected]}
+          >
+            <Text
+              style={[styles.childChipName, isSelected && styles.childChipNameSelected]}
+              maxFontSizeMultiplier={1.4}
+            >
+              {child.name}
+            </Text>
+          </Touchable>
+        );
+      })}
     </ScrollView>
   );
 }
@@ -442,6 +470,11 @@ export default function HomeScreen() {
 
   const children = user?.children ?? [];
   const childIds = children.map((child) => child.id);
+  // Which child Home is currently about. Null until the account's children have
+  // loaded, and reset if the selected one goes away (an admin unlinking them).
+  const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
+  const selectedChild =
+    children.find((child) => child.id === selectedChildId) ?? children[0] ?? null;
 
   const nextEventQuery = useQuery({
     queryKey: ["home", "nextEvent"],
@@ -494,16 +527,65 @@ export default function HomeScreen() {
   // so taking from the front means the strip shows the most recent day out.
   const heroPhotoUrls = useMemo(() => {
     if (!galleryGroups) return [];
+    // Narrowed to the selected child, so switching chips changes the strip
+    // rather than showing every child's photos under one child's name.
+    const ids = selectedChild ? [selectedChild.id] : childIds;
     return galleryGroups
       .flatMap((group) => group.photos)
-      .filter((photo) => isPhotoTaggedWithAny(photo, childIds))
+      .filter((photo) => isPhotoTaggedWithAny(photo, ids))
       .slice(0, HERO_PHOTO_COUNT)
       .map((photo) => resolvePhotoUrl(photo.url));
-  }, [galleryGroups, childIds.join(",")]);
+  }, [galleryGroups, selectedChild?.id, childIds.join(",")]);
+
+  // Today's photos of the selected child, and how many activities their
+  // timetable holds today. Both read caches Home already has.
+  const todaysPhotoCount = useMemo(() => {
+    if (!galleryGroups || !selectedChild) return 0;
+    const today = new Date().toISOString().slice(0, 10);
+    return galleryGroups
+      .filter((group) => group.event.date === today)
+      .flatMap((group) => group.photos)
+      .filter((photo) => isPhotoTaggedWithAny(photo, [selectedChild.id])).length;
+  }, [galleryGroups, selectedChild?.id]);
+
+  const todaysActivityCount = useMemo(() => {
+    const days = scheduleQuery.data;
+    if (!days) return 0;
+    // WEEK_DAYS covers Sun–Thu, the academy's week, so Friday and Saturday
+    // fall off the end and correctly report nothing scheduled.
+    const today = WEEK_DAYS[new Date().getDay()];
+    if (!today) return 0;
+    return days.find((day) => day.day === today)?.activities.length ?? 0;
+  }, [scheduleQuery.data]);
+
+  // Newest album that actually contains the selected child. Groups arrive
+  // newest-first, so the first match is the most recent.
+  const latestChildAlbum = useMemo(() => {
+    if (!galleryGroups || !selectedChild) return null;
+    for (const group of galleryGroups) {
+      const photos = group.photos.filter((photo) =>
+        isPhotoTaggedWithAny(photo, [selectedChild.id])
+      );
+      if (photos.length > 0) {
+        return { id: group.event.id, name: group.event.name, count: photos.length };
+      }
+    }
+    return null;
+  }, [galleryGroups, selectedChild?.id]);
+
+  const selectedBand = bandForChild(selectedChild?.birthDate);
+  const programName = selectedBand
+    ? [
+        selectedBand === "nursery" ? t.home.tileNursery : t.home.tileCourses,
+        t.academy.ageRange(AGE_BANDS[selectedBand].min, AGE_BANDS[selectedBand].max),
+      ]
+        .filter(Boolean)
+        .join(" · ")
+    : null;
 
   const { message: toastMessage, opacity: toastOpacity, showToast } = useToast();
 
-  const primaryChildName = children[0]?.name ?? null;
+  const primaryChildName = selectedChild?.name ?? null;
   const { salutationKey, emoji } = getTimeOfDayGreeting();
   const salutation = t.home[salutationKey];
   const firstName = getFirstName(user?.name);
@@ -664,7 +746,13 @@ export default function HomeScreen() {
             <Animated.Text style={[styles.subtitle, subtitleStyle]}>{subtitle}</Animated.Text>
           </View>
 
-          {isAdmin ? null : <ChildStrip children={children} />}
+          {isAdmin ? null : (
+            <ChildStrip
+              children={children}
+              selectedId={selectedChild?.id ?? null}
+              onSelect={setSelectedChildId}
+            />
+          )}
         </Animated.View>
 
         {isHomeLoading ? (
@@ -687,6 +775,25 @@ export default function HomeScreen() {
               onToast={showToast}
               onFeedback={() => setIsFeedbackOpen(true)}
             />
+
+            {selectedChild ? (
+              <ProgramCard
+                childName={selectedChild.name}
+                programName={programName}
+                photoCount={todaysPhotoCount}
+                activityCount={todaysActivityCount}
+              />
+            ) : null}
+
+            {latestChildAlbum ? (
+              <NewPhotosRow
+                eventId={latestChildAlbum.id}
+                eventName={latestChildAlbum.name}
+                photoCount={latestChildAlbum.count}
+              />
+            ) : null}
+
+            <AcademyGrid />
 
             <CoursesSection />
           </>
@@ -992,34 +1099,28 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
   },
   childChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: Colors.linen,
-    borderRadius: 40,
-    height: 56,
-    paddingHorizontal: 12,
-    gap: 10,
-    shadowColor: "#000",
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
-  },
-  childAvatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: `${Colors.terracotta}26`,
-    alignItems: "center",
     justifyContent: "center",
+    backgroundColor: Colors.linen,
+    borderRadius: 20,
+    minHeight: 36,
+    paddingHorizontal: 16,
+    paddingVertical: 7,
+    // A transparent border on the resting state so selecting a chip changes
+    // its colour without changing its size and nudging the row.
+    borderWidth: 1.5,
+    borderColor: "transparent",
   },
-  childAvatarEmoji: {
-    fontSize: 24,
+  childChipSelected: {
+    backgroundColor: Colors.cream,
+    borderColor: Colors.terracotta,
   },
   childChipName: {
     ...Type.body,
     fontFamily: Fonts.bold,
-    color: Colors.bark,
+    color: Colors.textLight,
+  },
+  childChipNameSelected: {
+    color: Colors.terracotta,
   },
   section: {
     marginBottom: 24,

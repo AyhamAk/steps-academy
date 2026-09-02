@@ -38,6 +38,8 @@ type CourseInput = {
   startTime?: string | null;
   startDate?: string | null;
   endDate?: string | null;
+  ageMinYears?: number | null;
+  ageMaxYears?: number | null;
   capacity?: number;
   accentColor?: string | null;
   isActive?: boolean;
@@ -61,6 +63,8 @@ export const CourseModel = {
         startTime: input.startTime ?? null,
         startDate: input.startDate ?? null,
         endDate: input.endDate ?? null,
+        ageMinYears: input.ageMinYears ?? null,
+        ageMaxYears: input.ageMaxYears ?? null,
         capacity: input.capacity ?? 0,
         accentColor: input.accentColor ?? null,
         isActive: input.isActive ?? true,
@@ -89,6 +93,8 @@ export const CourseModel = {
           ...(input.startTime !== undefined ? { startTime: input.startTime } : {}),
           ...(input.startDate !== undefined ? { startDate: input.startDate } : {}),
           ...(input.endDate !== undefined ? { endDate: input.endDate } : {}),
+          ...(input.ageMinYears !== undefined ? { ageMinYears: input.ageMinYears } : {}),
+          ...(input.ageMaxYears !== undefined ? { ageMaxYears: input.ageMaxYears } : {}),
           ...(input.capacity !== undefined ? { capacity: input.capacity } : {}),
           ...(input.accentColor !== undefined ? { accentColor: input.accentColor } : {}),
           ...(input.isActive !== undefined ? { isActive: input.isActive } : {}),

@@ -4,7 +4,8 @@ import { prisma } from "../lib/prisma";
 
 export type { Role };
 export type User = PrismaUser;
-export type PublicChild = { id: string; name: string };
+/** `birthDate` drives the age band Home labels the child with. */
+export type PublicChild = { id: string; name: string; birthDate: string | null };
 export type PublicUser = Omit<User, "passwordHash" | "googleId" | "pushToken"> & {
   /** Children this account is a guardian of. Admin-assigned, never self-declared. */
   children: PublicChild[];
@@ -170,7 +171,7 @@ export const UserModel = {
     } = user;
     const links = await prisma.parentStudent.findMany({
       where: { parentId: user.id },
-      include: { student: { select: { id: true, name: true } } },
+      include: { student: { select: { id: true, name: true, birthDate: true } } },
       orderBy: { student: { name: "asc" } },
     });
     return { ...rest, children: links.map((link) => link.student) };
