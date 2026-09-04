@@ -11,6 +11,7 @@ export default function DafiScreen() {
 
   return (
     <ComingSoonScreen
+      headerTitle={t.academy.dafiHeading}
       heroEmoji="🧭"
       heading={t.academy.dafiHeading}
       subtext={t.academy.dafiSubtext}

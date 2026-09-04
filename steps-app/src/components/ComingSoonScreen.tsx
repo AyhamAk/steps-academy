@@ -10,6 +10,7 @@ import Animated, {
 
 import { Screen } from "./Screen";
 import { ScreenFadeIn } from "./ui/ScreenFadeIn";
+import { StepsHeader } from "./ui/StepsHeader";
 import { ToastBanner, useToast } from "./ui/Toast";
 import { Colors } from "../constants/Colors";
 import { Fonts } from "../constants/Fonts";
@@ -20,6 +21,11 @@ import { Touchable } from "./ui/Touchable";
 export type PreviewCard = { emoji: string; label: string };
 
 type ComingSoonScreenProps = {
+  /**
+   * Set on screens pushed onto the stack, which have no other way back. The
+   * tab versions leave it off — a tab is already reachable from the bar.
+   */
+  headerTitle?: string;
   heroEmoji: string;
   heading: string;
   subtext: string;
@@ -29,6 +35,7 @@ type ComingSoonScreenProps = {
 };
 
 export function ComingSoonScreen({
+  headerTitle,
   heroEmoji,
   heading,
   subtext,
@@ -56,6 +63,7 @@ export function ComingSoonScreen({
 
   return (
     <Screen>
+      {headerTitle ? <StepsHeader title={headerTitle} showBack /> : null}
       <ScreenFadeIn style={styles.container}>
         <Animated.Text style={[styles.heroEmoji, heroStyle]}>{heroEmoji}</Animated.Text>
         <Text style={styles.heading}>{heading}</Text>

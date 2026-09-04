@@ -1,4 +1,3 @@
-import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { useState } from "react";
@@ -55,7 +54,6 @@ function TaggedThumb({
 }
 
 export function ParentGalleryScreen() {
-  const tabBarHeight = useBottomTabBarHeight();
   const { t, isRTL, rtlText } = useTranslation();
   const children = useChildren();
   const childIds = children.map((child) => child.id);
@@ -69,9 +67,7 @@ export function ParentGalleryScreen() {
 
   return (
     <>
-      <ScrollView
-        contentContainerStyle={[styles.content, { paddingBottom: tabBarHeight + 24 }]}
-      >
+      <ScrollView contentContainerStyle={styles.content}>
         <ScreenFadeIn>
           <AdminHeader
             title={t.gallery.pageTitle}

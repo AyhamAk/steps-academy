@@ -157,6 +157,7 @@ export default function AcademyCoursesScreen() {
                     setDetailId(c.id);
                   }}
                   onJoin={startRequest}
+                  onLeave={(c, enrollment) => setLeaving({ course: c, enrollment })}
                 />
               ))}
             </View>

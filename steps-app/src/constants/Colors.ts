@@ -15,6 +15,8 @@ export const Colors = {
   forestDeep: "#476C49",
   skyDeep: "#607B99",
   honeyDeep: "#B08A2E",
+  /** Honey at card-fill strength — the tips pillar's tinted surface. */
+  honeyLight: "#FBF3DC",
 
   // Lighter partners, used as the third stop so a slide gradient has somewhere
   // to travel to. Two stops read as a flat block; three give it depth.

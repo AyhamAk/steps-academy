@@ -3,11 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { useMemo, useState } from "react";
 import { Alert, Linking, ScrollView, StyleSheet, Text, View } from "react-native";
-import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 
 import { ChangePasswordModal } from "../../components/profile/ChangePasswordModal";
 import { ContactAcademyModal } from "../../components/profile/ContactAcademyModal";
-import { MyCoursesSection } from "../../components/profile/MyCoursesSection";
 import IconTile from "../../components/ui/IconTile";
 import RoleBadge from "../../components/ui/RoleBadge";
 import SectionLabel from "../../components/ui/SectionLabel";
@@ -33,7 +31,6 @@ import { Touchable } from "../../components/ui/Touchable";
 
 export default function ProfileScreen() {
   const { user, logout, deleteAccount, isLoading } = useAuth();
-  const tabBarHeight = useBottomTabBarHeight();
   const { t, isRTL, rtlText } = useTranslation();
   const locale = useLocaleStore((state) => state.locale);
   const setLocale = useLocaleStore((state) => state.setLocale);
@@ -170,10 +167,7 @@ export default function ProfileScreen() {
     <Screen>
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingTop: 12, paddingBottom: tabBarHeight + 24 },
-        ]}
+        contentContainerStyle={[styles.scrollContent, { paddingTop: 12 }]}
       >
         <ScreenFadeIn>
         <StepsCard style={styles.identityCard} elevation="flat">
@@ -277,7 +271,6 @@ export default function ProfileScreen() {
           </View>
         ) : null}
 
-        {user?.role === "admin" ? null : <MyCoursesSection />}
 
         <View style={styles.prefsGroup}>
           <SectionLabel label={t.profile.preferencesTitle} />

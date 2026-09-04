@@ -91,9 +91,7 @@ function NowLine({
         {lineStyle ? <View style={[styles.railLine, lineStyle]} /> : null}
         {/* A ring, not another filled dot. Same-colour, same-size circles
             left the marker looking like one more activity. */}
-        <View style={styles.nowRing}>
-          <View style={styles.nowCore} />
-        </View>
+        <View style={styles.nowDot} />
       </View>
       <View style={styles.nowBody}>
         <View style={styles.nowLine} />
@@ -397,6 +395,9 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 20,
     color: Colors.bark,
+    // Admin-entered content: an English course name inside an Arabic UI has to
+    // resolve its own direction, or it reads reversed.
+    writingDirection: "auto",
   },
   duration: { ...Type.caption, color: Colors.textLight },
   // No alignItems and no padding of its own: the rail has to stretch the
@@ -404,34 +405,33 @@ const styles = StyleSheet.create({
   nowRow: { flexDirection: "row", gap: 10 },
   nowLabel: {
     width: 78,
-    fontFamily: Fonts.bold,
+    fontFamily: Fonts.semiBold,
     fontSize: 12,
     lineHeight: 20,
     color: Colors.terracotta,
     writingDirection: "ltr",
     fontVariant: ["tabular-nums"],
   },
-  nowRing: {
-    width: 15,
-    height: 15,
-    borderRadius: 8,
-    marginTop: DOT_CENTER - 7.5,
-    borderWidth: 2,
-    borderColor: Colors.terracotta,
-    backgroundColor: Colors.background,
-    alignItems: "center",
-    justifyContent: "center",
+  // A solid 8px dot: at this size a ring reads as a smudge, and the marker
+  // needs to be quieter than an activity's own dot, not busier.
+  nowDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginTop: DOT_CENTER - 4,
+    backgroundColor: Colors.terracotta,
   },
-  nowCore: { width: 5, height: 5, borderRadius: 3, backgroundColor: Colors.terracotta },
   // Deliberately tighter than an activity row: the marker is anchored to
   // the next upcoming item, and an even gap made it look like a
   // proportional position between two items it is not measuring.
   nowBody: { flex: 1, paddingBottom: 8 },
   // Sits on the dot centre so the marker reads as one horizontal line.
   nowLine: {
-    height: 1.5,
-    marginTop: DOT_CENTER - 0.75,
+    height: 1,
+    marginTop: DOT_CENTER - 0.5,
     backgroundColor: Colors.terracotta,
-    borderRadius: 1,
+    // A quiet rule across the timeline rather than a bar competing with the
+    // activity rows it runs between.
+    opacity: 0.4,
   },
 });

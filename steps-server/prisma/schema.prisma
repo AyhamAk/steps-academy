@@ -106,6 +106,8 @@ model User {
   enrollmentRequests  CourseEnrollment[] @relation("EnrollmentRequester")
   enrollmentDecisions CourseEnrollment[] @relation("EnrollmentDecider")
   invitesCreated      InviteCode[]       @relation("InvitesCreated")
+  tipsCreated         Tip[]
+  tipReads            TipRead[]
   inviteRedemptions   InviteRedemption[]
 }
 
@@ -375,4 +377,56 @@ model AnalyticsEvent {
   @@index([createdAt])
   @@index([name, createdAt])
   @@index([userId, createdAt])
+}
+
+/// A monthly parenting tip written by the academy.
+///
+/// Follows the Course translation pattern: `title` is the academy's own
+/// wording and the fallback for any locale without its own translation, so a
+/// tip is publishable the moment it is written in one language.
+model Tip {
+  id        String   @id @default(uuid())
+  emoji     String   @default("💡")
+  title     String
+  titleAr   String?
+  titleHe   String?
+  /// One or two lines shown on the card. Optional — an archive tip usually
+  /// has none, and the card closes up rather than leaving a gap.
+  excerpt   String?
+  excerptAr String?
+  excerptHe String?
+  /// The article itself, shown in the reading sheet.
+  body      String
+  bodyAr    String?
+  bodyHe    String?
+  /// Which month this tip belongs to. Stored rather than derived from
+  /// createdAt so the academy can publish September's tip in August.
+  month     Int
+  year      Int
+  /// Rough reading time in minutes, written by the author.
+  minutes   Int      @default(3)
+  /// Drafts stay invisible to parents until an admin publishes them.
+  isPublished Boolean @default(false)
+  createdBy String
+  creator   User     @relation(fields: [createdBy], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  reads TipRead[]
+
+  @@index([isPublished, year, month])
+}
+
+/// One parent having read one tip. A join table rather than a flag on Tip,
+/// for the same reason PhotoTag is one: the state belongs to the pair, not to
+/// the tip.
+model TipRead {
+  tipId  String
+  tip    Tip      @relation(fields: [tipId], references: [id], onDelete: Cascade)
+  userId String
+  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  readAt DateTime @default(now())
+
+  @@id([tipId, userId])
+  @@index([userId])
 }

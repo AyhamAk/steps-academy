@@ -5,7 +5,7 @@ import { Colors } from "../../constants/Colors";
 import { Fonts } from "../../constants/Fonts";
 import { Type } from "../../constants/Typography";
 import { useTranslation } from "../../i18n/useTranslation";
-import { Course } from "../../services/coursesApi";
+import { Course, MyEnrollment } from "../../services/coursesApi";
 import { courseIcon } from "../../utils/courseIcon";
 import { formatCourseDates, formatCourseDays } from "../../utils/courseSchedule";
 import { courseName } from "../../utils/courseText";
@@ -54,23 +54,30 @@ export function CourseRow({
   isLast,
   onOpen,
   onJoin,
+  onLeave,
 }: {
   course: Course;
   isLast: boolean;
   onOpen: (course: Course) => void;
   onJoin: (course: Course) => void;
+  onLeave: (course: Course, enrollment: MyEnrollment) => void;
 }) {
   const { t, isRTL, rtlText, locale } = useTranslation();
 
   const isFull = course.spotsLeft !== null && course.spotsLeft === 0;
-  const pending = course.myEnrollments.find((e) => e.status === "pending");
-  const approved = course.myEnrollments.find((e) => e.status === "approved");
   const accent = course.accentColor ?? Colors.terracotta;
   const days = formatCourseDays(course, t);
   const dates = formatCourseDates(course, t);
-  // First name only: the pill has room for a tag, not a full name, and the
-  // detail view lists every child's status in full.
-  const firstName = (approved ?? pending)?.studentName.split(" ")[0] ?? "";
+  // Who is in it reads better as a line of the course's own detail than as a
+  // tag competing with the button for the right-hand edge. First names only —
+  // the detail view spells each child's status out in full.
+  const enrolled = course.myEnrollments;
+  const enrolledNames = enrolled.map((e) => e.studentName.split(" ")[0]).join(", ");
+  // Leaving is offered only for a place the academy has actually confirmed.
+  // A pending request is not a place yet, so it shows its status instead and
+  // is withdrawn from the course's own detail view.
+  const approved = enrolled.filter((e) => e.status === "approved");
+  const isWaiting = approved.length === 0 && enrolled.length > 0;
 
   return (
     <Touchable
@@ -91,34 +98,44 @@ export function CourseRow({
         </Text>
         {days ? <MetaLine icon="time-outline" text={days} isRTL={isRTL} /> : null}
         {dates ? <MetaLine icon="calendar-outline" text={dates} isRTL={isRTL} /> : null}
+        {enrolledNames ? (
+          <MetaLine icon="person-outline" text={enrolledNames} isRTL={isRTL} />
+        ) : null}
       </View>
 
-      {/* Status is a quiet tag in the corner. Remaining places aren't shown
-          here at all — they only matter to the join decision, and the detail
-          view spells them out. */}
-      {approved ? (
-        <View style={[styles.pill, styles.pillEnrolled, isRTL && styles.rowReverse]}>
-          <Ionicons name="checkmark-circle" size={13} color={Colors.forest} />
-          <Text style={[styles.pillText, styles.pillTextEnrolled]} numberOfLines={1}>
-            {firstName || t.myCourses.enrolled}
+      {/* Exactly one control per row. Joining and leaving are the only two
+          things a parent does here, so the row offers whichever applies
+          instead of a status tag they cannot act on. */}
+      {isWaiting ? (
+        <View style={styles.waitingTag}>
+          <Text style={styles.waitingText} numberOfLines={1} maxFontSizeMultiplier={1.2}>
+            {t.courses.waitlistShort}
           </Text>
         </View>
-      ) : pending ? (
-        <View style={[styles.pill, styles.pillPending, isRTL && styles.rowReverse]}>
-          <Ionicons name="hourglass-outline" size={13} color={Colors.bark} />
-          <Text style={[styles.pillText, styles.pillTextPending]} numberOfLines={1}>
-            {firstName || t.myCourses.waitlisted}
+      ) : approved.length > 0 ? (
+        <Touchable
+          onPress={() => {
+            // With more than one child in the course there is no single
+            // enrolment to end, so the detail view asks which.
+            if (approved.length === 1) onLeave(course, approved[0]);
+            else onOpen(course);
+          }}
+          style={[styles.actionButton, styles.leaveButton]}
+          hitSlop={6}
+        >
+          <Text style={[styles.actionText, styles.leaveText]} numberOfLines={1} maxFontSizeMultiplier={1.2}>
+            {t.courses.leaveShort}
           </Text>
-        </View>
+        </Touchable>
       ) : (
         // Nested inside the row's Touchable on purpose: the row opens the
         // details, this opens the join sheet directly.
         <Touchable
           onPress={() => onJoin(course)}
-          style={[styles.joinButton, isFull && styles.joinButtonWaitlist]}
+          style={[styles.actionButton, isFull && styles.joinButtonWaitlist]}
           hitSlop={6}
         >
-          <Text style={styles.joinText} numberOfLines={1} maxFontSizeMultiplier={1.2}>
+          <Text style={styles.actionText} numberOfLines={1} maxFontSizeMultiplier={1.2}>
             {isFull ? t.courses.waitlistShort : t.courses.joinShort}
           </Text>
         </Touchable>
@@ -168,21 +185,7 @@ const styles = StyleSheet.create({
   // row width before ellipsising, which at full width it rarely reaches.
   meta: { ...Type.caption, color: Colors.textLight, flex: 1, writingDirection: "auto" },
   metaRTL: { textAlign: "right" },
-  pill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    borderRadius: 999,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    maxWidth: 110,
-  },
-  pillEnrolled: { backgroundColor: `${Colors.forest}1F` },
-  pillPending: { backgroundColor: `${Colors.honey}33` },
-  pillText: { fontFamily: Fonts.semiBold, fontSize: 12, flexShrink: 1 },
-  pillTextEnrolled: { color: Colors.forest },
-  pillTextPending: { color: Colors.bark },
-  joinButton: {
+  actionButton: {
     backgroundColor: Colors.terracotta,
     borderRadius: 10,
     paddingHorizontal: 12,
@@ -191,10 +194,33 @@ const styles = StyleSheet.create({
     maxWidth: 110,
   },
   joinButtonWaitlist: { backgroundColor: Colors.honey },
-  joinText: {
+  // Leaving is the destructive one, so it is outlined rather than filled —
+  // present when you need it, never the thing your thumb lands on first.
+  leaveButton: {
+    backgroundColor: "transparent",
+    borderWidth: 1.5,
+    borderColor: Colors.clay,
+  },
+  actionText: {
     fontFamily: Fonts.bold,
     fontSize: 13,
     color: Colors.cream,
+    textAlign: "center",
+  },
+  leaveText: { color: Colors.clay },
+  // A pending request is a state, not an action — so it reads as a label
+  // rather than borrowing the button's shape and inviting a tap.
+  waitingTag: {
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    backgroundColor: `${Colors.honey}33`,
+    maxWidth: 110,
+  },
+  waitingText: {
+    fontFamily: Fonts.semiBold,
+    fontSize: 12,
+    color: Colors.bark,
     textAlign: "center",
   },
 });

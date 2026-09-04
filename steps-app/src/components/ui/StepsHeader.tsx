@@ -10,9 +10,18 @@ type StepsHeaderProps = {
   title: string;
   subtitle?: string;
   showBack?: boolean;
+  /** An optional action on the trailing edge, the way SectionLabel has one. */
+  actionLabel?: string;
+  onActionPress?: () => void;
 };
 
-export function StepsHeader({ title, subtitle, showBack }: StepsHeaderProps) {
+export function StepsHeader({
+  title,
+  subtitle,
+  showBack,
+  actionLabel,
+  onActionPress,
+}: StepsHeaderProps) {
   const { isRTL, rtlText } = useTranslation();
 
   return (
@@ -26,6 +35,13 @@ export function StepsHeader({ title, subtitle, showBack }: StepsHeaderProps) {
         <Text style={[styles.title, rtlText]}>{title}</Text>
         {subtitle ? <Text style={[styles.subtitle, rtlText]}>{subtitle}</Text> : null}
       </View>
+      {actionLabel && onActionPress ? (
+        <Touchable onPress={onActionPress} hitSlop={12} accessibilityLabel={actionLabel}>
+          <Text style={styles.action} maxFontSizeMultiplier={1.3}>
+            {actionLabel}
+          </Text>
+        </Touchable>
+      ) : null}
     </View>
   );
 }
@@ -57,5 +73,9 @@ const styles = StyleSheet.create({
     ...Type.caption,
     color: Colors.textLight,
     marginTop: 2,
+  },
+  action: {
+    ...Type.caption,
+    color: Colors.terracotta,
   },
 });

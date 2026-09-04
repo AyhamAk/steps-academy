@@ -4,13 +4,11 @@ import { router } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Image,
-  Modal,
   NativeScrollEvent,
   NativeSyntheticEvent,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TextStyle,
   View,
   useWindowDimensions,
@@ -30,15 +28,10 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 
-import SectionLabel from "../../components/ui/SectionLabel";
 import { AdminHomeSections } from "../../components/home/AdminHomeSections";
-import { SlideBackdrop, SlideVariant } from "../../components/home/SlideBackdrop";
-import { CoursesSection } from "../../components/home/CoursesSection";
 import { FeedbackModal } from "../../components/home/FeedbackModal";
 import { WeeklyScheduleSection } from "../../components/home/WeeklyScheduleSection";
 import { Screen } from "../../components/Screen";
-import { StepsButton } from "../../components/ui/StepsButton";
-import { StepsCard } from "../../components/ui/StepsCard";
 import { DataErrorState } from "../../components/ui/DataErrorState";
 import { SkeletonHomeSections } from "../../components/ui/Skeleton";
 import { NotificationBell } from "../../components/ui/NotificationBell";
@@ -47,13 +40,11 @@ import { ToastBanner, useToast } from "../../components/ui/Toast";
 import { Colors } from "../../constants/Colors";
 import { Fonts } from "../../constants/Fonts";
 import { Type } from "../../constants/Typography";
-import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 
-import { useLayout, useSheetPadding } from "../../hooks/useLayout";
+import { useLayout } from "../../hooks/useLayout";
 import { useReduceMotionSetting } from "../../hooks/useReduceMotionSetting";
 import { Translations } from "../../i18n/translations";
 import { useTranslation } from "../../i18n/useTranslation";
-import { Announcement, createAnnouncement, getLatestAnnouncement } from "../../services/announcementsApi";
 import { listCourses } from "../../services/coursesApi";
 import { getWeekSchedule, WEEK_DAYS } from "../../services/scheduleApi";
 import { adminOverview } from "../../services/studentsApi";
@@ -61,14 +52,13 @@ import {
   getNextEvent,
   isPhotoTaggedWithAny,
   myGallery,
-  NextEvent,
   resolvePhotoUrl,
 } from "../../services/galleryApi";
 import { useAuthStore } from "../../store/authStore";
-import { formatIsoDate, formatRelativeTime, parseIsoDate } from "../../utils/date";
+import { formatIsoDate, parseIsoDate } from "../../utils/date";
 import { Touchable } from "../../components/ui/Touchable";
 import { AcademyGrid } from "../../components/home/AcademyGrid";
-import { NewPhotosRow } from "../../components/home/NewPhotosRow";
+import { HeroCarousel } from "../../components/home/HeroCarousel";
 import { ProgramCard } from "../../components/home/ProgramCard";
 import { AGE_BANDS, bandForChild } from "../../utils/ageBand";
 
@@ -98,259 +88,8 @@ function getDaysAway(date: Date, t: Translations): { label: string; isToday: boo
   return { label: t.home.daysAway(diffDays), isToday: false };
 }
 
-const CAROUSEL_SLIDE_COUNT = 3;
 /** Thumbnails in the first slide's photo strip. Four fits the narrowest phone. */
 const HERO_PHOTO_COUNT = 4;
-
-/** A carousel slide: its own layered backdrop, sized to the viewport. */
-function SlideBackground({
-  variant,
-  isRTL,
-  slideWidth,
-  children,
-}: {
-  variant: SlideVariant;
-  isRTL: boolean;
-  slideWidth: number;
-  children: React.ReactNode;
-}) {
-
-  return (
-    <SlideBackdrop
-      variant={variant}
-      isRTL={isRTL}
-      style={[styles.carouselSlide, { width: slideWidth }]}
-    >
-      {children}
-    </SlideBackdrop>
-  );
-}
-
-function HeroCarousel({
-  t,
-  isRTL,
-  childName,
-  nextEvent,
-  daysAwayLabel,
-  heroPhotoUrls,
-  onToast,
-  onFeedback,
-}: {
-  t: Translations;
-  isRTL: boolean;
-  childName: string | null;
-  nextEvent: NextEvent | null | undefined;
-  daysAwayLabel: string | null;
-  heroPhotoUrls: string[];
-  onToast: (message: string) => void;
-  onFeedback: () => void;
-}) {
-  const { width, gutter } = useLayout();
-  // Against the gutter, not a hardcoded 48: the card then has the same margin
-  // on both sides at every width.
-  const slideWidth = width - gutter * 2;
-  const reduceMotion = useReduceMotionSetting();
-  const scrollRef = useRef<ScrollView>(null);
-  const indexRef = useRef(0);
-  const [activeIndex, setActiveIndex] = useState(0);
-  const [selectedMood, setSelectedMood] = useState<string | null>(null);
-  const dotProgress = useSharedValue(0);
-
-  const goToIndex = (index: number) => {
-    scrollRef.current?.scrollTo({ x: index * slideWidth, animated: true });
-    indexRef.current = index;
-    setActiveIndex(index);
-  };
-
-  useEffect(() => {
-    if (reduceMotion) return;
-    dotProgress.value = 0;
-    dotProgress.value = withTiming(1, { duration: 4000, easing: Easing.linear }, (finished) => {
-      if (finished) runOnJS(goToIndex)((indexRef.current + 1) % CAROUSEL_SLIDE_COUNT);
-    });
-  }, [activeIndex, reduceMotion, slideWidth]);
-
-  const handleMomentumEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const index = Math.round(e.nativeEvent.contentOffset.x / slideWidth);
-    indexRef.current = index;
-    setActiveIndex(index);
-  };
-
-  const dotFillStyle = useAnimatedStyle(() => ({
-    width: `${dotProgress.value * 100}%`,
-  }));
-
-  const childOrGeneric = childName ?? t.home.welcomeBack;
-  const arrow = isRTL ? "←" : "→";
-  const startAlign: "flex-start" | "flex-end" = isRTL ? "flex-end" : "flex-start";
-  const textAlign: "left" | "right" = isRTL ? "right" : "left";
-
-  return (
-    <View style={styles.carouselWrapper}>
-      <ScrollView
-        ref={scrollRef}
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        onMomentumScrollEnd={handleMomentumEnd}
-        snapToInterval={slideWidth}
-        decelerationRate="fast"
-        style={{ width: slideWidth }}
-      >
-        <SlideBackground variant="terracotta" isRTL={isRTL} slideWidth={slideWidth}>
-          {/* With thumbnails there is no room for the emoji too — the strip is
-              the picture, so the emoji only stands in when there are no photos. */}
-          {heroPhotoUrls.length > 0 ? (
-            <>
-              <Text
-                style={[styles.carouselHeadline, styles.headlineTight, { textAlign, alignSelf: startAlign }]}
-              >
-                {t.home.carouselHighlight(childOrGeneric)}
-              </Text>
-              <Touchable
-                style={[styles.photoStrip, isRTL && styles.rowReverse, { alignSelf: startAlign }]}
-                onPress={() => router.push("/gallery")}
-                accessibilityLabel={t.home.carouselHighlightCta}
-              >
-                {heroPhotoUrls.map((url) => (
-                  <Image key={url} source={{ uri: url }} style={styles.photoThumb} resizeMode="cover" />
-                ))}
-                <Text style={styles.photoStripArrow}>{arrow}</Text>
-              </Touchable>
-            </>
-          ) : (
-            <>
-              <Text style={[styles.carouselEmoji, { textAlign, alignSelf: startAlign }]}>🎨</Text>
-              <Text style={[styles.carouselHeadline, { textAlign, alignSelf: startAlign }]}>
-                {t.home.carouselHighlight(childOrGeneric)}
-              </Text>
-              <Touchable
-                style={[styles.carouselCta, { alignSelf: startAlign }]}
-                onPress={() => router.push("/gallery")}
-              >
-                <Text style={styles.carouselCtaText}>
-                  {t.home.carouselHighlightCta} {arrow}
-                </Text>
-              </Touchable>
-            </>
-          )}
-        </SlideBackground>
-
-        <SlideBackground variant="forest" isRTL={isRTL} slideWidth={slideWidth}>
-          <Text style={[styles.carouselEmoji, { textAlign, alignSelf: startAlign }]}>💬</Text>
-          <Text style={[styles.carouselHeadline, { textAlign, alignSelf: startAlign }]}>
-            {t.feedback.carouselHeadline}
-          </Text>
-          <Touchable
-            style={[styles.carouselCta, { alignSelf: startAlign }]}
-            onPress={onFeedback}
-          >
-            <Text style={styles.carouselCtaText}>{t.feedback.carouselCta}</Text>
-          </Touchable>
-        </SlideBackground>
-
-        <SlideBackground variant="sky" isRTL={isRTL} slideWidth={slideWidth}>
-          <Text style={[styles.carouselHeadline, { textAlign, alignSelf: startAlign }]}>
-            {t.home.moodCheckinQuestion(childOrGeneric)}
-          </Text>
-          <View style={styles.moodRow}>
-            {["😊", "😐", "😢"].map((moodEmoji) => (
-              <Touchable
-                key={moodEmoji}
-                style={[styles.moodButton, selectedMood === moodEmoji && styles.moodButtonSelected]}
-                onPress={() => {
-                  setSelectedMood(moodEmoji);
-                  onToast(t.home.moodThanks);
-                }}
-              >
-                <Text style={styles.moodEmoji}>{moodEmoji}</Text>
-              </Touchable>
-            ))}
-          </View>
-        </SlideBackground>
-      </ScrollView>
-
-      <View style={styles.carouselDots}>
-        {[0, 1, 2].map((index) => (
-          <View key={index} style={styles.carouselDotTrack}>
-            {index === activeIndex ? (
-              <Animated.View
-                style={[styles.carouselDotFill, reduceMotion ? { width: "100%" } : dotFillStyle]}
-              />
-            ) : null}
-          </View>
-        ))}
-      </View>
-    </View>
-  );
-}
-
-function AnnouncementQuickAddModal({
-  visible,
-  onClose,
-  onCreated,
-  t,
-}: {
-  visible: boolean;
-  onClose: () => void;
-  onCreated: (announcement: Announcement) => void;
-  t: Translations;
-}) {
-  const [text, setText] = useState("");
-  const [isSaving, setIsSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const { sheetPadding, keyboardPadding } = useSheetPadding(32);
-
-  const handlePost = async () => {
-    if (!text.trim()) {
-      setError(t.home.announcementRequired);
-      return;
-    }
-    setIsSaving(true);
-    setError(null);
-    try {
-      const announcement = await createAnnouncement(text.trim());
-      onCreated(announcement);
-      setText("");
-    } catch {
-      setError(t.home.couldntPostAnnouncement);
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <View style={[styles.modalBackdrop, { paddingBottom: keyboardPadding }]}>
-        <View style={[styles.modalSheet, { paddingBottom: sheetPadding }]}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>{t.home.addAnnouncement}</Text>
-            <Touchable onPress={onClose}>
-              <Text style={styles.modalClose}>✕</Text>
-            </Touchable>
-          </View>
-
-          <TextInput
-            value={text}
-            onChangeText={setText}
-            placeholder={t.home.announcementPlaceholder}
-            placeholderTextColor={Colors.textLight}
-            style={[styles.modalInput, styles.modalTextArea]}
-            multiline
-          />
-
-          {error ? <Text style={styles.modalError}>{error}</Text> : null}
-
-          <StepsButton
-            label={isSaving ? t.home.posting : t.home.postAnnouncement}
-            onPress={handlePost}
-            style={styles.modalButton}
-          />
-        </View>
-      </View>
-    </Modal>
-  );
-}
 
 /**
  * The parent's children as selectable pills.
@@ -396,75 +135,14 @@ function ChildStrip({
   );
 }
 
-function ExpandableAnnouncementText({
-  text,
-  expanded,
-  rtlText,
-}: {
-  text: string;
-  expanded: boolean;
-  rtlText: Pick<TextStyle, "textAlign" | "writingDirection">;
-}) {
-  const [collapsedHeight, setCollapsedHeight] = useState<number | null>(null);
-  const [fullHeight, setFullHeight] = useState<number | null>(null);
-  const heightProgress = useSharedValue(0);
-  const reduceMotion = useReduceMotionSetting();
-
-  useEffect(() => {
-    if (collapsedHeight == null || fullHeight == null) return;
-    heightProgress.value = reduceMotion
-      ? expanded
-        ? 1
-        : 0
-      : withTiming(expanded ? 1 : 0, { duration: 250 });
-  }, [expanded, collapsedHeight, fullHeight]);
-
-  const animatedStyle = useAnimatedStyle(() => {
-    if (collapsedHeight == null || fullHeight == null) return {};
-    return {
-      height: interpolate(
-        heightProgress.value,
-        [0, 1],
-        [collapsedHeight, fullHeight],
-        Extrapolation.CLAMP
-      ),
-    };
-  });
-
-  return (
-    <View>
-      <Text
-        style={[styles.announcementText, rtlText, styles.measureHidden]}
-        numberOfLines={3}
-        onLayout={(e) => setCollapsedHeight(e.nativeEvent.layout.height)}
-      >
-        {text}
-      </Text>
-      <Text
-        style={[styles.announcementText, rtlText, styles.measureHidden]}
-        onLayout={(e) => setFullHeight(e.nativeEvent.layout.height)}
-      >
-        {text}
-      </Text>
-
-      <Animated.View style={[styles.announcementTextClip, animatedStyle]}>
-        <Text style={[styles.announcementText, rtlText]}>{text}</Text>
-      </Animated.View>
-    </View>
-  );
-}
-
 const HEADER_COLLAPSE_RANGE = 90;
 
 export default function HomeScreen() {
-  const tabBarHeight = useBottomTabBarHeight();
   const { width, gutter, insets } = useLayout();
   const user = useAuthStore((state) => state.user);
   const isAdmin = user?.role === "admin";
   const reducedMotion = useReducedMotion();
   const { t, isRTL, rtlText } = useTranslation();
-  const [isAnnouncementExpanded, setIsAnnouncementExpanded] = useState(false);
-  const [isAnnouncementModalVisible, setIsAnnouncementModalVisible] = useState(false);
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
   const queryClient = useQueryClient();
 
@@ -479,10 +157,6 @@ export default function HomeScreen() {
   const nextEventQuery = useQuery({
     queryKey: ["home", "nextEvent"],
     queryFn: getNextEvent,
-  });
-  const announcementQuery = useQuery({
-    queryKey: ["home", "announcement"],
-    queryFn: getLatestAnnouncement,
   });
   // Shares its cache key with ParentGalleryScreen's `myGallery` query — visiting
   // either screen warms the other, so this rarely triggers its own fetch.
@@ -504,7 +178,6 @@ export default function HomeScreen() {
   });
 
   const nextEvent = nextEventQuery.data;
-  const announcement = announcementQuery.data;
   const galleryGroups = galleryQuery.data;
 
   // A disabled query sits in `pending` forever, so only count the ones that
@@ -512,7 +185,6 @@ export default function HomeScreen() {
   // would wait on a request that is never going to be made.
   const sectionQueries = [
     nextEventQuery,
-    announcementQuery,
     scheduleQuery,
     ...(isAdmin ? [adminOverviewQuery] : [coursesQuery]),
     ...(children.length > 0 ? [galleryQuery] : []),
@@ -558,21 +230,6 @@ export default function HomeScreen() {
     return days.find((day) => day.day === today)?.activities.length ?? 0;
   }, [scheduleQuery.data]);
 
-  // Newest album that actually contains the selected child. Groups arrive
-  // newest-first, so the first match is the most recent.
-  const latestChildAlbum = useMemo(() => {
-    if (!galleryGroups || !selectedChild) return null;
-    for (const group of galleryGroups) {
-      const photos = group.photos.filter((photo) =>
-        isPhotoTaggedWithAny(photo, [selectedChild.id])
-      );
-      if (photos.length > 0) {
-        return { id: group.event.id, name: group.event.name, count: photos.length };
-      }
-    }
-    return null;
-  }, [galleryGroups, selectedChild?.id]);
-
   const selectedBand = bandForChild(selectedChild?.birthDate);
   const programName = selectedBand
     ? [
@@ -607,25 +264,12 @@ export default function HomeScreen() {
   const subtitleOpacity = useSharedValue(reducedMotion ? 1 : 0);
   const footerBreath = useSharedValue(1);
 
-  const announcementOpacity = useSharedValue(reducedMotion ? 1 : 0);
-  const announcementTranslateY = useSharedValue(reducedMotion ? 0 : 20);
-
   useEffect(() => {
     if (!reducedMotion) {
       greetingOpacity.value = withDelay(300, withTiming(1, { duration: 400 }));
       greetingTranslateY.value = withDelay(300, withTiming(0, { duration: 400 }));
       emojiScale.value = withDelay(300, withSpring(1, { damping: 8, stiffness: 120 }));
       subtitleOpacity.value = withDelay(450, withTiming(1, { duration: 400 }));
-
-      const sectionEasing = Easing.out(Easing.ease);
-      announcementOpacity.value = withDelay(
-        300,
-        withTiming(1, { duration: 400, easing: sectionEasing })
-      );
-      announcementTranslateY.value = withDelay(
-        300,
-        withTiming(0, { duration: 400, easing: sectionEasing })
-      );
 
       footerBreath.value = withDelay(
         800,
@@ -649,11 +293,6 @@ export default function HomeScreen() {
 
   const footerDotsStyle = useAnimatedStyle(() => ({
     transform: [{ scale: footerBreath.value }],
-  }));
-
-  const announcementSectionStyle = useAnimatedStyle(() => ({
-    opacity: announcementOpacity.value,
-    transform: [{ translateY: announcementTranslateY.value }],
   }));
 
   const stickyHeaderStyle = useAnimatedStyle(() => ({
@@ -703,11 +342,7 @@ export default function HomeScreen() {
         onScroll={scrollHandler}
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={[
-          styles.scrollContent,
-          // The last card was being sliced in half by the tab bar.
-          { paddingBottom: tabBarHeight + 24 },
-        ]}
+        contentContainerStyle={styles.scrollContent}
       >
         <View>
         {isAdmin ? null : (
@@ -722,7 +357,9 @@ export default function HomeScreen() {
           </View>
         )}
         <Animated.View style={fullHeaderStyle}>
-          <StepsLogo compact={isAdmin} maxWidth={Math.min(width * 0.55, 240)} />
+          {/* Half the previous size: the logo was the largest thing on Home
+              and the greeting below it is what a parent actually reads. */}
+          <StepsLogo compact={isAdmin} maxWidth={Math.min(width * 0.275, 120)} />
 
           <View style={styles.greetingBlock}>
             <Animated.View style={[styles.greetingRow, greetingStyle]}>
@@ -776,79 +413,12 @@ export default function HomeScreen() {
               onFeedback={() => setIsFeedbackOpen(true)}
             />
 
-            {selectedChild ? (
-              <ProgramCard
-                childName={selectedChild.name}
-                programName={programName}
-                photoCount={todaysPhotoCount}
-                activityCount={todaysActivityCount}
-              />
-            ) : null}
-
-            {latestChildAlbum ? (
-              <NewPhotosRow
-                eventId={latestChildAlbum.id}
-                eventName={latestChildAlbum.name}
-                photoCount={latestChildAlbum.count}
-              />
-            ) : null}
-
             <AcademyGrid />
-
-            <CoursesSection />
           </>
         )}
 
         {/* The timetable matters to both — parents read it, admins check it. */}
         <WeeklyScheduleSection />
-
-        <Animated.View style={[styles.section, announcementSectionStyle]}>
-          <SectionLabel
-            label={t.home.latestAnnouncement}
-            actionLabel={isAdmin ? t.home.addAnnouncement : undefined}
-            onActionPress={isAdmin ? () => setIsAnnouncementModalVisible(true) : undefined}
-          />
-
-          {announcement ? (
-            <StepsCard style={styles.announcementCard}>
-              <View
-                style={[styles.announcementAccentBar, isRTL ? styles.accentBarRTL : styles.accentBarLTR]}
-              />
-              <View style={[styles.announcementHeaderRow, isRTL && styles.rowReverse]}>
-                <View style={[styles.announcementSenderRow, isRTL && styles.rowReverse]}>
-                  <View style={styles.announcementAvatar}>
-                    <Ionicons name="business-outline" size={14} color={Colors.honey} />
-                  </View>
-                  <Text style={[styles.announcementFrom, rtlText]}>{t.home.fromAcademy}</Text>
-                </View>
-                <Ionicons name="megaphone-outline" size={18} color={Colors.textLight} />
-              </View>
-              <ExpandableAnnouncementText
-                text={announcement.text}
-                expanded={isAnnouncementExpanded}
-                rtlText={rtlText}
-              />
-              {/* A two-word announcement has nothing to expand. */}
-              {announcement.text.length > 120 ? (
-                <Touchable
-                  onPress={() => setIsAnnouncementExpanded((prev) => !prev)}
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                >
-                  <Text style={[styles.readMoreLink, rtlText]}>
-                    {isAnnouncementExpanded ? t.common.showLess : t.common.readMore}
-                  </Text>
-                </Touchable>
-              ) : null}
-              <Text style={[styles.announcementTimestamp, rtlText]}>
-                {formatRelativeTime(new Date(announcement.createdAt), t)}
-              </Text>
-            </StepsCard>
-          ) : (
-            <View style={styles.emptyCard}>
-              <Text style={styles.emptyCardText}>{t.home.noAnnouncementsYet}</Text>
-            </View>
-          )}
-        </Animated.View>
           </>
         )}
         </View>
@@ -867,19 +437,6 @@ export default function HomeScreen() {
 
       <ToastBanner message={toastMessage} opacity={toastOpacity} />
 
-      {isAdmin ? (
-        <>
-          <AnnouncementQuickAddModal
-            visible={isAnnouncementModalVisible}
-            onClose={() => setIsAnnouncementModalVisible(false)}
-            onCreated={(created) => {
-              queryClient.setQueryData(["home", "announcement"], created);
-              setIsAnnouncementModalVisible(false);
-            }}
-            t={t}
-          />
-        </>
-      ) : null}
     </Screen>
   );
 }
@@ -888,6 +445,10 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     justifyContent: "space-between",
+    // The tab bar is opaque and laid out below the scene, not over it, so the
+    // scroll view already stops above it. Reserving its height here as well
+    // left a tab bar's worth of blank space under the footer.
+    paddingBottom: 12,
   },
   decorTopRight: {
     position: "absolute",
@@ -987,108 +548,11 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: 6,
   },
-  carouselWrapper: {
-    alignItems: "center",
-    marginBottom: 24,
-  },
-  carouselSlide: {
-    // minHeight, not height: at a larger font scale or in Arabic the
-    // headline takes a second line and a fixed 150 clipped the CTA off the
-    // bottom, since the slide also clips its overflow.
-    minHeight: 150,
-    borderRadius: 24,
-    padding: 20,
-    justifyContent: "center",
-    overflow: "hidden",
-  },
   // The child's recent photos, inside the slide rather than behind it — text
   // keeps a flat gradient underneath it, so legibility never depends on what
   // happens to be in the picture.
-  photoStrip: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  photoThumb: {
-    width: 56,
-    height: 56,
-    borderRadius: 12,
-    backgroundColor: "rgba(255,255,255,0.2)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.35)",
-  },
-  photoStripArrow: {
-    fontFamily: Fonts.bold,
-    fontSize: 18,
-    color: "#FFFFFF",
-    marginHorizontal: 2,
-  },
-  headlineTight: {
-    marginBottom: 10,
-  },
-  carouselEmoji: {
-    fontSize: 34,
-    marginBottom: 6,
-  },
-  carouselHeadline: {
-    fontFamily: Fonts.extraBold,
-    fontSize: 18,
-    color: "#FFFFFF",
-    marginBottom: 12,
-    maxWidth: "80%",
-  },
-  carouselCta: {
-    alignSelf: "flex-start",
-    backgroundColor: "rgba(255,255,255,0.25)",
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-  },
   carouselCtaPressed: {
     opacity: 0.75,
-  },
-  carouselCtaText: {
-    fontFamily: Fonts.bold,
-    fontSize: 13,
-    lineHeight: 18,
-    color: "#FFFFFF",
-  },
-  carouselDots: {
-    flexDirection: "row",
-    gap: 6,
-    marginTop: 10,
-  },
-  carouselDotTrack: {
-    width: 28,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: Colors.border,
-    overflow: "hidden",
-  },
-  carouselDotFill: {
-    height: "100%",
-    backgroundColor: Colors.primary,
-    borderRadius: 3,
-  },
-  moodRow: {
-    flexDirection: "row",
-    justifyContent: "center",
-    gap: 14,
-    marginTop: 16,
-  },
-  moodButton: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: "rgba(255,255,255,0.25)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  moodButtonSelected: {
-    backgroundColor: "rgba(255,255,255,0.55)",
-  },
-  moodEmoji: {
-    fontSize: 26,
   },
   childStrip: {
     // Centred under the logo, and stays centred when there's only one child.
@@ -1143,70 +607,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.terracotta,
   },
-  emptyCard: {
-    backgroundColor: Colors.linen,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: 16,
-    padding: 20,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
-  },
-  emptyCardText: {
-    fontFamily: Fonts.regular,
-    fontSize: 14,
-    color: Colors.textLight,
-    textAlign: "center",
-  },
-  accentBarLTR: {
-    left: 0,
-    borderTopLeftRadius: 16,
-    borderBottomLeftRadius: 16,
-  },
-  accentBarRTL: {
-    right: 0,
-    borderTopRightRadius: 16,
-    borderBottomRightRadius: 16,
-  },
-  announcementCard: {
-    borderRadius: 16,
-  },
-  announcementAccentBar: {
-    position: "absolute",
-    top: 0,
-    bottom: 0,
-    width: 6,
-    backgroundColor: Colors.honey,
-  },
-  announcementHeaderRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 8,
-  },
-  announcementSenderRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  announcementAvatar: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: `${Colors.honey}30`,
-    alignItems: "center",
-    justifyContent: "center",
-  },
   announcementAvatarEmoji: {
     fontSize: 13,
-  },
-  announcementFrom: {
-    ...Type.caption,
-    fontFamily: Fonts.semiBold,
-    color: Colors.textLight,
   },
   announcementEmoji: {
     fontSize: 18,
@@ -1225,19 +627,8 @@ const styles = StyleSheet.create({
   announcementTextClip: {
     overflow: "hidden",
   },
-  readMoreLink: {
-    ...Type.caption,
-    fontFamily: Fonts.semiBold,
-    color: Colors.terracotta,
-    marginTop: 6,
-  },
-  announcementTimestamp: {
-    ...Type.caption,
-    color: Colors.textLight,
-    marginTop: 10,
-  },
   footer: {
-    marginTop: 28,
+    marginTop: 20,
     alignItems: "center",
   },
   footerMascot: {
@@ -1302,8 +693,5 @@ const styles = StyleSheet.create({
     color: Colors.clay,
     marginTop: 12,
     textAlign: "center",
-  },
-  modalButton: {
-    marginTop: 20,
   },
 });

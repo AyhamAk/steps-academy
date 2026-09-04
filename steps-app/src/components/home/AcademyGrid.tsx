@@ -83,13 +83,13 @@ export function AcademyGrid() {
             }}
           >
             <View style={[styles.tileTop, isRTL && styles.rowReverse]}>
-              <IconTile tint={tile.tint} size={36}>
-                <Ionicons name={tile.icon} size={19} color={tile.tint} />
+              <IconTile tint={tile.tint} size={44}>
+                <Ionicons name={tile.icon} size={23} color={tile.tint} />
               </IconTile>
             </View>
             <Text
               style={[styles.tileTitle, isRTL && styles.textRight]}
-              numberOfLines={1}
+              numberOfLines={2}
               maxFontSizeMultiplier={1.3}
             >
               {tile.title}
@@ -123,13 +123,17 @@ const styles = StyleSheet.create({
     // rather than a measured width so it survives every screen size.
     width: "48%",
     flexGrow: 1,
+    minHeight: 118,
+    justifyContent: "flex-end",
     backgroundColor: Colors.linen,
-    borderRadius: 14,
-    padding: 14,
+    borderRadius: 18,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
   tileTop: {
     flexDirection: "row",
-    marginBottom: 10,
+    flex: 1,
   },
   rowReverse: {
     flexDirection: "row-reverse",
@@ -138,6 +142,8 @@ const styles = StyleSheet.create({
     textAlign: "right",
   },
   tileTitle: {
+    // Body size, not heading: at 22px a two-word label like "Parenting tips"
+    // cannot fit a half-width tile and was being cut to "Parenting t…".
     ...Type.body,
     fontFamily: Fonts.bold,
     color: Colors.bark,

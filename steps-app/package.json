@@ -45,7 +45,7 @@
   },
   "scripts": {
     "start": "expo start",
-    "go": "node scripts/start-go.js",
+    "dev": "node scripts/start-dev.js",
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web"

@@ -27,6 +27,7 @@ import dashboardRoutes from "./routes/dashboardRoutes";
 import legalRoutes from "./routes/legalRoutes";
 import shopRoutes from "./routes/shopRoutes";
 import studentRoutes from "./routes/studentRoutes";
+import tipRoutes from "./routes/tipRoutes";
 
 const app = express();
 
@@ -68,6 +69,7 @@ app.use("/api/schedule", scheduleRoutes);
 app.use("/api/feedback", feedbackRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/announcements", announcementRoutes);
+app.use("/api/tips", tipRoutes);
 app.use("/api/notifications", notificationRoutes);
 
 app.use(notFound);
