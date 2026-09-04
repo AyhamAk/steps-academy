@@ -59,10 +59,11 @@ export async function createStudent(req: Request, res: Response) {
 }
 
 export async function updateStudent(req: Request, res: Response) {
-  const { name, birthDate, notes } = req.body as {
+  const { name, birthDate, notes, guardianPhone } = req.body as {
     name?: string;
     birthDate?: string | null;
     notes?: string | null;
+    guardianPhone?: string | null;
   };
 
   if (name !== undefined && !name.trim()) {
@@ -73,6 +74,11 @@ export async function updateStudent(req: Request, res: Response) {
     ...(name !== undefined ? { name } : {}),
     ...(birthDate !== undefined ? { birthDate: birthDate?.trim() || null } : {}),
     ...(notes !== undefined ? { notes: notes?.trim() || null } : {}),
+    // Editable after creation: the number is what the invite is sent to, and
+    // without this a wrong one could only be fixed by deleting the student.
+    ...(guardianPhone !== undefined
+      ? { guardianPhone: guardianPhone?.trim() || null }
+      : {}),
   });
   if (!student) {
     return res.status(404).json({ message: "Student not found" });

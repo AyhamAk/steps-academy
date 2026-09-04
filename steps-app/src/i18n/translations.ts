@@ -246,10 +246,18 @@ export const en = {
     adminCopied: "Code copied",
     adminRevoke: "Revoke",
     adminRevokeConfirm: "Revoke this code? Anyone still holding it won't be able to sign up.",
+    // The code sits alone on its own line: buried mid-sentence it takes
+    // fiddly text selection to copy, but on its own a long-press grabs it.
     adminShareMessage: (child: string, code: string) =>
-      `Here's your Steps Academy invite code for ${child}: ${code}
+      `Steps Academy — invite for ${child}
 
-Download the app and enter this code to set up your account.`,
+Your code:
+${code}
+
+To set up your account:
+1. Download the Steps Academy app
+2. Tap Sign up
+3. Enter the code above`,
     statusActive: "Active",
     statusSpent: "Used up",
     statusRevoked: "Revoked",
@@ -993,9 +1001,15 @@ export const ar: Translations = {
     adminRevoke: "إلغاء",
     adminRevokeConfirm: "إلغاء هذا الرمز؟ لن يتمكن من يحمله من إنشاء حساب.",
     adminShareMessage: (child: string, code: string) =>
-      `هذا رمز الدعوة الخاص بك في أكاديمية Steps لـ ${child}: ${code}
+      `أكاديمية Steps — دعوة لـ ${child}
 
-حمّل التطبيق وأدخل هذا الرمز لإعداد حسابك.`,
+رمزك:
+${code}
+
+لإعداد حسابك:
+1. حمّل تطبيق Steps Academy
+2. اضغط «إنشاء حساب»
+3. أدخل الرمز أعلاه`,
     statusActive: "فعّال",
     statusSpent: "مستخدم بالكامل",
     statusRevoked: "ملغى",
@@ -1727,9 +1741,15 @@ export const he: Translations = {
     adminRevoke: "ביטול",
     adminRevokeConfirm: "לבטל את הקוד? מי שמחזיק בו לא יוכל להירשם.",
     adminShareMessage: (child: string, code: string) =>
-      `הנה קוד ההזמנה שלך ל-Steps Academy עבור ${child}: ${code}
+      `Steps Academy — הזמנה עבור ${child}
 
-הורד את האפליקציה והזן קוד זה כדי להגדיר את החשבון שלך.`,
+הקוד שלך:
+${code}
+
+להגדרת החשבון:
+1. הורידו את אפליקציית Steps Academy
+2. הקישו על הרשמה
+3. הזינו את הקוד שלמעלה`,
     statusActive: "פעיל",
     statusSpent: "נוצל במלואו",
     statusRevoked: "בוטל",

@@ -69,7 +69,13 @@ export async function createStudent(input: {
 
 export async function updateStudent(
   studentId: string,
-  input: { name?: string; birthDate?: string | null; notes?: string | null }
+  input: {
+    name?: string;
+    birthDate?: string | null;
+    notes?: string | null;
+    /** Where the invite code is sent. Editable, not create-only. */
+    guardianPhone?: string | null;
+  }
 ) {
   const { data } = await api.patch<{ student: Omit<Student, "guardians"> }>(
     `/api/students/${studentId}`,

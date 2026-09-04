@@ -174,7 +174,13 @@ export default function InviteSendScreen() {
               <View key={invite.id} style={[styles.row, isRTL && styles.rowReverse]}>
                 <View style={styles.flex}>
                   <Text style={[styles.childName, rtlText]}>{invite.studentName}</Text>
-                  <Text style={[styles.code, rtlText]}>{invite.code}</Text>
+                  {/* Selectable so a long-press copies it — for reading out,
+                      pasting into SMS, or any family not on WhatsApp. Native
+                      selection rather than a clipboard dependency, which would
+                      change the native fingerprint and force a rebuild. */}
+                  <Text style={[styles.code, rtlText]} selectable>
+                    {invite.code}
+                  </Text>
                   <Text style={[styles.state, { color: stateTint(state) }, rtlText]}>
                     {stateLabel(state)}
                     {invite.guardianPhone ? "" : ` · ${t.invite.noPhone}`}
