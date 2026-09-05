@@ -125,6 +125,12 @@ export default function OnboardingScreen() {
               autoCapitalize="characters"
               autoCorrect={false}
               maxLength={9}
+              // Lets iOS offer the code above the keyboard when it arrives by
+              // SMS, so a parent taps once instead of switching apps to copy
+              // it. Only works for SMS — WhatsApp messages are invisible to
+              // the OS — so it helps the share-sheet-to-Messages route.
+              textContentType="oneTimeCode"
+              autoComplete="one-time-code"
             />
             <StepsButton
               label={isChecking ? t.invite.checking : t.invite.checkCode}

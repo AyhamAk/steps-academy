@@ -17,6 +17,10 @@ export const Colors = {
   honeyDeep: "#B08A2E",
   /** Honey at card-fill strength — the tips pillar's tinted surface. */
   honeyLight: "#FBF3DC",
+  /** Sky at card-fill strength — the nursery pillar's tinted surface. */
+  skyTint: "#EAF1F8",
+  /** Clay at card-fill strength — the "+N more photos" tile. */
+  clayLight: "#F7EDEB",
 
   // Lighter partners, used as the third stop so a slide gradient has somewhere
   // to travel to. Two stops read as a flat block; three give it depth.

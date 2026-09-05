@@ -71,13 +71,23 @@ export function CourseRow({
   // Who is in it reads better as a line of the course's own detail than as a
   // tag competing with the button for the right-hand edge. First names only —
   // the detail view spells each child's status out in full.
-  const enrolled = course.myEnrollments;
+  /**
+   * Only a live enrolment counts.
+   *
+   * The API returns every enrolment ever made for this family, `rejected` and
+   * `cancelled` included. Treating those as "in the course" made a row say
+   * Pending for a request the academy had already turned down — while the
+   * detail view, which looks for an actual pending record, offered to join.
+   */
+  const enrolled = course.myEnrollments.filter(
+    (e) => e.status === "pending" || e.status === "approved"
+  );
   const enrolledNames = enrolled.map((e) => e.studentName.split(" ")[0]).join(", ");
   // Leaving is offered only for a place the academy has actually confirmed.
   // A pending request is not a place yet, so it shows its status instead and
   // is withdrawn from the course's own detail view.
   const approved = enrolled.filter((e) => e.status === "approved");
-  const isWaiting = approved.length === 0 && enrolled.length > 0;
+  const isPending = approved.length === 0 && enrolled.length > 0;
 
   return (
     <Touchable
@@ -106,10 +116,13 @@ export function CourseRow({
       {/* Exactly one control per row. Joining and leaving are the only two
           things a parent does here, so the row offers whichever applies
           instead of a status tag they cannot act on. */}
-      {isWaiting ? (
+      {isPending ? (
+        // "Pending", not "Wait list": the request is waiting on the academy,
+        // not on a place. Labelling it "Wait list" made a course with 28 free
+        // places look full to the family that had asked to join it.
         <View style={styles.waitingTag}>
           <Text style={styles.waitingText} numberOfLines={1} maxFontSizeMultiplier={1.2}>
-            {t.courses.waitlistShort}
+            {t.courses.pendingShort}
           </Text>
         </View>
       ) : approved.length > 0 ? (

@@ -215,48 +215,57 @@ const styles = StyleSheet.create({
   carouselCta: {
     alignSelf: "flex-start",
     backgroundColor: "rgba(255,255,255,0.25)",
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+    borderRadius: 99,
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    minHeight: 32,
+    justifyContent: "center",
   },
   carouselCtaText: {
-    fontFamily: Fonts.bold,
-    fontSize: 13,
-    lineHeight: 18,
-    color: "#FFFFFF",
+    fontFamily: Fonts.semiBold,
+    fontSize: 12,
+    lineHeight: 16,
+    color: Colors.cream,
   },
   carouselEmoji: {
-    fontSize: 34,
-    marginBottom: 6,
+    fontSize: 24,
+    marginBottom: 4,
   },
   carouselHeadline: {
     fontFamily: Fonts.extraBold,
-    fontSize: 18,
-    color: "#FFFFFF",
-    marginBottom: 12,
+    fontSize: 15,
+    lineHeight: 20,
+    color: Colors.cream,
+    marginBottom: 10,
     maxWidth: "80%",
   },
   carouselSlide: {
     // minHeight, not height: at a larger font scale or in Arabic the
-    // headline takes a second line and a fixed 150 clipped the CTA off the
+    // headline takes a second line and a fixed height clipped the CTA off the
     // bottom, since the slide also clips its overflow.
-    minHeight: 150,
-    borderRadius: 24,
-    padding: 20,
+    //
+    // Slimmed from 150 so the four pillar tiles above it clear the fold. It
+    // cannot go much below this: the mood buttons and the photo strip are
+    // 44pt touch targets and have to fit inside the padding.
+    minHeight: 110,
+    borderRadius: 18,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
     justifyContent: "center",
     overflow: "hidden",
   },
   carouselWrapper: {
     alignItems: "center",
     marginBottom: 24,
+    marginTop: 4,
   },
   headlineTight: {
     marginBottom: 10,
   },
   moodButton: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: "rgba(255,255,255,0.25)",
     alignItems: "center",
     justifyContent: "center",
@@ -265,13 +274,13 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.55)",
   },
   moodEmoji: {
-    fontSize: 26,
+    fontSize: 22,
   },
   moodRow: {
     flexDirection: "row",
     justifyContent: "center",
-    gap: 14,
-    marginTop: 16,
+    gap: 12,
+    marginTop: 10,
   },
   photoStrip: {
     flexDirection: "row",
@@ -280,13 +289,13 @@ const styles = StyleSheet.create({
   },
   photoStripArrow: {
     fontFamily: Fonts.bold,
-    fontSize: 18,
-    color: "#FFFFFF",
+    fontSize: 16,
+    color: Colors.cream,
     marginHorizontal: 2,
   },
   photoThumb: {
-    width: 56,
-    height: 56,
+    width: 44,
+    height: 44,
     borderRadius: 12,
     backgroundColor: "rgba(255,255,255,0.2)",
     borderWidth: 1,

@@ -24,13 +24,11 @@ import Animated, {
   useSharedValue,
   withDelay,
   withRepeat,
-  withSpring,
   withTiming,
 } from "react-native-reanimated";
 
 import { AdminHomeSections } from "../../components/home/AdminHomeSections";
 import { FeedbackModal } from "../../components/home/FeedbackModal";
-import { WeeklyScheduleSection } from "../../components/home/WeeklyScheduleSection";
 import { Screen } from "../../components/Screen";
 import { DataErrorState } from "../../components/ui/DataErrorState";
 import { SkeletonHomeSections } from "../../components/ui/Skeleton";
@@ -230,6 +228,22 @@ export default function HomeScreen() {
     return days.find((day) => day.day === today)?.activities.length ?? 0;
   }, [scheduleQuery.data]);
 
+  /**
+   * Courses the selected child holds a confirmed place in.
+   *
+   * `approved` only — what the UI calls "Enrolled". A pending request is not a
+   * place, and rejected or cancelled ones are still returned by the API.
+   */
+  const enrolledCourseCount = useMemo(() => {
+    if (!selectedChild) return 0;
+    return (coursesQuery.data ?? []).filter((course) =>
+      course.myEnrollments.some(
+        (enrollment) =>
+          enrollment.studentId === selectedChild.id && enrollment.status === "approved"
+      )
+    ).length;
+  }, [coursesQuery.data, selectedChild?.id]);
+
   const selectedBand = bandForChild(selectedChild?.birthDate);
   const programName = selectedBand
     ? [
@@ -246,9 +260,6 @@ export default function HomeScreen() {
   const { salutationKey, emoji } = getTimeOfDayGreeting();
   const salutation = t.home[salutationKey];
   const firstName = getFirstName(user?.name);
-  const subtitle = isAdmin
-    ? t.home.adminSubtitle
-    : t.home.timeOfDaySubtitle[salutationKey](primaryChildName);
   const daysAway = nextEvent ? getDaysAway(parseIsoDate(nextEvent.date), t) : null;
   const greetingComma = isRTL ? "،" : ",";
   const compactGreeting = firstName ? `${salutation}${greetingComma} ${firstName}` : t.home.welcomeBack;
@@ -258,18 +269,10 @@ export default function HomeScreen() {
     scrollY.value = event.contentOffset.y;
   });
 
-  const greetingOpacity = useSharedValue(reducedMotion ? 1 : 0);
-  const greetingTranslateY = useSharedValue(reducedMotion ? 0 : 12);
-  const emojiScale = useSharedValue(reducedMotion ? 1 : 0.5);
-  const subtitleOpacity = useSharedValue(reducedMotion ? 1 : 0);
   const footerBreath = useSharedValue(1);
 
   useEffect(() => {
     if (!reducedMotion) {
-      greetingOpacity.value = withDelay(300, withTiming(1, { duration: 400 }));
-      greetingTranslateY.value = withDelay(300, withTiming(0, { duration: 400 }));
-      emojiScale.value = withDelay(300, withSpring(1, { damping: 8, stiffness: 120 }));
-      subtitleOpacity.value = withDelay(450, withTiming(1, { duration: 400 }));
 
       footerBreath.value = withDelay(
         800,
@@ -277,19 +280,6 @@ export default function HomeScreen() {
       );
     }
   }, []);
-
-  const greetingStyle = useAnimatedStyle(() => ({
-    opacity: greetingOpacity.value,
-    transform: [{ translateY: greetingTranslateY.value }],
-  }));
-
-  const emojiStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: emojiScale.value }],
-  }));
-
-  const subtitleStyle = useAnimatedStyle(() => ({
-    opacity: subtitleOpacity.value,
-  }));
 
   const footerDotsStyle = useAnimatedStyle(() => ({
     transform: [{ scale: footerBreath.value }],
@@ -315,10 +305,6 @@ export default function HomeScreen() {
 
   return (
     <Screen>
-      <View style={[styles.decorTopRight, isRTL ? styles.decorTopRightRTL : styles.decorTopRightLTR]} />
-      <View
-        style={[styles.decorBottomLeft, isRTL ? styles.decorBottomLeftRTL : styles.decorBottomLeftLTR]}
-      />
 
       <Animated.View
         style={[
@@ -345,42 +331,30 @@ export default function HomeScreen() {
         contentContainerStyle={styles.scrollContent}
       >
         <View>
-        {isAdmin ? null : (
-          <View
-            style={[
-              styles.bellRow,
-              isRTL && styles.rowReverse,
-              { marginTop: insets.top > 0 ? 0 : 8 },
-            ]}
-          >
-            <NotificationBell />
-          </View>
-        )}
         <Animated.View style={fullHeaderStyle}>
-          {/* Half the previous size: the logo was the largest thing on Home
-              and the greeting below it is what a parent actually reads. */}
-          <StepsLogo compact={isAdmin} maxWidth={Math.min(width * 0.275, 120)} />
-
-          <View style={styles.greetingBlock}>
-            <Animated.View style={[styles.greetingRow, greetingStyle]}>
-              <Text
-                style={styles.greetingText}
-                numberOfLines={1}
-                adjustsFontSizeToFit
-                minimumFontScale={0.7}
-              >
-                {firstName ? (
-                  <>
-                    {salutation}
-                    {greetingComma} <Text style={styles.greetingName}>{firstName}</Text>
-                  </>
-                ) : (
-                  t.home.welcomeBack
-                )}
-              </Text>
-              <Animated.Text style={[styles.emoji, emojiStyle]}>{emoji}</Animated.Text>
-            </Animated.View>
-            <Animated.Text style={[styles.subtitle, subtitleStyle]}>{subtitle}</Animated.Text>
+          {/* Bell and greeting share one line. The logo and a centred,
+              two-line greeting used to take the whole first screen, which
+              pushed the four tiles — the actual way into the app — below the
+              fold. The logo still rides in the sticky header on scroll. */}
+          <View style={[styles.headerRow, isRTL && styles.rowReverse]}>
+            <Text
+              style={[styles.greeting, rtlText]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.7}
+              maxFontSizeMultiplier={1.3}
+            >
+              {firstName ? (
+                <>
+                  {salutation}
+                  {greetingComma} <Text style={styles.greetingName}>{firstName}</Text>
+                </>
+              ) : (
+                t.home.welcomeBack
+              )}{" "}
+              {emoji}
+            </Text>
+            {isAdmin ? null : <NotificationBell />}
           </View>
 
           {isAdmin ? null : (
@@ -402,6 +376,18 @@ export default function HomeScreen() {
           <AdminHomeSections />
         ) : (
           <>
+            <AcademyGrid />
+
+            {selectedChild ? (
+              <ProgramCard
+                childName={selectedChild.name}
+                programName={programName}
+                courseCount={enrolledCourseCount}
+                activityCount={todaysActivityCount}
+                photoCount={todaysPhotoCount}
+              />
+            ) : null}
+
             <HeroCarousel
               t={t}
               isRTL={isRTL}
@@ -412,13 +398,9 @@ export default function HomeScreen() {
               onToast={showToast}
               onFeedback={() => setIsFeedbackOpen(true)}
             />
-
-            <AcademyGrid />
           </>
         )}
 
-        {/* The timetable matters to both — parents read it, admins check it. */}
-        <WeeklyScheduleSection />
           </>
         )}
         </View>
@@ -450,37 +432,6 @@ const styles = StyleSheet.create({
     // left a tab bar's worth of blank space under the footer.
     paddingBottom: 12,
   },
-  decorTopRight: {
-    position: "absolute",
-    zIndex: 0,
-    top: -50,
-    width: 160,
-    height: 160,
-    borderRadius: 80,
-    backgroundColor: Colors.primary,
-    opacity: 0.05,
-  },
-  decorTopRightLTR: {
-    right: -50,
-  },
-  decorTopRightRTL: {
-    left: -50,
-  },
-  decorBottomLeft: {
-    position: "absolute",
-    bottom: -50,
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-    backgroundColor: Colors.secondary,
-    opacity: 0.05,
-  },
-  decorBottomLeftLTR: {
-    left: -50,
-  },
-  decorBottomLeftRTL: {
-    right: -50,
-  },
   stickyHeader: {
     position: "absolute",
     top: 0,
@@ -505,48 +456,22 @@ const styles = StyleSheet.create({
     color: Colors.bark,
     flexShrink: 1,
   },
-  bellRow: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    zIndex: 2,
-    paddingTop: 4,
-    marginBottom: -8,
-  },
-  greetingBlock: {
-    alignItems: "center",
-    paddingTop: 28,
-    marginBottom: 20,
-  },
-  greetingRow: {
+  headerRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
+    justifyContent: "space-between",
+    gap: 12,
+    marginTop: 4,
+    marginBottom: 14,
   },
-  greetingText: {
-    // Not Type.display (32): "Good afternoon, <name>" and the longer Arabic
-    // greetings run past the screen at that size. adjustsFontSizeToFit can't
-    // rescue it either — Android ignores it once the Text has a nested child,
-    // which this one has for the coloured name. flexShrink lets it give way
-    // to the emoji beside it instead of pushing past the edge.
-    fontFamily: Fonts.extraBold,
-    fontSize: 26,
-    lineHeight: 32,
+  greeting: {
+    fontFamily: Fonts.bold,
+    fontSize: 16,
     color: Colors.bark,
-    textAlign: "center",
     flexShrink: 1,
   },
   greetingName: {
     color: Colors.terracotta,
-  },
-  emoji: {
-    fontSize: 26,
-  },
-  subtitle: {
-    ...Type.caption,
-    color: Colors.textLight,
-    textAlign: "center",
-    marginTop: 6,
   },
   // The child's recent photos, inside the slide rather than behind it — text
   // keeps a flat gradient underneath it, so legibility never depends on what
@@ -555,20 +480,18 @@ const styles = StyleSheet.create({
     opacity: 0.75,
   },
   childStrip: {
-    // Centred under the logo, and stays centred when there's only one child.
-    flexGrow: 1,
-    justifyContent: "center",
-    gap: 10,
-    paddingTop: 4,
+    // Leading-aligned now the logo above it is gone — a single centred chip
+    // under a left-aligned greeting read as an unrelated floating pill.
+    gap: 8,
     paddingBottom: 16,
   },
   childChip: {
     justifyContent: "center",
     backgroundColor: Colors.linen,
-    borderRadius: 20,
-    minHeight: 36,
-    paddingHorizontal: 16,
-    paddingVertical: 7,
+    borderRadius: 99,
+    minHeight: 32,
+    paddingHorizontal: 18,
+    paddingVertical: 6,
     // A transparent border on the resting state so selecting a chip changes
     // its colour without changing its size and nudging the row.
     borderWidth: 1.5,
@@ -579,8 +502,8 @@ const styles = StyleSheet.create({
     borderColor: Colors.terracotta,
   },
   childChipName: {
-    ...Type.body,
-    fontFamily: Fonts.bold,
+    fontFamily: Fonts.semiBold,
+    fontSize: 13,
     color: Colors.textLight,
   },
   childChipNameSelected: {

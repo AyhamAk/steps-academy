@@ -1,56 +1,66 @@
+import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, View } from "react-native";
 
 import { Colors } from "../../constants/Colors";
 import { Fonts } from "../../constants/Fonts";
-import { Type } from "../../constants/Typography";
 import { useTranslation } from "../../i18n/useTranslation";
 
 /**
- * What today looks like for the selected child.
+ * Where the selected child stands, in three numbers.
  *
- * Both counters come from data Home has already fetched — the gallery and the
- * timetable — rather than a new endpoint, so switching children costs nothing
- * and the card can never be the thing that makes Home wait.
+ * Courses first: it is the one that holds still. Activities and photos both
+ * reset overnight, so a parent checking twice in a day expects those to move
+ * and this one not to.
  */
 export function ProgramCard({
   childName,
   programName,
-  photoCount,
+  courseCount,
   activityCount,
+  photoCount,
 }: {
   childName: string;
   programName: string | null;
-  photoCount: number;
+  courseCount: number;
   activityCount: number;
+  photoCount: number;
 }) {
   const { t, isRTL, rtlText } = useTranslation();
 
   return (
-    <View style={[styles.card, isRTL ? styles.cardRTL : styles.cardLTR]}>
-      <Text style={[styles.label, rtlText]} maxFontSizeMultiplier={1.3}>
-        {t.home.programLabel(childName).toUpperCase()}
+    <View style={styles.card}>
+      <Text style={[styles.title, rtlText]} maxFontSizeMultiplier={1.3}>
+        {t.home.programLabel(childName)}
+        {programName ? ` · ${programName}` : ""}
       </Text>
-      {programName ? (
-        <Text style={[styles.program, rtlText]} maxFontSizeMultiplier={1.3}>
-          {programName}
-        </Text>
-      ) : null}
-      <View style={[styles.stats, isRTL && styles.rowReverse]}>
-        <Stat value={photoCount} label={t.home.programPhotos} />
-        <Stat value={activityCount} label={t.home.programActivities} />
+
+      <View style={[styles.row, isRTL && styles.rowReverse]}>
+        <Stat icon="school-outline" value={courseCount} label={t.home.programCourses} />
+        <View style={styles.divider} />
+        <Stat icon="sparkles-outline" value={activityCount} label={t.home.programActivities} />
+        <View style={styles.divider} />
+        <Stat icon="camera-outline" value={photoCount} label={t.home.programPhotos} />
       </View>
     </View>
   );
 }
 
-function Stat({ value, label }: { value: number; label: string }) {
-  const { rtlText } = useTranslation();
+function Stat({
+  icon,
+  value,
+  label,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  value: number;
+  label: string;
+}) {
   return (
-    <View style={styles.stat}>
-      <Text style={styles.statValue} maxFontSizeMultiplier={1.3}>
+    <View style={styles.col}>
+      <Ionicons name={icon} size={18} color={Colors.sky} />
+      <Text style={styles.value} maxFontSizeMultiplier={1.3}>
         {value}
       </Text>
-      <Text style={[styles.statLabel, rtlText]} maxFontSizeMultiplier={1.3}>
+      <Text style={styles.label} numberOfLines={2} maxFontSizeMultiplier={1.2}>
         {label}
       </Text>
     </View>
@@ -58,53 +68,49 @@ function Stat({ value, label }: { value: number; label: string }) {
 }
 
 const styles = StyleSheet.create({
+  /**
+   * A flat bordered card, all four sides.
+   *
+   * It used to carry a 4px accent on one edge only. Against a border radius,
+   * React Native mitres that single edge into the corner curve, which read as
+   * a stray hook protruding from the card rather than as a rail — and it
+   * landed on the right in Arabic, where it was most visible.
+   */
   card: {
-    backgroundColor: "#EEF3F8",
-    borderRadius: 14,
-    paddingVertical: 16,
-    paddingHorizontal: 18,
-    marginBottom: 20,
+    backgroundColor: Colors.skyTint,
+    borderWidth: 1,
+    borderColor: Colors.sky,
+    borderRadius: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    marginBottom: 16,
   },
-  // The accent rail sits on the side the text starts from, so it reads as a
-  // margin rule rather than a stray bar at the end of the card.
-  cardLTR: {
-    borderLeftWidth: 4,
-    borderLeftColor: "#7B9EC4",
+  title: {
+    fontFamily: Fonts.semiBold,
+    fontSize: 12,
+    color: Colors.skyDeep,
+    marginBottom: 12,
   },
-  cardRTL: {
-    borderRightWidth: 4,
-    borderRightColor: "#7B9EC4",
+  row: { flexDirection: "row", justifyContent: "space-between" },
+  rowReverse: { flexDirection: "row-reverse" },
+  col: { flex: 1, alignItems: "center" },
+  value: {
+    fontFamily: Fonts.extraBold,
+    fontSize: 20,
+    color: Colors.bark,
+    marginTop: 6,
   },
   label: {
-    ...Type.caption,
-    fontFamily: Fonts.bold,
-    letterSpacing: 0.8,
+    fontFamily: Fonts.regular,
+    fontSize: 11,
     color: Colors.textLight,
-  },
-  program: {
-    ...Type.heading,
-    fontFamily: Fonts.bold,
-    color: Colors.bark,
     marginTop: 2,
+    textAlign: "center",
   },
-  stats: {
-    flexDirection: "row",
-    gap: 28,
-    marginTop: 14,
-  },
-  rowReverse: {
-    flexDirection: "row-reverse",
-  },
-  stat: {
-    minWidth: 64,
-  },
-  statValue: {
-    ...Type.heading,
-    fontFamily: Fonts.bold,
-    color: "#3E6389",
-  },
-  statLabel: {
-    ...Type.caption,
-    color: Colors.textLight,
+  divider: {
+    width: 1,
+    backgroundColor: Colors.sky,
+    opacity: 0.35,
+    marginHorizontal: 4,
   },
 });

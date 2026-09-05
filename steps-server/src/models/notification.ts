@@ -69,4 +69,15 @@ export const NotificationModel = {
   async markAllRead(userId: string): Promise<void> {
     await prisma.notification.updateMany({ where: { userId, read: false }, data: { read: true } });
   },
+
+  /**
+   * Removes every notification for one account.
+   *
+   * Scoped to the caller by userId, never by id list — a notification is
+   * personal, and a delete that took ids could be pointed at someone else's.
+   */
+  async clearAll(userId: string): Promise<number> {
+    const { count } = await prisma.notification.deleteMany({ where: { userId } });
+    return count;
+  },
 };

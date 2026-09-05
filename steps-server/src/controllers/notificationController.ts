@@ -18,3 +18,9 @@ export async function markAllRead(req: Request, res: Response) {
   await NotificationModel.markAllRead(req.userId!);
   res.json(await serialize(req.userId!));
 }
+
+/** Clears the caller's own notifications. There is no undo. */
+export async function clearAll(req: Request, res: Response) {
+  await NotificationModel.clearAll(req.userId!);
+  res.status(204).end();
+}

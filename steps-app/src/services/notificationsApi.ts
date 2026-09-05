@@ -28,3 +28,8 @@ export async function markNotificationsRead() {
   const { data } = await api.post<NotificationsResponse>("/api/notifications/read");
   return data;
 }
+
+/** Deletes every notification for the signed-in account. No undo. */
+export async function clearNotifications() {
+  await api.delete("/api/notifications");
+}

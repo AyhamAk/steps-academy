@@ -20,7 +20,7 @@ import { I18nManager, View } from "react-native";
 import * as Sentry from "@sentry/react-native";
 
 import { AnimatedIntro } from "../components/ui/AnimatedIntro";
-import { queryClient } from "../lib/queryClient";
+import { queryClient, startQueryFocusTracking } from "../lib/queryClient";
 import { initSentry, setSentryUser } from "../lib/sentry";
 import { Colors } from "../constants/Colors";
 import { AUTH_ENABLED } from "../constants/flags";
@@ -248,6 +248,10 @@ function RootLayout() {
   useEffect(() => {
     setSentryUser(userId);
   }, [userId]);
+
+  // Returning to the app refetches anything stale, so a course whose capacity
+  // an admin has just raised stops claiming to be full.
+  useEffect(() => startQueryFocusTracking(), []);
 
   if (!ready) {
     return null;

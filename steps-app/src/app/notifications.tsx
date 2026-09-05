@@ -1,8 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, FlatList, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Alert, FlatList, StyleSheet, Text, View } from "react-native";
 
 import { EmptyState } from "../components/gallery/EmptyState";
 import { Screen } from "../components/Screen";
@@ -17,6 +17,7 @@ import { track } from "../services/analytics";
 import { useTranslation } from "../i18n/useTranslation";
 import {
   AppNotification,
+  clearNotifications,
   getNotifications,
   markNotificationsRead,
   NotificationType,
@@ -45,6 +46,54 @@ function itemText(n: AppNotification, t: Translations): string {
 }
 
 /** Icon, tint and label per type, so the kind is readable at a glance. */
+/**
+ * The pale fill behind each type's icon.
+ *
+ * Named tokens rather than an alpha suffix on the accent, so the tile matches
+ * the tinted cards elsewhere (nursery sky, tips honey) instead of being a
+ * one-off computed colour.
+ */
+const TYPE_TILE: Record<NotificationType, string> = {
+  photo: Colors.skyTint,
+  announcement: Colors.clayLight,
+  event: Colors.honeyLight,
+  course: Colors.skyTint,
+};
+
+/** Today / this week / earlier — nothing older gets its own bucket. */
+function groupByRecency(items: AppNotification[]) {
+  const today: AppNotification[] = [];
+  const thisWeek: AppNotification[] = [];
+  const earlier: AppNotification[] = [];
+  const now = Date.now();
+  for (const item of items) {
+    const ageDays = (now - new Date(item.createdAt).getTime()) / 86_400_000;
+    if (ageDays < 1) today.push(item);
+    else if (ageDays < 7) thisWeek.push(item);
+    else earlier.push(item);
+  }
+  return { today, thisWeek, earlier };
+}
+
+/**
+ * One line of context under the title.
+ *
+ * Derived from the fields the server already sends. A per-notification body
+ * would need the admin composer to exist first.
+ */
+function itemBody(n: AppNotification, t: Translations): string {
+  switch (n.type) {
+    case "photo":
+      return t.notifications.bodyPhoto(n.eventName ?? null);
+    case "event":
+      return t.notifications.bodyEvent;
+    case "course":
+      return t.notifications.bodyCourse;
+    default:
+      return t.notifications.bodyAnnouncement;
+  }
+}
+
 const TYPE_STYLE: Record<
   NotificationType,
   { icon: keyof typeof Ionicons.glyphMap; tint: string }
@@ -87,11 +136,41 @@ export default function NotificationsScreen() {
   }, []);
 
   const items = snapshot ?? data?.notifications ?? null;
+  const unreadCount = (items ?? []).filter((n) => !n.read).length;
+
+  const clearMutation = useMutation({
+    mutationFn: clearNotifications,
+    onSuccess: () => {
+      // Clear the local snapshot too: it is what this screen renders, and it
+      // would otherwise keep showing the list the server no longer has.
+      setSnapshot([]);
+      void queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    },
+  });
+
+  const confirmClearAll = () => {
+    Alert.alert(t.notifications.clearConfirmTitle, t.notifications.clearConfirmMessage, [
+      { text: t.common.cancel, style: "cancel" },
+      {
+        text: t.notifications.clearAll,
+        style: "destructive",
+        onPress: () => clearMutation.mutate(),
+      },
+    ]);
+  };
 
   return (
     <Screen safeBottom>
       <ScreenFadeIn style={styles.container}>
-        <StepsHeader title={t.notifications.title} showBack />
+        <StepsHeader
+          title={t.notifications.title}
+          subtitle={
+            items && items.length > 0 ? t.notifications.unreadCount(unreadCount) : undefined
+          }
+          showBack
+          actionLabel={items && items.length > 0 ? t.notifications.clearAll : undefined}
+          onActionPress={items && items.length > 0 ? confirmClearAll : undefined}
+        />
 
         {isError ? (
           <EmptyState emoji="⚠️" title={t.notifications.couldntLoad} subtitle={t.common.tryAgain} />
@@ -101,15 +180,45 @@ export default function NotificationsScreen() {
           <EmptyState emoji="🔔" title={t.notifications.empty} subtitle={t.notifications.emptySubtitle} />
         ) : (
           <FlatList
-            data={items}
-            keyExtractor={(n) => n.id}
+            data={
+              (
+                [
+                  ["today", groupByRecency(items).today],
+                  ["thisWeek", groupByRecency(items).thisWeek],
+                  ["earlier", groupByRecency(items).earlier],
+                ] as const
+              ).flatMap(([key, group]) =>
+                // Only a section that has something in it gets a label.
+                group.length === 0
+                  ? []
+                  : [
+                      { kind: "label" as const, key, id: `label-${key}` },
+                      ...group.map((n) => ({ kind: "item" as const, id: n.id, item: n })),
+                    ]
+              )
+            }
+            keyExtractor={(row) => row.id}
             contentContainerStyle={styles.list}
-            renderItem={({ item }) => {
+            renderItem={({ item: row }) => {
+              if (row.kind === "label") {
+                return (
+                  <Text style={[styles.sectionLabel, rtlText]} maxFontSizeMultiplier={1.3}>
+                    {row.key === "today"
+                      ? t.notifications.sectionToday
+                      : row.key === "thisWeek"
+                        ? t.notifications.sectionThisWeek
+                        : t.notifications.sectionEarlier}
+                  </Text>
+                );
+              }
+
+              const item = row.item;
               const destination = destinationFor(item);
               const { icon, tint } = TYPE_STYLE[item.type];
               return (
                 <Touchable
                   disabled={!destination}
+                  accessibilityLabel={itemText(item, t)}
                   onPress={() => {
                     if (!destination) return;
                     track("notification_opened", {
@@ -120,18 +229,33 @@ export default function NotificationsScreen() {
                   }}
                   style={[styles.row, isRTL && styles.rowReverse, !item.read && styles.rowUnread]}
                 >
-                  <View style={item.read ? styles.dotSpacer : styles.unreadDot} />
-                  <View style={[styles.iconWrap, { backgroundColor: `${tint}20` }]}>
+                  <View style={[styles.iconWrap, { backgroundColor: TYPE_TILE[item.type] }]}>
                     <Ionicons name={icon} size={18} color={tint} />
                   </View>
                   <View style={styles.rowText}>
                     <Text style={[styles.typeLabel, { color: tint }, rtlText]}>
                       {typeLabel(item.type, t)}
                     </Text>
-                    <Text style={[styles.rowTitle, rtlText]}>{itemText(item, t)}</Text>
-                    <Text style={[styles.rowTime, rtlText]}>{relativeTime(item.createdAt, t)}</Text>
+                    <Text
+                      style={[styles.rowTitle, !item.read && styles.rowTitleUnread, rtlText]}
+                      maxFontSizeMultiplier={1.3}
+                    >
+                      {itemText(item, t)}
+                    </Text>
+                    <Text
+                      style={[styles.rowBody, rtlText]}
+                      numberOfLines={1}
+                      maxFontSizeMultiplier={1.3}
+                    >
+                      {itemBody(item, t)}
+                    </Text>
                   </View>
-                  {destination ? <Text style={styles.chevron}>{isRTL ? "‹" : "›"}</Text> : null}
+                  <View style={styles.metaCol}>
+                    {item.read ? null : <View style={styles.unreadDot} />}
+                    <Text style={styles.rowTime} maxFontSizeMultiplier={1.2}>
+                      {relativeTime(item.createdAt, t)}
+                    </Text>
+                  </View>
                 </Touchable>
               );
             }}
@@ -169,20 +293,22 @@ const styles = StyleSheet.create({
   },
   rowUnread: {
     backgroundColor: Colors.linen,
-    borderColor: `${Colors.terracotta}40`,
+    borderColor: Colors.terracotta,
   },
-  rowPressed: {
-    opacity: 0.75,
+  sectionLabel: {
+    fontFamily: Fonts.semiBold,
+    fontSize: 12,
+    color: Colors.textLight,
+    letterSpacing: 0.5,
+    marginBottom: 2,
+    marginTop: 14,
   },
+  metaCol: { alignItems: "center", gap: 6 },
   unreadDot: {
     width: DOT,
     height: DOT,
     borderRadius: DOT / 2,
     backgroundColor: Colors.terracotta,
-  },
-  dotSpacer: {
-    width: DOT,
-    height: DOT,
   },
   rowText: {
     flex: 1,
@@ -203,15 +329,21 @@ const styles = StyleSheet.create({
   },
   rowTitle: {
     ...Type.body,
+    fontSize: 14,
     color: Colors.bark,
   },
-  rowTime: {
-    ...Type.caption,
+  rowTitleUnread: {
+    fontFamily: Fonts.semiBold,
+  },
+  rowBody: {
+    fontFamily: Fonts.regular,
+    fontSize: 12,
     color: Colors.textLight,
     marginTop: 2,
   },
-  chevron: {
-    fontSize: 22,
+  rowTime: {
+    fontFamily: Fonts.regular,
+    fontSize: 10,
     color: Colors.textLight,
   },
 });

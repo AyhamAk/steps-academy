@@ -82,7 +82,7 @@ export function NotificationBell() {
       <Animated.View style={bellStyle}>
         <Ionicons
           name={unread > 0 ? "notifications" : "notifications-outline"}
-          size={22}
+          size={18}
           color={unread > 0 ? Colors.terracotta : Colors.textLight}
         />
       </Animated.View>
@@ -97,9 +97,11 @@ export function NotificationBell() {
 
 const styles = StyleSheet.create({
   button: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    // 34, not 42: on the compact single-line Home header the larger circle
+    // outweighed the greeting beside it. hitSlop keeps the tap target legal.
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     backgroundColor: Colors.linen,
     borderWidth: 1,
     borderColor: Colors.border,
@@ -123,6 +125,6 @@ const styles = StyleSheet.create({
   badgeText: {
     fontFamily: Fonts.bold,
     fontSize: 10,
-    color: "#FFFFFF",
+    color: Colors.cream,
   },
 });

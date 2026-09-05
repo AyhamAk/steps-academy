@@ -40,7 +40,7 @@ export function AcademyGrid() {
       tint: "#7B9EC4",
       title: t.home.tileNursery,
       subtitle: t.academy.ageRange(0, 3) ?? "",
-      href: "/academy/courses?band=nursery",
+      href: "/academy/nursery",
     },
     {
       key: "courses",

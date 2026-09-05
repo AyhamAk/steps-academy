@@ -68,7 +68,11 @@ export default function AcademyCoursesScreen() {
   const visible = useMemo(() => {
     const inScope = (courses ?? []).filter(inBand);
     if (filter === "enrolled") {
-      return inScope.filter((course) => course.myEnrollments.length > 0);
+      // Live enrolments only — a rejected or cancelled request is not a place,
+      // and listing it under "Enrolled" is the same mistake the row made.
+      return inScope.filter((course) =>
+        course.myEnrollments.some((e) => e.status === "pending" || e.status === "approved")
+      );
     }
     if (filter === "open") {
       return inScope.filter((course) => course.spotsLeft === null || course.spotsLeft > 0);
