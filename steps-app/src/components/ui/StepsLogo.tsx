@@ -17,6 +17,15 @@ const LOGO_WIDTH = 220;
 const LOGO_HEIGHT = 150;
 
 /**
+ * The box every butterfly fraction below is measured against. Exported because
+ * a caller that lays its own layers out at a different size (the launch
+ * screen, which works in the artwork's true pixels) has to convert into these
+ * units before passing a `scale` — otherwise the butterflies land in the wrong
+ * place at the wrong size.
+ */
+export const BUTTERFLY_BOX = { width: LOGO_WIDTH, height: LOGO_HEIGHT };
+
+/**
  * The butterflies, lifted out of the artwork so they can move on their own.
  *
  * The logo shipped as one flat PNG, which can only ever be animated as a
@@ -28,7 +37,7 @@ const LOGO_HEIGHT = 150;
  * Each has its own drift, rise and timing — matching numbers would read as a
  * single object sliding around rather than separate butterflies.
  */
-const BUTTERFLIES = [
+export const BUTTERFLIES = [
   {
     source: require("../../assets/logo-butterfly-1.png"),
     left: 0.6312, top: 0.1696, width: 0.1253, height: 0.2229,
@@ -56,12 +65,19 @@ const BUTTERFLIES = [
   },
 ] as const;
 
-function Butterfly({
+export function Butterfly({
   config,
   reduceMotion,
+  scale = 1,
 }: {
   config: (typeof BUTTERFLIES)[number];
   reduceMotion: boolean;
+  /**
+   * Multiplier on {@link BUTTERFLY_BOX}, set by callers that size the layers
+   * themselves rather than scaling the whole stage with a transform — the
+   * launch screen does, so its letters can animate at their true size.
+   */
+  scale?: number;
 }) {
   const progress = useSharedValue(0);
 
@@ -95,10 +111,10 @@ function Butterfly({
       style={[
         styles.butterfly,
         {
-          left: config.left * LOGO_WIDTH,
-          top: config.top * LOGO_HEIGHT,
-          width: config.width * LOGO_WIDTH,
-          height: config.height * LOGO_HEIGHT,
+          left: config.left * LOGO_WIDTH * scale,
+          top: config.top * LOGO_HEIGHT * scale,
+          width: config.width * LOGO_WIDTH * scale,
+          height: config.height * LOGO_HEIGHT * scale,
         },
         style,
       ]}

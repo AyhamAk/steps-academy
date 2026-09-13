@@ -1,0 +1,37 @@
+[
+  {
+    "name": "logo-letter-1.png",
+    "left": 0.0525,
+    "top": 0.3256,
+    "width": 0.1463,
+    "height": 0.4448
+  },
+  {
+    "name": "logo-letter-2.png",
+    "left": 0.1765,
+    "top": 0.3256,
+    "width": 0.1627,
+    "height": 0.4419
+  },
+  {
+    "name": "logo-letter-3.png",
+    "left": 0.332,
+    "top": 0.3266,
+    "width": 0.1273,
+    "height": 0.4351
+  },
+  {
+    "name": "logo-letter-4.png",
+    "left": 0.4718,
+    "top": 0.3227,
+    "width": 0.1247,
+    "height": 0.4457
+  },
+  {
+    "name": "logo-letter-5.png",
+    "left": 0.5722,
+    "top": 0.3246,
+    "width": 0.145,
+    "height": 0.4457
+  }
+]

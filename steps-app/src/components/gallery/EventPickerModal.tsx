@@ -18,6 +18,7 @@ import { Student } from "../../services/studentsApi";
 import { formatIsoDate } from "../../utils/date";
 import { StepsButton } from "../ui/StepsButton";
 import { Touchable } from "../ui/Touchable";
+import { AttendeePicker } from "./AttendeePicker";
 
 type EventPickerModalProps = {
   visible: boolean;
@@ -141,39 +142,11 @@ export function EventPickerModal({
                 style={styles.input}
               />
 
-              <Text style={styles.label}>{t.gallery.kidsWhoAttended}</Text>
-              {students.length === 0 ? (
-                <Text style={styles.emptyText}>{t.gallery.noStudentsYet}</Text>
-              ) : (
-                <View style={styles.studentGrid}>
-                  {students.map((student) => {
-                    const isSelected = attendeeIds.includes(student.id);
-                    return (
-                      <Touchable
-                        key={student.id}
-                        onPress={() =>
-                          setAttendeeIds((prev) =>
-                            isSelected
-                              ? prev.filter((id) => id !== student.id)
-                              : [...prev, student.id]
-                          )
-                        }
-                        style={[styles.studentChip, isSelected && styles.studentChipSelected]}
-                      >
-                        <Text
-                          style={[
-                            styles.studentChipText,
-                            isSelected && styles.studentChipTextSelected,
-                          ]}
-                        >
-                          {isSelected ? "✓ " : ""}
-                          {student.name}
-                        </Text>
-                      </Touchable>
-                    );
-                  })}
-                </View>
-              )}
+              <AttendeePicker
+                students={students}
+                selectedIds={attendeeIds}
+                onChange={setAttendeeIds}
+              />
 
               {error ? <Text style={styles.error}>{error}</Text> : null}
 
@@ -260,31 +233,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: Colors.textLight,
     marginTop: 2,
-  },
-  studentGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  studentChip: {
-    borderRadius: 20,
-    borderWidth: 1.5,
-    borderColor: Colors.border,
-    backgroundColor: Colors.linen,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-  },
-  studentChipSelected: {
-    backgroundColor: Colors.terracotta,
-    borderColor: Colors.terracotta,
-  },
-  studentChipText: {
-    fontFamily: Fonts.semiBold,
-    fontSize: 13,
-    color: Colors.bark,
-  },
-  studentChipTextSelected: {
-    color: "#FFFFFF",
   },
   emptyText: {
     fontFamily: Fonts.regular,

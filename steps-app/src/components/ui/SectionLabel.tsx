@@ -9,15 +9,28 @@ type Props = {
   label: string;
   actionLabel?: string;
   onActionPress?: () => void;
+  /**
+   * Centres the label instead of aligning it to the leading edge.
+   *
+   * Opt-in, because every other section heading sits above a left-aligned
+   * list where a centred one reads as detached from what it labels. Not
+   * combinable with an action — a trailing link has nowhere to go.
+   */
+  centered?: boolean;
 };
 
 /** Section heading, with an optional action on the trailing edge. */
-export default function SectionLabel({ label, actionLabel, onActionPress }: Props) {
+export default function SectionLabel({
+  label,
+  actionLabel,
+  onActionPress,
+  centered = false,
+}: Props) {
   const { isRTL, rtlText } = useTranslation();
 
   return (
-    <View style={[styles.row, isRTL && styles.rowReverse]}>
-      <Text style={[styles.label, rtlText]}>{label}</Text>
+    <View style={[styles.row, isRTL && styles.rowReverse, centered && styles.rowCentered]}>
+      <Text style={[styles.label, centered ? styles.labelCentered : rtlText]}>{label}</Text>
       {actionLabel && onActionPress ? (
         <Pressable onPress={onActionPress} hitSlop={12}>
           <Text style={styles.action}>{actionLabel}</Text>
@@ -28,6 +41,8 @@ export default function SectionLabel({ label, actionLabel, onActionPress }: Prop
 }
 
 const styles = StyleSheet.create({
+  rowCentered: { justifyContent: "center" },
+  labelCentered: { textAlign: "center" },
   row: {
     flexDirection: "row",
     alignItems: "center",

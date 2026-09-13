@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 
 import { processAndUploadImage } from "../lib/imageUpload";
 import { sendPushToUsers } from "../lib/push";
-import { albumPublished } from "../lib/pushCopy";
+import { albumPublished, albumUpdated } from "../lib/pushCopy";
 import { getSignedGetUrl } from "../lib/r2";
 import { DEFAULT_PAGE_SIZE, EventModel } from "../models/event";
 import { NotificationModel } from "../models/notification";
@@ -254,33 +254,18 @@ export async function uploadPhotos(req: Request, res: Response) {
 }
 
 /**
- * Tells families about a finished album.
+ * Fans an album out to the families of a set of children.
  *
- * Publishing is its own step because neither of the moments before it means
- * "this is ready to look at": the event is created empty, and photos arrive
- * one request at a time. The admin decides when it is finished.
- *
- * Guarded by notifiedAt, so tapping Done twice — or reopening a finished album
- * and closing it again — cannot notify the same families a second time.
+ * One notification per child rather than per photo, and only to guardians of
+ * children who are actually in the album — telling every parent about photos
+ * their child is not in is noise, and it hints at which children were there.
  */
-export async function publishEvent(req: Request, res: Response) {
-  const event = await EventModel.findById(param(req, "eventId"));
-  if (!event) {
-    return res.status(404).json({ message: "Event not found" });
-  }
-  if (event.notifiedAt) {
-    return res.json({ published: false, reason: "already-published" });
-  }
-
-  const photoCount = await PhotoModel.countByEvent(event.id);
-  if (photoCount === 0) {
-    return res.status(400).json({ message: "Add photos before publishing the album" });
-  }
-
-  // Only guardians of children who were actually at the event. Telling every
-  // parent about an album their child is not in is noise, and it hints at
-  // which children attended what.
-  for (const student of event.attendees) {
+async function notifyGuardiansOfStudents(
+  students: { id: string; name: string }[],
+  event: { id: string; name: string },
+  copy: typeof albumPublished
+) {
+  for (const student of students) {
     const guardians = await StudentModel.listGuardians(student.id);
     if (guardians.length === 0) continue;
 
@@ -289,12 +274,60 @@ export async function publishEvent(req: Request, res: Response) {
       { type: "photo", childName: student.name, eventId: event.id }
     );
     await sendPushToUsers(guardians, (locale) => ({
-      ...albumPublished(event.name, locale),
+      ...copy(event.name, locale),
       data: { type: "event", eventId: event.id },
     }));
   }
+}
+
+/**
+ * Tells families about a finished album — the first time, and again whenever
+ * more photos are added to one they already know about.
+ *
+ * Publishing is its own step because neither of the moments before it means
+ * "this is ready to look at": the event is created empty, and photos arrive
+ * one request at a time. The admin decides when it is finished, and the app
+ * calls this every time the review sheet closes.
+ *
+ * notifiedAt is therefore a watermark, not a one-time latch. A second round
+ * goes only to the families of children tagged in photos added *since* that
+ * mark: closing an unchanged album notifies nobody, while adding five photos
+ * of one child next month reaches that child's parents and no one else.
+ */
+export async function publishEvent(req: Request, res: Response) {
+  const event = await EventModel.findById(param(req, "eventId"));
+  if (!event) {
+    return res.status(404).json({ message: "Event not found" });
+  }
+
+  if (event.notifiedAt) {
+    const since = event.notifiedAt;
+    const addedCount = await PhotoModel.countByEventSince(event.id, since);
+    if (addedCount === 0) {
+      return res.json({ published: false, reason: "nothing-new" });
+    }
+
+    // Tagged in the new photos, not merely on the attendee list — an album can
+    // gain photos of three children out of twenty, and the other seventeen
+    // families have no reason to hear about it.
+    const studentIds = await PhotoModel.studentIdsTaggedSince(event.id, since);
+    const students = await StudentModel.listByIds(studentIds);
+
+    // Stamped before the fan-out so a Done tap that arrives while this one is
+    // still sending cannot pick the same photos up a second time.
+    await EventModel.markNotified(event.id);
+    await notifyGuardiansOfStudents(students, event, albumUpdated);
+
+    return res.json({ published: true, updated: true });
+  }
+
+  const photoCount = await PhotoModel.countByEvent(event.id);
+  if (photoCount === 0) {
+    return res.status(400).json({ message: "Add photos before publishing the album" });
+  }
 
   await EventModel.markNotified(event.id);
+  await notifyGuardiansOfStudents(event.attendees, event, albumPublished);
   res.json({ published: true });
 }
 

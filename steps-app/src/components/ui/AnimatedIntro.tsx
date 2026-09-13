@@ -1,20 +1,19 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Image, Pressable, StyleSheet } from "react-native";
+import { Pressable, StyleSheet } from "react-native";
 import Animated, {
-  Easing,
   runOnJS,
   useAnimatedStyle,
   useSharedValue,
-  withDelay,
-  withRepeat,
-  withSpring,
   withTiming,
 } from "react-native-reanimated";
 
 import { Colors } from "../../constants/Colors";
 import { useReduceMotionSetting } from "../../hooks/useReduceMotionSetting";
+import { AnimatedLogoLetters } from "./AnimatedLogoLetters";
 
-const HOLD_MS = 1400;
+// Five staggered letters, then a hop each, then a beat to watch the
+// butterflies drift before the hand-off.
+const HOLD_MS = 3000;
 const FADE_OUT_MS = 320;
 
 /**
@@ -22,15 +21,23 @@ const FADE_OUT_MS = 320;
  * first screen mounts underneath. The native splash (a static image — the OS
  * renders it before any JS runs, so it can never animate) hands off to this.
  * Tapping anywhere skips it.
+ *
+ * Worth knowing: by the time this mounts the app is already usable. RootLayout
+ * renders nothing until fonts and both stores have hydrated, so this is not
+ * covering a wait — it is a held beat in front of a ready app, which is why it
+ * is short and skippable rather than looped indefinitely.
+ *
+ * Uses the layered StepsLogo rather than the flattened PNG, so the butterflies
+ * drift on their own while the mark settles. Same artwork either way; no image
+ * file is added, replaced or edited.
  */
 export function AnimatedIntro({ onDone }: { onDone: () => void }) {
   const reduceMotion = useReduceMotionSetting();
 
   const overlayOpacity = useSharedValue(1);
-  const logoOpacity = useSharedValue(0);
-  const logoScale = useSharedValue(0.78);
-  const logoY = useSharedValue(16);
-  const float = useSharedValue(0);
+  // The letters animate themselves; this wrapper only handles the hold and
+  // the hand-off, so it must not add a competing scale or bounce.
+  const exitScale = useSharedValue(1);
 
   // A full-screen overlay that fails to unmount would silently swallow every
   // touch in the app, so dismissal stops capturing input immediately and is
@@ -46,6 +53,9 @@ export function AnimatedIntro({ onDone }: { onDone: () => void }) {
 
   const dismiss = useCallback(() => {
     setIsDismissing(true);
+    // A touch of scale-up on the way out reads as the logo handing over to the
+    // screen behind it, rather than the overlay simply vanishing.
+    exitScale.value = withTiming(1.06, { duration: FADE_OUT_MS });
     overlayOpacity.value = withTiming(0, { duration: FADE_OUT_MS }, (finished) => {
       if (finished) runOnJS(finish)();
     });
@@ -58,35 +68,15 @@ export function AnimatedIntro({ onDone }: { onDone: () => void }) {
   }, [isDismissing, finish]);
 
   useEffect(() => {
-    if (reduceMotion) {
-      logoOpacity.value = 1;
-      logoScale.value = 1;
-      logoY.value = 0;
-      const timer = setTimeout(dismiss, 500);
-      return () => clearTimeout(timer);
-    }
-
-    logoOpacity.value = withTiming(1, { duration: 480, easing: Easing.out(Easing.ease) });
-    logoScale.value = withSpring(1, { damping: 11, stiffness: 95 });
-    logoY.value = withSpring(0, { damping: 13, stiffness: 90 });
-    // Gentle drift once it has settled, so the hold doesn't feel frozen.
-    float.value = withDelay(
-      620,
-      withRepeat(withTiming(-7, { duration: 900, easing: Easing.inOut(Easing.ease) }), -1, true)
-    );
-
-    const timer = setTimeout(dismiss, HOLD_MS);
+    // Long enough for five staggered letters to land and take one hop each.
+    const timer = setTimeout(dismiss, reduceMotion ? 500 : HOLD_MS);
     return () => clearTimeout(timer);
   }, [reduceMotion, dismiss]);
 
   const overlayStyle = useAnimatedStyle(() => ({ opacity: overlayOpacity.value }));
 
   const logoStyle = useAnimatedStyle(() => ({
-    opacity: logoOpacity.value,
-    transform: [
-      { scale: logoScale.value },
-      { translateY: logoY.value + float.value },
-    ],
+    transform: [{ scale: exitScale.value }],
   }));
 
   return (
@@ -96,11 +86,7 @@ export function AnimatedIntro({ onDone }: { onDone: () => void }) {
     >
       <Pressable style={styles.tapArea} onPress={dismiss}>
         <Animated.View style={logoStyle}>
-          <Image
-            source={require("../../assets/steps-logo.png")}
-            style={styles.logo}
-            resizeMode="contain"
-          />
+          <AnimatedLogoLetters maxWidth={300} />
         </Animated.View>
       </Pressable>
     </Animated.View>
@@ -117,9 +103,5 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-  },
-  logo: {
-    width: 260,
-    height: 176,
   },
 });

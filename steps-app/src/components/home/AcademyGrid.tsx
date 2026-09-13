@@ -30,14 +30,14 @@ type Tile = {
  * rather than pretending to have content.
  */
 export function AcademyGrid() {
-  const { t, isRTL } = useTranslation();
+  const { t } = useTranslation();
   const router = useRouter();
 
   const tiles: Tile[] = [
     {
       key: "nursery",
       icon: "happy-outline",
-      tint: "#7B9EC4",
+      tint: Colors.sky,
       title: t.home.tileNursery,
       subtitle: t.academy.ageRange(0, 3) ?? "",
       href: "/academy/nursery",
@@ -70,7 +70,7 @@ export function AcademyGrid() {
 
   return (
     <View style={styles.section}>
-      <SectionLabel label={t.home.academySectionTitle} />
+      <SectionLabel label={t.home.academySectionTitle} centered />
       <View style={styles.grid}>
         {tiles.map((tile) => (
           <Touchable
@@ -82,23 +82,15 @@ export function AcademyGrid() {
               router.push(tile.href as never);
             }}
           >
-            <View style={[styles.tileTop, isRTL && styles.rowReverse]}>
+            <View style={styles.tileTop}>
               <IconTile tint={tile.tint} size={44}>
                 <Ionicons name={tile.icon} size={23} color={tile.tint} />
               </IconTile>
             </View>
-            <Text
-              style={[styles.tileTitle, isRTL && styles.textRight]}
-              numberOfLines={2}
-              maxFontSizeMultiplier={1.3}
-            >
+            <Text style={styles.tileTitle} numberOfLines={2} maxFontSizeMultiplier={1.3}>
               {tile.title}
             </Text>
-            <Text
-              style={[styles.tileSubtitle, isRTL && styles.textRight]}
-              numberOfLines={1}
-              maxFontSizeMultiplier={1.3}
-            >
+            <Text style={styles.tileSubtitle} numberOfLines={1} maxFontSizeMultiplier={1.3}>
               {tile.subtitle}
             </Text>
           </Touchable>
@@ -124,22 +116,19 @@ const styles = StyleSheet.create({
     width: "48%",
     flexGrow: 1,
     minHeight: 118,
-    justifyContent: "flex-end",
+    justifyContent: "center",
+    alignItems: "center",
     backgroundColor: Colors.linen,
     borderRadius: 18,
     padding: 16,
     borderWidth: 1,
     borderColor: Colors.border,
   },
+  // Was a `flexDirection: row` with flex:1, which pinned the icon to the
+  // start of the row — top-left, or top-right in Arabic — while the title
+  // below it aligned by textAlign. Two mechanisms, two axes, off balance.
   tileTop: {
-    flexDirection: "row",
-    flex: 1,
-  },
-  rowReverse: {
-    flexDirection: "row-reverse",
-  },
-  textRight: {
-    textAlign: "right",
+    marginBottom: 10,
   },
   tileTitle: {
     // Body size, not heading: at 22px a two-word label like "Parenting tips"
@@ -147,10 +136,12 @@ const styles = StyleSheet.create({
     ...Type.body,
     fontFamily: Fonts.bold,
     color: Colors.bark,
+    textAlign: "center",
   },
   tileSubtitle: {
     ...Type.caption,
     color: Colors.textLight,
-    marginTop: 1,
+    marginTop: 3,
+    textAlign: "center",
   },
 });

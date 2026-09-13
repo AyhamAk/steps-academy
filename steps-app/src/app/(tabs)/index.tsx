@@ -480,17 +480,20 @@ const styles = StyleSheet.create({
     opacity: 0.75,
   },
   childStrip: {
-    // Leading-aligned now the logo above it is gone — a single centred chip
-    // under a left-aligned greeting read as an unrelated floating pill.
+    // Centred, and it stays centred with one child. flexGrow lets the content
+    // fill the scroll view so justifyContent can centre it, while still
+    // scrolling normally once there are more chips than fit on a line.
+    flexGrow: 1,
+    justifyContent: "center",
     gap: 8,
-    paddingBottom: 16,
+    paddingBottom: 18,
   },
   childChip: {
     justifyContent: "center",
     backgroundColor: Colors.linen,
     borderRadius: 99,
     minHeight: 32,
-    paddingHorizontal: 18,
+    paddingHorizontal: 20,
     paddingVertical: 6,
     // A transparent border on the resting state so selecting a chip changes
     // its colour without changing its size and nudging the row.

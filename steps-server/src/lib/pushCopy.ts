@@ -29,6 +29,24 @@ export function albumPublished(eventName: string, locale: PushLocale): PushPaylo
   };
 }
 
+/**
+ * A second (or later) round of photos in an album families already know about.
+ *
+ * Worded so it doesn't read as a duplicate of the first announcement — the
+ * parent has already been told about this album, and "New photos" again would
+ * look like the same notification arriving twice.
+ */
+export function albumUpdated(eventName: string, locale: PushLocale): PushPayload {
+  return {
+    title: pick(
+      { en: "More photos added", ar: "تمت إضافة صور", he: "נוספו תמונות" },
+      locale
+    ),
+    body: eventName,
+    data: { type: "event" },
+  };
+}
+
 export function announcementPosted(text: string, locale: PushLocale): PushPayload {
   return {
     title: pick({ en: "Announcement", ar: "إعلان", he: "הודעה" }, locale),

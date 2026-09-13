@@ -25,11 +25,11 @@ export function ProgramCard({
   activityCount: number;
   photoCount: number;
 }) {
-  const { t, isRTL, rtlText } = useTranslation();
+  const { t, isRTL } = useTranslation();
 
   return (
     <View style={styles.card}>
-      <Text style={[styles.title, rtlText]} maxFontSizeMultiplier={1.3}>
+      <Text style={styles.title} maxFontSizeMultiplier={1.3}>
         {t.home.programLabel(childName)}
         {programName ? ` · ${programName}` : ""}
       </Text>
@@ -87,8 +87,9 @@ const styles = StyleSheet.create({
   },
   title: {
     fontFamily: Fonts.semiBold,
-    fontSize: 12,
+    fontSize: 13,
     color: Colors.skyDeep,
+    textAlign: "center",
     marginBottom: 12,
   },
   row: { flexDirection: "row", justifyContent: "space-between" },

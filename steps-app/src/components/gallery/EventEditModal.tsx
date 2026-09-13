@@ -17,6 +17,7 @@ import { deleteEvent, GalleryEvent, updateEvent, updateEventAttendees } from "..
 import { Student } from "../../services/studentsApi";
 import { StepsButton } from "../ui/StepsButton";
 import { Touchable } from "../ui/Touchable";
+import { AttendeePicker } from "./AttendeePicker";
 
 /**
  * Everything an admin can do to an album itself: rename it, move it to another
@@ -141,39 +142,11 @@ export function EventEditModal({
               style={[styles.input, rtlText]}
             />
 
-            <Text style={[styles.label, rtlText]}>{t.gallery.kidsWhoAttended}</Text>
-            {students.length === 0 ? (
-              <Text style={styles.emptyText}>{t.gallery.noStudentsYet}</Text>
-            ) : (
-              <View style={styles.studentGrid}>
-                {students.map((student) => {
-                  const isSelected = attendeeIds.includes(student.id);
-                  return (
-                    <Touchable
-                      key={student.id}
-                      onPress={() =>
-                        setAttendeeIds((previous) =>
-                          isSelected
-                            ? previous.filter((id) => id !== student.id)
-                            : [...previous, student.id]
-                        )
-                      }
-                      style={[styles.studentChip, isSelected && styles.studentChipSelected]}
-                    >
-                      <Text
-                        style={[
-                          styles.studentChipText,
-                          isSelected && styles.studentChipTextSelected,
-                        ]}
-                      >
-                        {isSelected ? "✓ " : ""}
-                        {student.name}
-                      </Text>
-                    </Touchable>
-                  );
-                })}
-              </View>
-            )}
+            <AttendeePicker
+              students={students}
+              selectedIds={attendeeIds}
+              onChange={setAttendeeIds}
+            />
 
             {error ? <Text style={styles.error}>{error}</Text> : null}
 
@@ -240,20 +213,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: Colors.bark,
   },
-  studentGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  studentChip: {
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    backgroundColor: Colors.linen,
-    paddingHorizontal: 14,
-    minHeight: 44,
-    justifyContent: "center",
-  },
-  studentChipSelected: { backgroundColor: Colors.terracotta, borderColor: Colors.terracotta },
-  studentChipText: { fontFamily: Fonts.semiBold, fontSize: 14, color: Colors.bark },
-  studentChipTextSelected: { color: Colors.cream },
-  emptyText: { fontFamily: Fonts.regular, fontSize: 13, color: Colors.textLight },
   error: {
     fontFamily: Fonts.semiBold,
     fontSize: 13,
