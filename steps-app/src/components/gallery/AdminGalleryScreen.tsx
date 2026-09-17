@@ -182,11 +182,10 @@ export function AdminGalleryScreen() {
   const handleAddPhotos = async () => {
     if (!reviewEvent) return;
 
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
-      Alert.alert(t.common.permissionNeeded, t.gallery.allowPhotoLibrary, [{ text: t.common.ok }]);
-      return;
-    }
+    // No permission request here on purpose: launchImageLibraryAsync goes through the
+    // system picker (Android photo picker / iOS PHPicker), which hands back only the
+    // chosen files and needs no media-read permission. Asking would force us to declare
+    // READ_MEDIA_IMAGES, which Google Play rejects for apps that a picker can serve.
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ["images"],
       allowsMultipleSelection: true,

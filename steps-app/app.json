@@ -30,7 +30,13 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "blockedPermissions": [
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.READ_MEDIA_VIDEO",
+        "android.permission.READ_MEDIA_AUDIO",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -53,6 +59,22 @@
         {
           "icon": "./assets/android-icon-foreground.png",
           "color": "#D4A843"
+        }
+      ],
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Steps Academy needs access to your photo library so admins can upload event photos.",
+          "savePhotosPermission": "Steps Academy needs permission to save photos to your library when you download them from the gallery.",
+          "granularPermissions": []
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Steps Academy needs access to your photo library so admins can upload event photos.",
+          "cameraPermission": false,
+          "microphonePermission": false
         }
       ]
     ],

@@ -93,7 +93,9 @@ export function FullscreenPhotoViewer({
   const handleDownload = async () => {
     setBusy("download");
     try {
-      const permission = await MediaLibrary.requestPermissionsAsync();
+      // writeOnly: saving needs no read access, and on Android 13+ it resolves without
+      // requesting any permission at all — so the app never declares READ_MEDIA_IMAGES.
+      const permission = await MediaLibrary.requestPermissionsAsync(true);
       if (!permission.granted) {
         Alert.alert(t.common.permissionNeeded, t.gallery.allowPhotoLibrarySave, [
           { text: t.common.ok },
