@@ -20,7 +20,8 @@ import { UserModel } from "./models/user";
  * Log in as: sarah@steps.local / steps1234  (parent of "Layla")
  *          or admin@steps.local / steps1234  (admin)
  *
- * Idempotent: skips entirely if Sarah already exists, and never runs in prod.
+ * Idempotent: skips entirely if Sarah already exists, and refuses to touch
+ * anything but a database on this machine.
  */
 const ADMIN_EMAIL = "admin@steps.local";
 const DEV_PASSWORD = "steps1234";
@@ -49,8 +50,36 @@ async function seedAdmin(): Promise<void> {
   });
 }
 
+/**
+ * Is `DATABASE_URL` pointing at a database on this machine?
+ *
+ * `NODE_ENV` alone was never a safe guard. A local checkout runs with
+ * `NODE_ENV=development` while `.env` points at the production Supabase
+ * instance, so simply starting the server put `admin@steps.local` — an admin
+ * whose password is in this file — into the real database, where it sat for
+ * weeks on a public API.
+ */
+function pointsAtLocalDatabase(): boolean {
+  const url = process.env.DATABASE_URL ?? "";
+  if (!url) return false;
+  try {
+    const host = new URL(url).hostname;
+    return host === "localhost" || host === "127.0.0.1" || host === "::1" || host === "host.docker.internal";
+  } catch {
+    return false;
+  }
+}
+
 export async function runDevSeed(): Promise<void> {
   if (env.nodeEnv === "production") return;
+
+  if (!pointsAtLocalDatabase()) {
+    console.warn(
+      "[devSeed] skipped — DATABASE_URL is not a local database. " +
+        "Demo accounts are never written to a remote one, whatever NODE_ENV says.",
+    );
+    return;
+  }
 
   await seedAdmin();
 

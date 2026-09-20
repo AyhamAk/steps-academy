@@ -1,13 +1,9 @@
 import { EnrollmentStatus } from "@prisma/client";
 import { Request, Response } from "express";
 
+import { notifyEnrollmentDecision } from "../lib/enrollmentNotify";
 import { sendPushToUsers } from "../lib/push";
-import {
-  childLeftCourse,
-  coursePlaceConfirmed,
-  coursePlaceDeclined,
-  waitlistRequest,
-} from "../lib/pushCopy";
+import { childLeftCourse, waitlistRequest } from "../lib/pushCopy";
 import { CourseModel, EnrollmentModel, EnrollmentWithContext } from "../models/course";
 import { NotificationModel } from "../models/notification";
 import { StudentModel } from "../models/student";
@@ -315,25 +311,7 @@ export async function decideEnrollment(req: Request, res: Response) {
   if (!enrollment) return res.status(404).json({ message: "Request not found" });
 
   // Tell the child's guardians what was decided.
-  const guardians = await StudentModel.listGuardians(enrollment.studentId);
-  if (guardians.length > 0) {
-    await NotificationModel.createForUsers(
-      guardians.map((guardian) => guardian.id),
-      {
-        type: "course",
-        childName: enrollment.student.name,
-        courseId: enrollment.courseId,
-        courseName: enrollment.course.name,
-      }
-    );
-    await sendPushToUsers(guardians, (locale) => {
-      const copy =
-        status === "approved"
-          ? coursePlaceConfirmed(enrollment.student.name, enrollment.course.name, locale)
-          : coursePlaceDeclined(enrollment.student.name, enrollment.course.name, locale);
-      return { ...copy, data: { type: "course", courseId: enrollment.courseId } };
-    });
-  }
+  await notifyEnrollmentDecision(enrollment, status);
 
   res.json({ enrollment: serializeEnrollment(enrollment) });
 }
