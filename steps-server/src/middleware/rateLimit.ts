@@ -21,3 +21,18 @@ export const analyticsRateLimit = rateLimit({
   // Silence rather than an error body: the client ignores the response anyway.
   handler: (_req, res) => res.status(202).json({ ok: true }),
 });
+
+// The admin panel's Basic auth is checked with bcrypt, which is slow enough to
+// discourage guessing but is the only brake there was. Same budget as login:
+// an admin signs in once and the browser replays the header from then on, so
+// 20 in a quarter of an hour only ever bites a script.
+export const dashboardRateLimit = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  // Only failures count — the browser re-sends credentials on every page load,
+  // and a working session must not be able to lock itself out.
+  skipSuccessfulRequests: true,
+  message: "Too many attempts. Please try again later.",
+});

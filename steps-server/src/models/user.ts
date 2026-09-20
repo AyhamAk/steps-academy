@@ -150,6 +150,104 @@ export const UserModel = {
     };
   },
 
+  /**
+   * Every account, admins included — the control panel's user list.
+   *
+   * Deliberately separate from `listParentsWithChildren`: that one is the
+   * app's roster screen and must never surface an admin, while the panel has
+   * to be able to find and demote one.
+   */
+  async listAllWithChildren({
+    search,
+    limit = 50,
+    offset = 0,
+  }: { search?: string; limit?: number; offset?: number } = {}) {
+    const term = search?.trim();
+    const where = term
+      ? {
+          OR: [
+            { name: { contains: term, mode: "insensitive" as const } },
+            { email: { contains: term, mode: "insensitive" as const } },
+          ],
+        }
+      : {};
+
+    const [users, total] = await Promise.all([
+      prisma.user.findMany({
+        where,
+        orderBy: [{ role: "asc" }, { name: "asc" }],
+        take: limit,
+        skip: offset,
+        include: {
+          children: { include: { student: { select: { id: true, name: true } } } },
+        },
+      }),
+      prisma.user.count({ where }),
+    ]);
+
+    return {
+      total,
+      users: users.map((user) => ({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        createdAt: user.createdAt,
+        claimedChildName: user.claimedChildName,
+        hasPassword: Boolean(user.passwordHash),
+        children: user.children.map((link) => link.student),
+      })),
+    };
+  },
+
+  async setRole(id: string, role: Role): Promise<User | null> {
+    try {
+      return await prisma.user.update({ where: { id }, data: { role } });
+    } catch {
+      return null;
+    }
+  },
+
+  /**
+   * What would block deleting this account.
+   *
+   * These five relations are `Restrict` in the schema, so Postgres refuses the
+   * delete while any row points at the user. Counting them first is the only
+   * way to tell an admin *why* a delete will fail instead of handing them a
+   * foreign-key error.
+   */
+  async ownedContentCounts(id: string) {
+    const [events, photos, announcements, invites, tips] = await Promise.all([
+      prisma.event.count({ where: { createdBy: id } }),
+      prisma.photo.count({ where: { uploadedBy: id } }),
+      prisma.announcement.count({ where: { createdBy: id } }),
+      prisma.inviteCode.count({ where: { createdBy: id } }),
+      prisma.tip.count({ where: { createdBy: id } }),
+    ]);
+    return {
+      events,
+      photos,
+      announcements,
+      invites,
+      tips,
+      total: events + photos + announcements + invites + tips,
+    };
+  },
+
+  /**
+   * Moves everything that blocks a delete onto another admin, in one
+   * transaction so a half-reassigned account can never be left behind.
+   */
+  async reassignContent(fromId: string, toId: string): Promise<void> {
+    await prisma.$transaction([
+      prisma.event.updateMany({ where: { createdBy: fromId }, data: { createdBy: toId } }),
+      prisma.photo.updateMany({ where: { uploadedBy: fromId }, data: { uploadedBy: toId } }),
+      prisma.announcement.updateMany({ where: { createdBy: fromId }, data: { createdBy: toId } }),
+      prisma.inviteCode.updateMany({ where: { createdBy: fromId }, data: { createdBy: toId } }),
+      prisma.tip.updateMany({ where: { createdBy: fromId }, data: { createdBy: toId } }),
+    ]);
+  },
+
   /** Parents who signed up but have no child linked yet — the admin's to-do list. */
   async listAwaitingLink() {
     const parents = await prisma.user.findMany({
