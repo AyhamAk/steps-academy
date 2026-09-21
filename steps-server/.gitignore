@@ -6,3 +6,6 @@ uploads/
 *.log
 npm-debug.log*
 .DS_Store
+
+# The roster send-list: children's names against live invite codes.
+roster-codes.csv
