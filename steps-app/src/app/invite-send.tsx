@@ -96,7 +96,7 @@ export default function InviteSendScreen() {
   const outstanding = active.filter((invite) => invite.redeemedCount === 0).length;
 
   const send = async (invite: Invite) => {
-    const message = t.invite.adminShareMessage(invite.studentName, invite.code);
+    const message = t.invite.adminShareMessage(invite.studentName, invite.code, t.invite.haveCode);
     const number = toWhatsAppNumber(invite.guardianPhone);
 
     if (number) {

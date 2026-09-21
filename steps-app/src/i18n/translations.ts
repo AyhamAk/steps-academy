@@ -262,7 +262,10 @@ export const en = {
     adminRevokeConfirm: "Revoke this code? Anyone still holding it won't be able to sign up.",
     // The code sits alone on its own line: buried mid-sentence it takes
     // fiddly text selection to copy, but on its own a long-press grabs it.
-    adminShareMessage: (child: string, code: string) =>
+    // `button` is passed in as `t.invite.haveCode` — the very string the
+    // sign-in screen renders. Naming it here by hand is how this message came
+    // to tell parents to tap a button that does not exist.
+    adminShareMessage: (child: string, code: string, button: string) =>
       `Steps Academy — invite for ${child}
 
 Get the app:
@@ -272,7 +275,7 @@ iPhone: ${STORE_LINKS.ios}
 Your code:
 ${code}
 
-Open the app, tap "Create an account", and enter the code.`,
+Open the app, tap "${button}", and enter the code.`,
     statusActive: "Active",
     statusSpent: "Used up",
     statusRevoked: "Revoked",
@@ -1046,7 +1049,7 @@ export const ar: Translations = {
     adminCopied: "تم نسخ الرمز",
     adminRevoke: "إلغاء",
     adminRevokeConfirm: "إلغاء هذا الرمز؟ لن يتمكن من يحمله من إنشاء حساب.",
-    adminShareMessage: (child: string, code: string) =>
+    adminShareMessage: (child: string, code: string, button: string) =>
       `أكاديمية Steps — دعوة لـ ${child}
 
 حمّل التطبيق:
@@ -1056,7 +1059,7 @@ export const ar: Translations = {
 رمزك:
 ${code}
 
-افتح التطبيق، اضغط «إنشاء حساب»، وأدخل الرمز.`,
+افتح التطبيق، اضغط «${button}»، وأدخل الرمز.`,
     statusActive: "فعّال",
     statusSpent: "مستخدم بالكامل",
     statusRevoked: "ملغى",
@@ -1813,7 +1816,7 @@ export const he: Translations = {
     adminCopied: "הקוד הועתק",
     adminRevoke: "ביטול",
     adminRevokeConfirm: "לבטל את הקוד? מי שמחזיק בו לא יוכל להירשם.",
-    adminShareMessage: (child: string, code: string) =>
+    adminShareMessage: (child: string, code: string, button: string) =>
       `Steps Academy — הזמנה עבור ${child}
 
 הורידו את האפליקציה:
@@ -1823,7 +1826,7 @@ export const he: Translations = {
 הקוד שלך:
 ${code}
 
-פתחו את האפליקציה, הקישו על «יצירת חשבון», והזינו את הקוד.`,
+פתחו את האפליקציה, הקישו על «${button}», והזינו את הקוד.`,
     statusActive: "פעיל",
     statusSpent: "נוצל במלואו",
     statusRevoked: "בוטל",
