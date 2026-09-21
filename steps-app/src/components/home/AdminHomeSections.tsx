@@ -137,6 +137,11 @@ export function AdminHomeSections() {
     { key: "courses", label: t.adminHome.actionCourses, icon: "school", tint: Colors.forest, route: "/courses" },
     { key: "requests", label: t.courses.requestsTitle, icon: "clipboard", tint: Colors.clay, route: "/course-requests" },
     { key: "schedule", label: t.adminHome.actionSchedule, icon: "calendar", tint: Colors.terracotta, route: "/schedule" },
+    // The tips screen has had a full editor since it shipped, but an admin
+    // never sees the academy grid the parent tile lives in — so there was no
+    // way to reach it. Same label and colour as that tile, so the two doors
+    // lead somewhere recognisably identical.
+    { key: "tips", label: t.home.tileTips, icon: "bulb", tint: Colors.honey, route: "/academy/tips" },
     { key: "invites", label: t.invite.sendTitle, icon: "key", tint: Colors.forest, route: "/invite-send" },
     { key: "feedback", label: t.adminHome.actionFeedback, icon: "chatbubble", tint: Colors.sky, route: "/feedback" },
   ];
