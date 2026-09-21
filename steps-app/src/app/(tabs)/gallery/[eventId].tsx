@@ -105,6 +105,7 @@ export default function EventGalleryScreen() {
     <Screen>
       <ScreenFadeIn style={styles.fadeContainer}>
         <AdminHeader
+          backTo="/gallery"
           title={data?.event.name ?? t.gallery.pageTitle}
           subtitle={
             data
