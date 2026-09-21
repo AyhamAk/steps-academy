@@ -16,7 +16,8 @@ type Tile = {
   icon: keyof typeof Ionicons.glyphMap;
   tint: string;
   title: string;
-  subtitle: string;
+  /** Omitted by a tile that needs no second line. */
+  subtitle?: string;
   href: string;
 };
 
@@ -24,10 +25,10 @@ type Tile = {
  * The four ways into the academy, as a 2×2 grid.
  *
  * Nursery and Courses are the same screen filtered to an age band — the
- * academy thinks of them as two things, so they get two doors. Dafi path and
- * Parenting tips are placeholders: the tiles exist so the grid is whole and so
- * parents can see what is coming, and they land on a "coming soon" screen
- * rather than pretending to have content.
+ * academy thinks of them as two things, so they get two doors. Parenting tips
+ * is a real screen. Dafi evening is the one that has not shipped: its tile
+ * exists so parents can see what is coming, and it lands on a "coming soon"
+ * screen rather than pretending to have content.
  */
 export function AcademyGrid() {
   const { t } = useTranslation();
@@ -63,7 +64,8 @@ export function AcademyGrid() {
       icon: "bulb-outline",
       tint: Colors.honey,
       title: t.home.tileTips,
-      subtitle: t.home.tileTipsSubtitle,
+      // No second line: the other three describe an age range or a promise,
+      // and there is nothing true and short to say about tips.
       href: "/academy/tips",
     },
   ];
@@ -90,9 +92,11 @@ export function AcademyGrid() {
             <Text style={styles.tileTitle} numberOfLines={2} maxFontSizeMultiplier={1.3}>
               {tile.title}
             </Text>
-            <Text style={styles.tileSubtitle} numberOfLines={1} maxFontSizeMultiplier={1.3}>
-              {tile.subtitle}
-            </Text>
+            {tile.subtitle ? (
+              <Text style={styles.tileSubtitle} numberOfLines={1} maxFontSizeMultiplier={1.3}>
+                {tile.subtitle}
+              </Text>
+            ) : null}
           </Touchable>
         ))}
       </View>
