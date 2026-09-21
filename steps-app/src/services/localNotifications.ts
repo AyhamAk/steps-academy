@@ -25,6 +25,8 @@ function bodyFor(notification: AppNotification, t: Translations): string {
         notification.childName ?? "",
         notification.courseName ?? ""
       );
+    case "tip":
+      return t.notifications.itemTip(notification.tipTitle ?? "");
   }
 }
 

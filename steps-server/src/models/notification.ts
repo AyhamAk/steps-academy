@@ -13,6 +13,8 @@ type CreateInput = {
   eventId?: string;
   courseId?: string;
   courseName?: string;
+  tipId?: string;
+  tipTitle?: string;
 };
 
 export const NotificationModel = {
@@ -26,6 +28,8 @@ export const NotificationModel = {
         eventId: input.eventId,
         courseId: input.courseId,
         courseName: input.courseName,
+        tipId: input.tipId,
+        tipTitle: input.tipTitle,
       },
     });
   },

@@ -4,6 +4,7 @@ import { prisma } from "../lib/prisma";
 import { sendPushToUsers } from "../lib/push";
 import { announcementPosted } from "../lib/pushCopy";
 import { deleteObjects } from "../lib/r2";
+import { becamePublished, notifyTipPublished } from "../lib/tipNotify";
 import { csrfToken } from "../middleware/dashboardAuth";
 import { AnnouncementModel } from "../models/announcement";
 import { EventModel } from "../models/event";
@@ -277,6 +278,11 @@ export async function tipPage(req: Request, res: Response) {
         ${textArea("bodyHe", "Body (Hebrew)", tip?.bodyHe ?? "", { rows: 5 })}
       </div>
       ${checkboxField("isPublished", "Published — visible to parents", tip?.isPublished ?? false)}
+      ${
+        tip?.isPublished
+          ? `<p class="field-hint">Already published. Saving again does not notify anyone.</p>`
+          : banner("Publishing notifies every parent and sends a push.", "warn")
+      }
       ${button(tip ? "Save tip" : "Create tip")}
     </form>
   </div></div>
@@ -466,7 +472,14 @@ export async function createTip(req: Request, res: Response) {
   if ("error" in parsed) return res.redirect(redirectWith(`${LIST}/tips/new`, { err: parsed.error }));
 
   const tip = await TipModel.create({ ...parsed.input, createdBy: req.userId! });
-  res.redirect(redirectWith(`${LIST}/tips/${tip.id}`, { ok: "Tip created." }));
+  const told = becamePublished(null, tip);
+  if (told) await notifyTipPublished(tip);
+
+  res.redirect(
+    redirectWith(`${LIST}/tips/${tip.id}`, {
+      ok: told ? "Tip published — every parent has been notified." : "Draft saved. Nobody is told until you publish.",
+    }),
+  );
 }
 
 export async function updateTip(req: Request, res: Response) {
@@ -475,8 +488,20 @@ export async function updateTip(req: Request, res: Response) {
   if ("error" in parsed) return res.redirect(redirectWith(`${LIST}/tips/${tipId}`, { err: parsed.error }));
 
   const { createdBy: _ignored, ...input } = parsed.input;
-  await TipModel.update(tipId, input);
-  res.redirect(redirectWith(`${LIST}/tips/${tipId}`, { ok: "Saved." }));
+  // Same rule as the app: only the draft → published crossing notifies, so
+  // fixing a typo on a live tip stays silent.
+  const before = await TipModel.findById(tipId);
+  const tip = await TipModel.update(tipId, input);
+  if (!tip) return res.redirect(redirectWith(LIST, { err: "That tip is gone." }));
+
+  const told = becamePublished(before, tip);
+  if (told) await notifyTipPublished(tip);
+
+  res.redirect(
+    redirectWith(`${LIST}/tips/${tipId}`, {
+      ok: told ? "Published — every parent has been notified." : "Saved.",
+    }),
+  );
 }
 
 export async function deleteTip(req: Request, res: Response) {

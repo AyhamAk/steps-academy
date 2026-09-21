@@ -111,3 +111,17 @@ export function childLeftCourse(
     data: { type: "course" },
   };
 }
+
+/**
+ * A new parenting tip is published.
+ *
+ * The quietest thing the academy sends — a tip is a monthly read, not news,
+ * so the title names the kind of thing and the body is the tip's own title.
+ */
+export function tipPublished(tipTitle: string, locale: PushLocale): PushPayload {
+  return {
+    title: pick({ en: "New parenting tip", ar: "نصيحة جديدة للأهل", he: "טיפ חדש להורים" }, locale),
+    body: tipTitle,
+    data: { type: "tip" },
+  };
+}

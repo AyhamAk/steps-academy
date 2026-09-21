@@ -40,6 +40,8 @@ function itemText(n: AppNotification, t: Translations): string {
       return t.notifications.itemEvent(n.eventName ?? "");
     case "course":
       return t.notifications.itemCourse(n.childName ?? "", n.courseName ?? "");
+    case "tip":
+      return t.notifications.itemTip(n.tipTitle ?? "");
     default:
       return t.notifications.itemAnnouncement;
   }
@@ -58,6 +60,7 @@ const TYPE_TILE: Record<NotificationType, string> = {
   announcement: Colors.clayLight,
   event: Colors.honeyLight,
   course: Colors.skyTint,
+  tip: Colors.honeyLight,
 };
 
 /** Today / this week / earlier — nothing older gets its own bucket. */
@@ -89,6 +92,8 @@ function itemBody(n: AppNotification, t: Translations): string {
       return t.notifications.bodyEvent;
     case "course":
       return t.notifications.bodyCourse;
+    case "tip":
+      return t.notifications.bodyTip;
     default:
       return t.notifications.bodyAnnouncement;
   }
@@ -102,6 +107,7 @@ const TYPE_STYLE: Record<
   event: { icon: "calendar", tint: Colors.honey },
   course: { icon: "school", tint: Colors.forest },
   announcement: { icon: "megaphone", tint: Colors.terracotta },
+  tip: { icon: "bulb", tint: Colors.honey },
 };
 
 function typeLabel(type: NotificationType, t: Translations): string {
@@ -111,6 +117,7 @@ function typeLabel(type: NotificationType, t: Translations): string {
 /** Where tapping a notification should land. Null means it isn't tappable. */
 function destinationFor(n: AppNotification): string | null {
   if (n.type === "course") return "/profile";
+  if (n.type === "tip") return "/academy/tips";
   if (n.eventId) return `/gallery/${n.eventId}`;
   if (n.type === "announcement") return "/";
   return null;

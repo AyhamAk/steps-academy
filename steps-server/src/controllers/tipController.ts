@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 
+import { becamePublished, notifyTipPublished } from "../lib/tipNotify";
 import { TipModel } from "../models/tip";
 
 function param(req: Request, key: string): string {
@@ -86,6 +87,8 @@ export async function createTip(req: Request, res: Response) {
   if (error) return res.status(400).json({ message: error });
 
   const tip = await TipModel.create({ ...req.body, createdBy: req.userId! });
+  // A tip created straight into the published state is new to everyone.
+  if (becamePublished(null, tip)) await notifyTipPublished(tip);
   res.status(201).json({ tip });
 }
 
@@ -93,8 +96,14 @@ export async function updateTip(req: Request, res: Response) {
   const error = validateTip(req.body, false);
   if (error) return res.status(400).json({ message: error });
 
-  const tip = await TipModel.update(param(req, "tipId"), req.body);
+  const tipId = param(req, "tipId");
+  // Read before writing: only the draft → published crossing notifies, and
+  // afterwards there is no way to tell which side of it this save was.
+  const before = await TipModel.findById(tipId);
+  const tip = await TipModel.update(tipId, req.body);
   if (!tip) return res.status(404).json({ message: "Tip not found" });
+
+  if (becamePublished(before, tip)) await notifyTipPublished(tip);
   res.json({ tip });
 }
 

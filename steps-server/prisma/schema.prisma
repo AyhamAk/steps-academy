@@ -18,6 +18,7 @@ enum NotificationType {
   announcement
   event
   course
+  tip
 }
 
 enum EnrollmentStatus {
@@ -300,6 +301,9 @@ model Notification {
   /// Set on course notifications so tapping one opens that course.
   courseId   String?
   courseName String?
+  /// Set on tip notifications so tapping one opens that tip.
+  tipId      String?
+  tipTitle   String?
   read       Boolean          @default(false)
   createdAt  DateTime         @default(now())
 
