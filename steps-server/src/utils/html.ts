@@ -111,12 +111,17 @@ export function funnel(steps: { label: string; value: number }[]): string {
  * That makes escaping the caller's job — every call site must run untrusted
  * text through `escapeHtml` itself.
  */
-export function table(headers: string[], rows: string[][]): string {
+export function table(headers: string[], rows: string[][], opts: { hideOnPhone?: number[] } = {}): string {
   if (rows.length === 0) return `<p class="empty">Nothing yet.</p>`;
+  // A wide table on a phone turns into a horizontal scrollbar nobody finds.
+  // Columns listed in `hideOnPhone` drop out below 760px, leaving the ones
+  // that actually identify a row.
+  const optional = new Set(opts.hideOnPhone ?? []);
+  const cls = (index: number) => (optional.has(index) ? ' class="opt"' : "");
   return `<div class="table-wrap"><table>
-    <thead><tr>${headers.map((h) => `<th>${escapeHtml(h)}</th>`).join("")}</tr></thead>
+    <thead><tr>${headers.map((h, i) => `<th${cls(i)}>${escapeHtml(h)}</th>`).join("")}</tr></thead>
     <tbody>${rows
-      .map((row) => `<tr>${row.map((cell) => `<td>${cell}</td>`).join("")}</tr>`)
+      .map((row) => `<tr>${row.map((cell, i) => `<td${cls(i)}>${cell}</td>`).join("")}</tr>`)
       .join("")}</tbody>
   </table></div>`;
 }
@@ -213,8 +218,12 @@ export function section(title: string, body: string, note?: string): string {
 }
 
 /** A table filling a card — the card is the frame, so no inner padding. */
-export function tableCard(headers: string[], rows: string[][]): string {
-  return `<div class="card">${table(headers, rows)}</div>`;
+export function tableCard(
+  headers: string[],
+  rows: string[][],
+  opts: { hideOnPhone?: number[] } = {},
+): string {
+  return `<div class="card">${table(headers, rows, opts)}</div>`;
 }
 
 /** Free-form content inside a card, padded. */
@@ -244,7 +253,7 @@ export function banner(text: string, tone: "warn" | "danger" | "good" = "warn"):
 
 // -------------------------------------------------------------------- layout
 
-export type NavKey = "usage" | "users" | "students" | "courses" | "content" | "sql";
+export type NavKey = "usage" | "users" | "students" | "courses" | "content" | "health" | "sql";
 
 const NAV: { key: NavKey; href: string; label: string }[] = [
   { key: "usage", href: "/dashboard", label: "Usage" },
@@ -252,6 +261,7 @@ const NAV: { key: NavKey; href: string; label: string }[] = [
   { key: "students", href: "/dashboard/students", label: "Students" },
   { key: "courses", href: "/dashboard/courses", label: "Courses" },
   { key: "content", href: "/dashboard/content", label: "Content" },
+  { key: "health", href: "/dashboard/health", label: "Health" },
   { key: "sql", href: "/dashboard/sql", label: "SQL" },
 ];
 
@@ -404,11 +414,17 @@ const STYLES = `
   .funnel-fill { height:100%; background:var(--terracotta); }
   .funnel-drop { font-size:11.5px; color:var(--clay); margin-top:4px; }
 
+  @media (max-width:760px) {
+    th.opt, td.opt { display:none; }
+  }
   @media (max-width:640px) {
     .wrap { padding:0 14px; }
     h1 { font-size:21px; }
     .stat-value { font-size:22px; }
     td, th { padding:9px 10px; }
+    .stats { grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); }
+    .btn { padding:9px 14px; }
+    .searchbar input, .searchbar select { max-width:none; flex:1; }
   }
 `;
 

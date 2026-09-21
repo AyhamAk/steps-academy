@@ -25,6 +25,7 @@ import {
   deleteCourse,
   updateCourse,
 } from "../dashboard/courses";
+import { healthPage } from "../dashboard/health";
 import { sqlPage } from "../dashboard/sql";
 import {
   bulkCreateStudents,
@@ -115,6 +116,9 @@ router.post("/content/tips", requireCsrf, createTip);
 router.get("/content/tips/:tipId", tipPage);
 router.post("/content/tips/:tipId/edit", requireCsrf, updateTip);
 router.post("/content/tips/:tipId/delete", requireCsrf, deleteTip);
+
+// -- health
+router.get("/health", healthPage);
 
 // -- sql (a GET renders the empty console, a POST runs a query and re-renders)
 router.get("/sql", sqlPage);

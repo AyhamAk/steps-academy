@@ -68,7 +68,7 @@ export async function usersPage(req: Request, res: Response) {
 
   ${section(
     "All accounts",
-    tableCard(["Name", "Email", "Role", "Children", "Joined", ""], rows),
+    tableCard(["Name", "Email", "Role", "Children", "Joined", ""], rows, { hideOnPhone: [1, 4] }),
     search ? `matching “${search}”` : undefined,
   )}`;
 

@@ -73,7 +73,7 @@ export async function studentsPage(req: Request, res: Response) {
 
   ${section(
     "Roster",
-    tableCard(["Child", "Born", "Guardians", "Photos", ""], rows),
+    tableCard(["Child", "Born", "Guardians", "Photos", ""], rows, { hideOnPhone: [1, 3] }),
     search ? `matching “${search}”` : `${total} total`,
   )}
 

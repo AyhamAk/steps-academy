@@ -95,7 +95,9 @@ export async function contentPage(req: Request, res: Response) {
 
   ${section(
     "Albums",
-    `${tableCard(["Album", "Date", "Photos", "Children", "Status", ""], albumRows)}
+    `${tableCard(["Album", "Date", "Photos", "Children", "Status", ""], albumRows, {
+       hideOnPhone: [2, 3],
+     })}
      ${drawer(
        "Create an album",
        `${formStart(`${LIST}/albums`, csrf)}
@@ -135,7 +137,7 @@ export async function contentPage(req: Request, res: Response) {
 
   ${section(
     "Parenting tips",
-    `${tableCard(["Tip", "Month", "Read time", "Status", ""], tipRows)}
+    `${tableCard(["Tip", "Month", "Read time", "Status", ""], tipRows, { hideOnPhone: [2] })}
      ${padCard(linkButton(`${LIST}/tips/new`, "Write a new tip", "primary"))}`,
     `${tips.filter((t) => t.isPublished).length} published`,
   )}

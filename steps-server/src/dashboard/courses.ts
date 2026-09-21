@@ -99,7 +99,9 @@ export async function coursesPage(req: Request, res: Response) {
 
   ${section(
     "Courses",
-    tableCard(["Course", "Instructor", "Days", "Time", "Places", "Waiting", ""], courseRows),
+    tableCard(["Course", "Instructor", "Days", "Time", "Places", "Waiting", ""], courseRows, {
+      hideOnPhone: [1, 2, 3],
+    }),
     `${courses.filter((c) => c.isActive).length} active`,
   )}
 
@@ -120,7 +122,9 @@ export async function coursesPage(req: Request, res: Response) {
     )}
     ${button("Filter", "quiet")}
   </form>
-  ${tableCard(["Child", "Course", "Requested by", "Status", "When", ""], enrollmentRows)}
+  ${tableCard(["Child", "Course", "Requested by", "Status", "When", ""], enrollmentRows, {
+    hideOnPhone: [2, 4],
+  })}
   </section>
 
   ${section("Add a course", drawer("New course", courseForm(csrf, `${LIST}/new`, null)))}`;
