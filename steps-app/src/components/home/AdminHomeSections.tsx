@@ -122,7 +122,11 @@ export function AdminHomeSections() {
     const measured = event.nativeEvent.layout.width;
     if (measured > 0 && measured !== gridWidth) setGridWidth(measured);
   };
-  const tileWidth = (gridWidth - cardGap) / 2;
+  // Floored, for the reason gridCardWidth in useLayout is floored: two
+  // fractional widths each round up at layout time, the pair overflows the
+  // container by a pixel, and the second tile wraps — leaving one per row
+  // down the whole screen.
+  const tileWidth = Math.floor((gridWidth - cardGap) / 2);
 
   /**
    * Every admin destination that exists, so Management is somewhere an admin
@@ -203,7 +207,10 @@ export function AdminHomeSections() {
 
       <View style={styles.section}>
         <SectionLabel label={t.adminHome.quickTitle} />
-        <View style={[styles.actionGrid, { gap: cardGap }]} onLayout={onGridLayout}>
+        <View
+          style={[styles.actionGrid, isRTL && styles.actionGridRTL, { gap: cardGap }]}
+          onLayout={onGridLayout}
+        >
           {actions.map((action) => (
             <Touchable
               key={action.key}
@@ -309,6 +316,11 @@ const styles = StyleSheet.create({
   actionGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
+  },
+  // RTL is driven from JS here, not by I18nManager, so `row` fills from the
+  // left whatever the language. In Arabic the tiles belong on the right.
+  actionGridRTL: {
+    flexDirection: "row-reverse",
   },
   actionTile: {
     minHeight: 92,
