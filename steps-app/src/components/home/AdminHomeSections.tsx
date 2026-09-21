@@ -1,8 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
-import { useState } from "react";
-import { LayoutChangeEvent, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 
 import { Colors } from "../../constants/Colors";
 import { Fonts } from "../../constants/Fonts";
@@ -100,33 +99,11 @@ function Stat({ value, label, tint }: { value: number; label: string; tint: stri
  */
 export function AdminHomeSections() {
   const { t, isRTL } = useTranslation();
-  const { width, gutter, cardGap } = useLayout();
+  const { cardGap } = useLayout();
   const { data, isPending, isError, refetch } = useQuery({
     queryKey: ["admin", "overview"],
     queryFn: adminOverview,
   });
-
-  /**
-   * Two columns, sized from the grid's *measured* width.
-   *
-   * Deriving it from the window width needs the container's horizontal padding,
-   * which lives in `Screen` as a NativeWind class rather than in `useLayout` —
-   * guessing it wrong by 8px made each tile too wide to sit two per row, so
-   * every tile wrapped onto its own line. Measuring cannot drift.
-   *
-   * Seeded with the window width less that padding so the first frame is
-   * already right, then corrected on layout.
-   */
-  const [gridWidth, setGridWidth] = useState(width - gutter * 2);
-  const onGridLayout = (event: LayoutChangeEvent) => {
-    const measured = event.nativeEvent.layout.width;
-    if (measured > 0 && measured !== gridWidth) setGridWidth(measured);
-  };
-  // Floored, for the reason gridCardWidth in useLayout is floored: two
-  // fractional widths each round up at layout time, the pair overflows the
-  // container by a pixel, and the second tile wraps — leaving one per row
-  // down the whole screen.
-  const tileWidth = Math.floor((gridWidth - cardGap) / 2);
 
   /**
    * Every admin destination that exists, so Management is somewhere an admin
@@ -207,15 +184,12 @@ export function AdminHomeSections() {
 
       <View style={styles.section}>
         <SectionLabel label={t.adminHome.quickTitle} />
-        <View
-          style={[styles.actionGrid, isRTL && styles.actionGridRTL, { gap: cardGap }]}
-          onLayout={onGridLayout}
-        >
+        <View style={[styles.actionGrid, isRTL && styles.actionGridRTL, { gap: cardGap }]}>
           {actions.map((action) => (
             <Touchable
               key={action.key}
               accessibilityLabel={action.label}
-              style={[styles.actionTile, { width: tileWidth }]}
+              style={styles.actionTile}
               onPress={() => router.push(action.route as never)}
             >
               <IconTile tint={action.tint} size={40}>
@@ -323,6 +297,14 @@ const styles = StyleSheet.create({
     flexDirection: "row-reverse",
   },
   actionTile: {
+    // Two per row, as a percentage rather than a measured width. Measuring
+    // was tried twice and failed both times: the seed guessed the container
+    // from `gutter * 2` = 40px while Screen actually applies `px-6` = 48px,
+    // so the first frame was 8px too wide and every tile wrapped onto its own
+    // line. A percentage is of the real container by definition, and 48%
+    // twice plus the gap leaves slack instead of overflowing by a pixel.
+    width: "48%",
+    flexGrow: 1,
     minHeight: 92,
     backgroundColor: Colors.linen,
     borderRadius: 16,
