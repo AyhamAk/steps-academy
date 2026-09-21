@@ -14,9 +14,12 @@ import {
   linkButton,
   redirectWith,
   selectField,
+  drawer,
+  section,
   shortDate,
   statCard,
   table,
+  tableCard,
   textArea,
   textField,
 } from "../utils/html";
@@ -68,37 +71,41 @@ export async function studentsPage(req: Request, res: Response) {
     ${search ? linkButton(LIST, "Clear") : ""}
   </form>
 
-  <h2>Roster</h2>
-  <div class="card">
-    ${table(["Child", "Born", "Guardians", "Photos", ""], rows)}
-  </div>
+  ${section(
+    "Roster",
+    tableCard(["Child", "Born", "Guardians", "Photos", ""], rows),
+    search ? `matching “${search}”` : `${total} total`,
+  )}
 
-  <div class="cols">
+  ${section(
+    "Add children",
+    `<div class="cols">
     <div>
-      <h2>Add a child</h2>
-      <div class="card">
-        ${formStart(`${LIST}/new`, csrf)}
+      ${drawer(
+        "Add one child",
+        `${formStart(`${LIST}/new`, csrf)}
           ${textField("name", "Name", "", { required: true })}
           ${textField("birthDate", "Date of birth", "", { type: "date", hint: "Drives the age band on Home." })}
           ${textField("guardianPhone", "Guardian phone", "", { placeholder: "05x-xxx-xxxx" })}
           ${textArea("notes", "Notes", "", { rows: 2, hint: "Private to admins." })}
           ${button("Add to roster")}
-        </form>
-      </div>
+        </form>`,
+      )}
     </div>
     <div>
-      <h2>Add several at once</h2>
-      <div class="card">
-        ${formStart(`${LIST}/bulk`, csrf)}
+      ${drawer(
+        "Add several at once",
+        `${formStart(`${LIST}/bulk`, csrf)}
           ${textArea("names", "One name per line", "", {
             rows: 6,
             hint: "Names already on the roster are skipped, whatever the capitalisation.",
           })}
           ${button("Add them all")}
-        </form>
-      </div>
+        </form>`,
+      )}
     </div>
-  </div>`;
+  </div>`,
+  )}`;
 
   res.type("html").send(
     layout({
@@ -154,8 +161,7 @@ export async function studentDetailPage(req: Request, res: Response) {
   const body = `
   <div class="cols">
     <div>
-      <h2>Details</h2>
-      <div class="card">
+      ${section("Details", `<div class="card"><div class="card-pad">
         ${formStart(`${base}/edit`, csrf)}
           ${textField("name", "Name", student.name, { required: true })}
           ${textField("birthDate", "Date of birth", student.birthDate ?? "", { type: "date" })}
@@ -163,19 +169,17 @@ export async function studentDetailPage(req: Request, res: Response) {
           ${textArea("notes", "Notes", student.notes ?? "", { rows: 3 })}
           ${button("Save changes")}
         </form>
-      </div>
+      </div></div>`)}
 
-      <h2>Danger zone</h2>
-      <div class="card">
+      ${section("Danger zone", `<div class="card"><div class="card-pad">
         <p class="sub">Removing a child takes their photo tags, album attendance,
            course places and invite codes with them. The photographs themselves stay.</p>
         ${linkButton(`${base}/delete`, "Remove from roster", "danger")}
-      </div>
+      </div></div>`)}
     </div>
 
     <div>
-      <h2>Guardians</h2>
-      <div class="card">
+      ${section("Guardians", `<div class="card"><div class="card-pad">
         ${banner("Only the accounts listed here can see this child's photos.", "warn")}
         ${table(["Parent", "Email", ""], guardianRows)}
         ${
@@ -188,12 +192,11 @@ export async function studentDetailPage(req: Request, res: Response) {
                 )}
                 ${button("Link guardian")}
                </form>`
-            : `<p class="empty">Every account is already linked.</p>`
+            : `<p class="field-hint">Every account is already linked.</p>`
         }
-      </div>
+      </div></div>`)}
 
-      <h2>Invite codes</h2>
-      <div class="card">
+      ${section("Invite codes", `<div class="card"><div class="card-pad">
         <p class="sub">A code lets one parent sign up and links them to this child automatically.</p>
         ${table(["Code", "Status", "Used", "Expires", ""], codeRows)}
         ${formStart(`${base}/codes`, csrf)}
@@ -203,7 +206,7 @@ export async function studentDetailPage(req: Request, res: Response) {
           </div>
           ${button("Issue a new code")}
         </form>
-      </div>
+      </div></div>`)}
     </div>
   </div>`;
 

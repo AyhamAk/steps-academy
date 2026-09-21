@@ -14,9 +14,12 @@ import {
   linkButton,
   redirectWith,
   selectField,
+  drawer,
+  section,
   shortDate,
   statCard,
   table,
+  tableCard,
   textArea,
   textField,
 } from "../utils/html";
@@ -94,12 +97,14 @@ export async function coursesPage(req: Request, res: Response) {
     ${statCard({ label: "Places taken", value: String(courses.reduce((sum, c) => sum + c.approvedCount, 0)) })}
   </div>
 
-  <h2>Courses</h2>
-  <div class="card">
-    ${table(["Course", "Instructor", "Days", "Time", "Places", "Waiting", ""], courseRows)}
-  </div>
+  ${section(
+    "Courses",
+    tableCard(["Course", "Instructor", "Days", "Time", "Places", "Waiting", ""], courseRows),
+    `${courses.filter((c) => c.isActive).length} active`,
+  )}
 
-  <h2>Enrolments</h2>
+  <section class="block">
+  <div class="block-head"><h2>Enrolments</h2></div>
   <form method="get" action="${LIST}" class="searchbar">
     ${selectField(
       "status",
@@ -115,12 +120,10 @@ export async function coursesPage(req: Request, res: Response) {
     )}
     ${button("Filter", "quiet")}
   </form>
-  <div class="card">
-    ${table(["Child", "Course", "Requested by", "Status", "When", ""], enrollmentRows)}
-  </div>
+  ${tableCard(["Child", "Course", "Requested by", "Status", "When", ""], enrollmentRows)}
+  </section>
 
-  <h2>New course</h2>
-  <div class="card">${courseForm(csrf, `${LIST}/new`, null)}</div>`;
+  ${section("Add a course", drawer("New course", courseForm(csrf, `${LIST}/new`, null)))}`;
 
   res.type("html").send(
     layout({
@@ -153,12 +156,9 @@ export async function courseDetailPage(req: Request, res: Response) {
     ${statCard({ label: "Visible in the app", value: course.isActive ? "Yes" : "No" })}
   </div>
 
-  <h2>Details</h2>
-  <div class="card">${courseForm(csrf, `${base}/edit`, course)}</div>
+  ${section("Details", `<div class="card"><div class="card-pad">${courseForm(csrf, `${base}/edit`, course)}</div></div>`)}
 
-  <h2>Who is on it</h2>
-  <div class="card">
-    ${table(
+  ${section("Who is on it", tableCard(
       ["Child", "Status", "Decided by", "Note"],
       enrollments.map((e) => [
         escapeHtml(e.student.name),
@@ -166,15 +166,13 @@ export async function courseDetailPage(req: Request, res: Response) {
         escapeHtml(e.decider?.name ?? "—"),
         escapeHtml(e.note ?? ""),
       ]),
-    )}
-  </div>
+    ))}
 
-  <h2>Danger zone</h2>
-  <div class="card">
+  ${section("Danger zone", `<div class="card"><div class="card-pad">
     <p class="sub">Deleting a course removes every place on it, approved or not. Hiding it instead
        keeps the history and takes it out of the app.</p>
     ${linkButton(`${base}/delete`, "Delete this course", "danger")}
-  </div>`;
+  </div></div>`)}`;
 
   res.type("html").send(
     layout({

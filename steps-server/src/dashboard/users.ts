@@ -13,9 +13,11 @@ import {
   linkButton,
   redirectWith,
   selectField,
+  section,
   shortDate,
   statCard,
   table,
+  tableCard,
 } from "../utils/html";
 
 /**
@@ -64,10 +66,11 @@ export async function usersPage(req: Request, res: Response) {
     ${search ? linkButton(LIST, "Clear") : ""}
   </form>
 
-  <h2>All accounts</h2>
-  <div class="card">
-    ${table(["Name", "Email", "Role", "Children", "Joined", ""], rows)}
-  </div>`;
+  ${section(
+    "All accounts",
+    tableCard(["Name", "Email", "Role", "Children", "Joined", ""], rows),
+    search ? `matching “${search}”` : undefined,
+  )}`;
 
   res.type("html").send(
     layout({
@@ -122,8 +125,7 @@ export async function userDetailPage(req: Request, res: Response) {
 
   <div class="cols">
     <div>
-      <h2>Children</h2>
-      <div class="card">
+      ${section("Children", `<div class="card"><div class="card-pad">
         ${banner(
           "Linking a child here is what grants this account access to that child's photos. Nothing else does.",
           "warn",
@@ -139,14 +141,13 @@ export async function userDetailPage(req: Request, res: Response) {
                 )}
                 ${button("Link child")}
                </form>`
-            : `<p class="empty">Every child on the roster is already linked to this account.</p>`
+            : `<p class="field-hint">Every child on the roster is already linked to this account.</p>`
         }
-      </div>
+      </div></div>`)}
     </div>
 
     <div>
-      <h2>Role</h2>
-      <div class="card">
+      ${section("Role", `<div class="card"><div class="card-pad">
         ${
           isLastAdmin
             ? banner("This is the only admin account. Demoting it would lock everyone out of the panel.", "danger")
@@ -159,17 +160,16 @@ export async function userDetailPage(req: Request, res: Response) {
                 ${button("Save role")}
                </form>`
         }
-      </div>
+      </div></div>`)}
 
-      <h2>Danger zone</h2>
-      <div class="card">
+      ${section("Danger zone", `<div class="card"><div class="card-pad">
         <p class="sub">Created ${escapeHtml(owned.events)} album${owned.events === 1 ? "" : "s"},
            ${escapeHtml(owned.photos)} photo${owned.photos === 1 ? "" : "s"},
            ${escapeHtml(owned.announcements)} announcement${owned.announcements === 1 ? "" : "s"},
            ${escapeHtml(owned.invites)} invite code${owned.invites === 1 ? "" : "s"},
            ${escapeHtml(owned.tips)} tip${owned.tips === 1 ? "" : "s"}.</p>
         ${linkButton(`${base}/delete`, "Delete this account", "danger")}
-      </div>
+      </div></div>`)}
     </div>
   </div>`;
 

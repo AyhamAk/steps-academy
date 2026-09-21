@@ -9,8 +9,10 @@ import {
   funnel,
   layout,
   pct,
+  section,
   statCard,
   table,
+  tableCard,
 } from "../utils/html";
 
 /**
@@ -28,6 +30,7 @@ export async function usagePage(req: Request, res: Response) {
   try {
     const [
       liveNow,
+      whoIsHere,
       activeToday,
       activeWeek,
       activePrevWeek,
@@ -51,6 +54,35 @@ export async function usagePage(req: Request, res: Response) {
       q<{ n: number }>(
         `select count(distinct coalesce("userId", "anonId"))::int n from "AnalyticsEvent"
          where "createdAt" > now() - interval '5 minutes'`
+      ),
+      // Who those people actually are. A count alone cannot answer "is that
+      // family stuck on the sign-up screen right now", which is the only
+      // reason to look at a live number in the first place.
+      q<{
+        name: string | null;
+        email: string | null;
+        ident: string;
+        last: Date;
+        events: number;
+        screen: string | null;
+      }>(
+        // `ident` mixes a uuid userId with a text anonId, so it is cast once
+        // in the inner query and everything joins on that.
+        `select u.name, u.email, t.ident, t.last, t.events,
+                (select x.props->>'route' from "AnalyticsEvent" x
+                  where coalesce(x."userId"::text, x."anonId") = t.ident
+                    and x.name = 'screen_view'
+                  order by x."createdAt" desc limit 1) screen
+         from (
+           select coalesce("userId"::text, "anonId") ident,
+                  max("createdAt") last,
+                  count(*)::int events
+           from "AnalyticsEvent"
+           where "createdAt" > now() - interval '5 minutes'
+           group by 1
+         ) t
+         left join "User" u on u.id::text = t.ident
+         order by t.last desc limit 40`
       ),
       q<{ n: number }>(
         `select count(distinct coalesce("userId", "anonId"))::int n from "AnalyticsEvent"
@@ -183,25 +215,46 @@ export async function usagePage(req: Request, res: Response) {
     ${statCard({ label: "Events recorded", value: String(totalEvents), sub: since ? `since ${new Date(since).toLocaleDateString("en-GB")}` : "nothing yet" })}
   </div>
 
-  <h2>Daily active users · last 14 days</h2>
-  <div class="card">${barChart(dailyActives.map((r) => ({ label: r.label, value: Number(r.n) })))}</div>
+  ${section(
+    "Active right now",
+    whoIsHere.length === 0
+      ? `<div class="card"><p class="empty">Nobody is using the app at the moment.</p></div>`
+      : tableCard(
+          ["Who", "On screen", "Last action", "Events"],
+          whoIsHere.map((person) => [
+            person.name
+              ? `<span class="pill pill-live">live</span> ${escapeHtml(person.name)}`
+              : `<span class="pill pill-live">live</span> <span class="muted">Not signed in</span>`,
+            person.screen ? `<code>${escapeHtml(person.screen)}</code>` : `<span class="muted">—</span>`,
+            escapeHtml(ago(person.last)),
+            String(person.events),
+          ]),
+        ),
+    whoIsHere.length
+      ? `${whoIsHere.length} in the last 5 minutes · unnamed rows have not signed in`
+      : undefined,
+  )}
+
+  ${section(
+    "Daily active users",
+    `<div class="card"><div class="card-pad">${barChart(dailyActives.map((r) => ({ label: r.label, value: Number(r.n) })))}</div></div>`,
+    "last 14 days",
+  )}
 
   <div class="cols">
     <div>
-      <h2>Getting started</h2>
-      <div class="card">
+      ${section("Getting started", `<div class="card"><div class="card-pad">
         ${funnel([
           { label: "Invite code accepted", value: inviteOk },
           { label: "Details completed", value: stepCount("details") },
           { label: "Consent given", value: stepCount("consent") },
           { label: "Account created", value: Number(registrations[0]?.n ?? 0) },
         ])}
-        ${inviteFail > 0 ? `<p class="empty">${inviteFail} invite code${inviteFail === 1 ? "" : "s"} rejected.</p>` : ""}
-      </div>
+        ${inviteFail > 0 ? `<p class="field-hint">${inviteFail} invite code${inviteFail === 1 ? "" : "s"} rejected.</p>` : ""}
+      </div></div>`)}
     </div>
     <div>
-      <h2>Course sign-up</h2>
-      <div class="card">
+      ${section("Course sign-up", `<div class="card"><div class="card-pad">
         ${funnel([
           { label: "Sheet opened", value: opened },
           { label: "Place confirmed", value: completed },
@@ -211,13 +264,11 @@ export async function usagePage(req: Request, res: Response) {
               .map((r) => `${r.n} at ${escapeHtml(r.step ?? "unknown")}`)
               .join(", ")}</p>`
           : ""}
-      </div>
+      </div></div>`)}
     </div>
   </div>
 
-  <h2>Albums</h2>
-  <div class="card">
-    ${table(
+  ${section("Albums", tableCard(
       ["Album", "Opened", "Scrolled to end", "Viewer opened", "Saved"],
       albums.map((a) => [
         escapeHtml(a.album),
@@ -226,27 +277,18 @@ export async function usagePage(req: Request, res: Response) {
         String(a.viewer),
         String(a.downloads),
       ])
-    )}
-  </div>
+    ))}
 
   <div class="cols">
     <div>
-      <h2>Screens</h2>
-      <div class="card">
-        ${table(["Route", "Views"], screens.map((s) => [`<code>${escapeHtml(s.route)}</code>`, String(s.n)]))}
-      </div>
+      ${section("Screens", tableCard(["Route", "Views"], screens.map((s) => [`<code>${escapeHtml(s.route)}</code>`, String(s.n)])))}
     </div>
     <div>
-      <h2>Tabs opened</h2>
-      <div class="card">
-        ${table(["Tab", "Switches"], tabs.map((t) => [escapeHtml(t.tab), String(t.n)]))}
-      </div>
+      ${section("Tabs opened", tableCard(["Tab", "Switches"], tabs.map((t) => [escapeHtml(t.tab), String(t.n)])))}
     </div>
   </div>
 
-  <h2>Families</h2>
-  <div class="card">
-    ${table(
+  ${section("Families", tableCard(
       ["Family", "Email", "Last seen", "Events"],
       lastSeen.map((f) => [
         escapeHtml(f.name),
@@ -254,33 +296,24 @@ export async function usagePage(req: Request, res: Response) {
         escapeHtml(ago(f.last)),
         String(f.events),
       ])
-    )}
-  </div>
+    ))}
 
   <div class="cols">
     <div>
-      <h2>App errors</h2>
-      <div class="card">
-        ${table(
+      ${section("App errors", tableCard(
           ["Screen", "Type", "Count"],
           clientErrors.map((e) => [escapeHtml(e.screen), escapeHtml(e.type), String(e.n)])
-        )}
-      </div>
+        ))}
     </div>
     <div>
-      <h2>Server errors</h2>
-      <div class="card">
-        ${table(
+      ${section("Server errors", tableCard(
           ["Route", "Status", "Count"],
           serverErrors.map((e) => [`<code>${escapeHtml(e.route)}</code>`, escapeHtml(e.status), String(e.n)])
-        )}
-      </div>
+        ))}
     </div>
   </div>
 
-  <h2>Raw events</h2>
-  <div class="card feed">
-    ${table(
+  ${section("Raw events", `<div class="card feed">${table(
       ["When", "Event", "Who", "Details"],
       feed.map((row) => [
         `<span class="muted">${escapeHtml(new Date(row.created).toLocaleTimeString("en-GB"))}</span>`,
@@ -288,8 +321,7 @@ export async function usagePage(req: Request, res: Response) {
         escapeHtml(row.who ?? "—"),
         `<code>${escapeHtml(row.props ? JSON.stringify(row.props) : "")}</code>`,
       ])
-    )}
-  </div>
+    )}</div>`)}
 `;
 
     res.type("html").send(

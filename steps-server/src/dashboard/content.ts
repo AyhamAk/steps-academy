@@ -24,9 +24,13 @@ import {
   linkButton,
   redirectWith,
   selectField,
+  drawer,
+  padCard,
+  section,
   shortDate,
   statCard,
   table,
+  tableCard,
   textArea,
   textField,
 } from "../utils/html";
@@ -88,54 +92,59 @@ export async function contentPage(req: Request, res: Response) {
     ${statCard({ label: "Weekly activities", value: String(schedule.length) })}
   </div>
 
-  <h2>Albums</h2>
-  <div class="card">
-    ${table(["Album", "Date", "Photos", "Children", "Status", ""], albumRows)}
-    ${formStart(`${LIST}/albums`, csrf)}
-      <div class="grid2">
-        ${textField("name", "New album name", "", { required: true })}
-        ${textField("date", "Date", "", { type: "date", required: true })}
-      </div>
-      ${button("Create album")}
-    </form>
-    <p class="field-hint">Photos are uploaded from the app — this panel manages albums, not files.</p>
-  </div>
+  ${section(
+    "Albums",
+    `${tableCard(["Album", "Date", "Photos", "Children", "Status", ""], albumRows)}
+     ${drawer(
+       "Create an album",
+       `${formStart(`${LIST}/albums`, csrf)}
+          <div class="grid2">
+            ${textField("name", "Album name", "", { required: true })}
+            ${textField("date", "Date", "", { type: "date", required: true })}
+          </div>
+          ${button("Create album")}
+        </form>
+        <p class="field-hint">Photos are uploaded from the app — this panel manages albums, not files.</p>`,
+     )}`,
+    `${albums.length} total`,
+  )}
 
   <div class="cols">
     <div>
-      <h2>Announcement</h2>
-      <div class="card">
+      ${section("Announcement", `<div class="card"><div class="card-pad">
         ${banner("Posting notifies every parent and sends a push straight away.", "warn")}
         ${latest ? `<p class="sub">Last posted ${escapeHtml(shortDate(latest.createdAt))}: “${escapeHtml(latest.text.slice(0, 120))}”</p>` : ""}
         ${formStart(`${LIST}/announcements`, csrf)}
           ${textArea("text", "Message", "", { rows: 4, hint: "Up to 2000 characters." })}
           ${button("Post to every parent")}
         </form>
-      </div>
+      </div></div>`)}
     </div>
 
     <div>
-      <h2>Gallery quote</h2>
-      <div class="card">
+      ${section("Gallery quote", `<div class="card"><div class="card-pad">
         <p class="sub">The line above the photo gallery. Clearing it hides the quote.</p>
         ${formStart(`${LIST}/quote`, csrf)}
           ${textArea("quote", "Quote", quote ?? "", { rows: 2, hint: "Up to 280 characters." })}
           ${button("Save quote")}
         </form>
-      </div>
+      </div></div>`)}
     </div>
   </div>
 
-  <h2>Parenting tips</h2>
-  <div class="card">
-    ${table(["Tip", "Month", "Read time", "Status", ""], tipRows)}
-    <p class="sub">${linkButton(`${LIST}/tips/new`, "Write a new tip", "primary")}</p>
-  </div>
+  ${section(
+    "Parenting tips",
+    `${tableCard(["Tip", "Month", "Read time", "Status", ""], tipRows)}
+     ${padCard(linkButton(`${LIST}/tips/new`, "Write a new tip", "primary"))}`,
+    `${tips.filter((t) => t.isPublished).length} published`,
+  )}
 
-  <h2>Weekly schedule</h2>
-  <div class="card">
-    ${table(["Day", "Activity", "Starts", "Lasts", ""], scheduleRows)}
-    ${formStart(`${LIST}/schedule`, csrf)}
+  ${section(
+    "Weekly schedule",
+    `${tableCard(["Day", "Activity", "Starts", "Lasts", ""], scheduleRows)}
+     ${drawer(
+       "Add an activity",
+       `${formStart(`${LIST}/schedule`, csrf)}
       <div class="grid2">
         ${selectField("day", "Day", WEEK_DAYS.map((day) => ({ value: day, label: day })))}
         ${textField("name", "Activity", "", { required: true })}
@@ -145,8 +154,9 @@ export async function contentPage(req: Request, res: Response) {
         ${textField("accentColor", "Accent colour", "", { placeholder: "#D4A843" })}
       </div>
       ${button("Add activity")}
-    </form>
-  </div>`;
+        </form>`,
+     )}`,
+  )}`;
 
   res.type("html").send(
     layout({
@@ -182,18 +192,16 @@ export async function albumPage(req: Request, res: Response) {
 
   <div class="cols">
     <div>
-      <h2>Details</h2>
-      <div class="card">
+      ${section("Details", `<div class="card"><div class="card-pad">
         ${formStart(`${base}/edit`, csrf)}
           ${textField("name", "Album name", album.name, { required: true })}
           ${textField("date", "Date", album.date, { type: "date", required: true })}
           ${textArea("caption", "Caption", album.caption ?? "", { rows: 2, hint: "Up to 300 characters." })}
           ${button("Save changes")}
         </form>
-      </div>
+      </div></div>`)}
 
-      <h2>Publish</h2>
-      <div class="card">
+      ${section("Publish", `<div class="card"><div class="card-pad">
         ${banner(
           album.notifiedAt
             ? "Publishing again only notifies the guardians of children tagged since the last time."
@@ -201,22 +209,20 @@ export async function albumPage(req: Request, res: Response) {
           "warn",
         )}
         ${formStart(`${base}/publish`, csrf)}${button(album.notifiedAt ? "Publish updates" : "Publish album")}</form>
-      </div>
+      </div></div>`)}
     </div>
 
     <div>
-      <h2>Children on this album</h2>
-      <div class="card">
+      ${section("Children on this album", `<div class="card"><div class="card-pad">
         ${
           album.attendees.length
             ? `<ul>${album.attendees.map((child) => `<li>${escapeHtml(child.name)}</li>`).join("")}</ul>`
             : `<p class="empty">Nobody is on this album yet, so nobody can see it.</p>`
         }
         <p class="field-hint">Attendance is set from the app when the album is created.</p>
-      </div>
+      </div></div>`)}
 
-      <h2>Danger zone</h2>
-      <div class="card">
+      ${section("Danger zone", `<div class="card"><div class="card-pad">
         <p class="sub">Deleting removes ${photoCount} photograph${photoCount === 1 ? "" : "s"} from the
            gallery and from storage. This cannot be undone.</p>
         ${formStart(`${base}/delete`, csrf)}
@@ -225,8 +231,7 @@ export async function albumPage(req: Request, res: Response) {
             <input type="text" name="confirm" autocomplete="off" required>
           </label>
           ${button("Delete this album", "danger")}
-        </form>
-      </div>
+      </div></div>`)}
     </div>
   </div>`;
 
@@ -252,7 +257,7 @@ export async function tipPage(req: Request, res: Response) {
   const now = new Date();
 
   const body = `
-  <div class="card">
+  <div class="card"><div class="card-pad">
     ${formStart(tip ? `${LIST}/tips/${tip.id}/edit` : `${LIST}/tips`, csrf)}
       <div class="grid2">
         ${textField("emoji", "Emoji", tip?.emoji ?? "💡")}
@@ -274,12 +279,11 @@ export async function tipPage(req: Request, res: Response) {
       ${checkboxField("isPublished", "Published — visible to parents", tip?.isPublished ?? false)}
       ${button(tip ? "Save tip" : "Create tip")}
     </form>
-  </div>
+  </div></div>
 
   ${
     tip
-      ? `<h2>Danger zone</h2>
-         <div class="card">
+      ? `${section("Danger zone", `<div class="card"><div class="card-pad">
            ${formStart(`${LIST}/tips/${tip.id}/delete`, csrf)}
              <label class="field">
                <span class="field-label">Type <strong>${escapeHtml(tip.title)}</strong> to confirm</span>
@@ -287,7 +291,7 @@ export async function tipPage(req: Request, res: Response) {
              </label>
              ${button("Delete this tip", "danger")}
            </form>
-         </div>`
+         </div></div>`)}`
       : ""
   }
   <p class="sub">${linkButton(LIST, "Back to content")}</p>`;
