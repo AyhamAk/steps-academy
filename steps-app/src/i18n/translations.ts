@@ -1,3 +1,5 @@
+import { STORE_LINKS } from "../constants/academy";
+
 export const en = {
   common: {
     readMore: "Read more",
@@ -263,13 +265,14 @@ export const en = {
     adminShareMessage: (child: string, code: string) =>
       `Steps Academy — invite for ${child}
 
+Get the app:
+Android: ${STORE_LINKS.android}
+iPhone: ${STORE_LINKS.ios}
+
 Your code:
 ${code}
 
-To set up your account:
-1. Download the Steps Academy app
-2. Tap Sign up
-3. Enter the code above`,
+Open the app, tap "Create an account", and enter the code.`,
     statusActive: "Active",
     statusSpent: "Used up",
     statusRevoked: "Revoked",
@@ -1046,13 +1049,14 @@ export const ar: Translations = {
     adminShareMessage: (child: string, code: string) =>
       `أكاديمية Steps — دعوة لـ ${child}
 
+حمّل التطبيق:
+أندرويد: ${STORE_LINKS.android}
+آيفون: ${STORE_LINKS.ios}
+
 رمزك:
 ${code}
 
-لإعداد حسابك:
-1. حمّل تطبيق Steps Academy
-2. اضغط «إنشاء حساب»
-3. أدخل الرمز أعلاه`,
+افتح التطبيق، اضغط «إنشاء حساب»، وأدخل الرمز.`,
     statusActive: "فعّال",
     statusSpent: "مستخدم بالكامل",
     statusRevoked: "ملغى",
@@ -1812,13 +1816,14 @@ export const he: Translations = {
     adminShareMessage: (child: string, code: string) =>
       `Steps Academy — הזמנה עבור ${child}
 
+הורידו את האפליקציה:
+אנדרואיד: ${STORE_LINKS.android}
+אייפון: ${STORE_LINKS.ios}
+
 הקוד שלך:
 ${code}
 
-להגדרת החשבון:
-1. הורידו את אפליקציית Steps Academy
-2. הקישו על הרשמה
-3. הזינו את הקוד שלמעלה`,
+פתחו את האפליקציה, הקישו על «יצירת חשבון», והזינו את הקוד.`,
     statusActive: "פעיל",
     statusSpent: "נוצל במלואו",
     statusRevoked: "בוטל",

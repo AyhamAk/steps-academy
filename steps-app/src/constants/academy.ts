@@ -10,3 +10,13 @@ export const ACADEMY_CONTACT = {
   // change ACADEMY_EMAIL on the API at the same time.
   email: "nagam_410@hotmail.com",
 };
+
+// Where a parent downloads the app. Defined once and shared by all three
+// locales — the same two URLs written six times would drift apart the first
+// time one of them changed.
+export const STORE_LINKS = {
+  // Matches `android.package` in app.json.
+  android: "https://play.google.com/store/apps/details?id=com.stepsacademy.steps",
+  // Matches `ascAppId` in eas.json.
+  ios: "https://apps.apple.com/app/id6806549602",
+};
