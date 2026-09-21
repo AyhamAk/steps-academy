@@ -111,7 +111,7 @@ const TYPE_STYLE: Record<
 };
 
 function typeLabel(type: NotificationType, t: Translations): string {
-  return t.notifications.types[type];
+  return t.notifications.types[type] ?? t.notifications.types.announcement;
 }
 
 /** Where tapping a notification should land. Null means it isn't tappable. */
@@ -221,7 +221,10 @@ export default function NotificationsScreen() {
 
               const item = row.item;
               const destination = destinationFor(item);
-              const { icon, tint } = TYPE_STYLE[item.type];
+              // The server may know a notification type this build does not:
+              // a type added after the app was installed arrives anyway, and
+              // an unknown key here used to crash the whole screen.
+              const { icon, tint } = TYPE_STYLE[item.type] ?? TYPE_STYLE.announcement;
               return (
                 <Touchable
                   disabled={!destination}
@@ -236,7 +239,12 @@ export default function NotificationsScreen() {
                   }}
                   style={[styles.row, isRTL && styles.rowReverse, !item.read && styles.rowUnread]}
                 >
-                  <View style={[styles.iconWrap, { backgroundColor: TYPE_TILE[item.type] }]}>
+                  <View
+                    style={[
+                      styles.iconWrap,
+                      { backgroundColor: TYPE_TILE[item.type] ?? TYPE_TILE.announcement },
+                    ]}
+                  >
                     <Ionicons name={icon} size={18} color={tint} />
                   </View>
                   <View style={styles.rowText}>
