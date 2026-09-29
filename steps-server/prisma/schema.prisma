@@ -28,6 +28,15 @@ enum EnrollmentStatus {
   cancelled
 }
 
+/// Which program an album belongs to. Nursery and Courses each show their own
+/// photos; "both" shows in both, and is what every album made before this
+/// existed was given, so no parent lost sight of a photo when it shipped.
+enum Program {
+  nursery
+  courses
+  both
+}
+
 /// The academy runs Sunday–Thursday.
 enum WeekDay {
   sun
@@ -220,6 +229,7 @@ model Event {
   date      String
   // Admin-written note shown to parents on the event's gallery. One per event.
   caption   String?
+  program   Program  @default(both)
   /// When the album was published to families. Null means the admin is still
   /// working on it: an event is created empty and photos arrive one request at
   /// a time, so notifying on either would tell a parent about an album that is

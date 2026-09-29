@@ -19,6 +19,8 @@ export const Colors = {
   honeyLight: "#FBF3DC",
   /** Sky at card-fill strength — the nursery pillar's tinted surface. */
   skyTint: "#EAF1F8",
+  /** Forest at card-fill strength — the courses pillar's tinted surface. */
+  forestTint: "#EAF2EA",
   /** Clay at card-fill strength — the "+N more photos" tile. */
   clayLight: "#F7EDEB",
 

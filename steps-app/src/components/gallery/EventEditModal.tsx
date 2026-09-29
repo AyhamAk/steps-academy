@@ -13,17 +13,24 @@ import { Colors } from "../../constants/Colors";
 import { Fonts } from "../../constants/Fonts";
 import { useSheetPadding } from "../../hooks/useLayout";
 import { useTranslation } from "../../i18n/useTranslation";
-import { deleteEvent, GalleryEvent, updateEvent, updateEventAttendees } from "../../services/galleryApi";
+import {
+  deleteEvent,
+  GalleryEvent,
+  Program,
+  updateEvent,
+  updateEventAttendees,
+} from "../../services/galleryApi";
 import { Student } from "../../services/studentsApi";
 import { StepsButton } from "../ui/StepsButton";
 import { Touchable } from "../ui/Touchable";
 import { AttendeePicker } from "./AttendeePicker";
+import { ProgramPicker } from "./ProgramPicker";
 
 /**
  * Everything an admin can do to an album itself: rename it, move it to another
- * date, change who was there, or delete it outright.
+ * date or program, change who was there, or delete it outright.
  *
- * Name and date go through one PATCH; attendees keep their own endpoint, which
+ * Name, date and program go through one PATCH; attendees keep their own endpoint, which
  * already validates the ids. The attendee call only fires when the set actually
  * changed, so a rename doesn't rewrite the attendee rows for nothing.
  */
@@ -45,6 +52,7 @@ export function EventEditModal({
   const [name, setName] = useState("");
   const [date, setDate] = useState("");
   const [attendeeIds, setAttendeeIds] = useState<string[]>([]);
+  const [program, setProgram] = useState<Program>("both");
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -54,6 +62,7 @@ export function EventEditModal({
     setName(event.name);
     setDate(event.date);
     setAttendeeIds(event.attendees.map((attendee) => attendee.id));
+    setProgram(event.program ?? "both");
     setError(null);
   }, [event?.id]);
 
@@ -72,7 +81,7 @@ export function EventEditModal({
     setIsSaving(true);
     setError(null);
     try {
-      let saved = await updateEvent(event.id, { name: name.trim(), date: date.trim() });
+      let saved = await updateEvent(event.id, { name: name.trim(), date: date.trim(), program });
       if (attendeesChanged) {
         saved = await updateEventAttendees(event.id, attendeeIds);
       }
@@ -141,6 +150,8 @@ export function EventEditModal({
               placeholderTextColor={Colors.textLight}
               style={[styles.input, rtlText]}
             />
+
+            <ProgramPicker value={program} onChange={setProgram} />
 
             <AttendeePicker
               students={students}

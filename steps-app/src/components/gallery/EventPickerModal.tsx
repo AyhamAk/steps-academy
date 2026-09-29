@@ -13,12 +13,13 @@ import { Colors } from "../../constants/Colors";
 import { Fonts } from "../../constants/Fonts";
 import { useSheetPadding } from "../../hooks/useLayout";
 import { useTranslation } from "../../i18n/useTranslation";
-import { createEvent, GalleryEvent } from "../../services/galleryApi";
+import { createEvent, GalleryEvent, Program } from "../../services/galleryApi";
 import { Student } from "../../services/studentsApi";
 import { formatIsoDate } from "../../utils/date";
 import { StepsButton } from "../ui/StepsButton";
 import { Touchable } from "../ui/Touchable";
 import { AttendeePicker } from "./AttendeePicker";
+import { ProgramBadges, ProgramPicker } from "./ProgramPicker";
 
 type EventPickerModalProps = {
   visible: boolean;
@@ -47,6 +48,8 @@ export function EventPickerModal({
   const [name, setName] = useState("");
   const [date, setDate] = useState(todayIso());
   const [attendeeIds, setAttendeeIds] = useState<string[]>([]);
+  // Nothing chosen to start with: the admin decides where the album shows.
+  const [program, setProgram] = useState<Program | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -55,6 +58,7 @@ export function EventPickerModal({
     setName("");
     setDate(todayIso());
     setAttendeeIds([]);
+    setProgram(null);
     setError(null);
   };
 
@@ -68,10 +72,19 @@ export function EventPickerModal({
       setError(t.gallery.eventNameDateRequired);
       return;
     }
+    if (!program) {
+      setError(t.gallery.programRequired);
+      return;
+    }
     setIsSaving(true);
     setError(null);
     try {
-      const event = await createEvent({ name: name.trim(), date: date.trim(), attendeeIds });
+      const event = await createEvent({
+        name: name.trim(),
+        date: date.trim(),
+        attendeeIds,
+        program,
+      });
       reset();
       onCreated(event);
     } catch {
@@ -116,6 +129,7 @@ export function EventPickerModal({
                       (event.attendees ?? []).length
                     )}
                   </Text>
+                  <ProgramBadges program={event.program ?? "both"} />
                 </Touchable>
               ))}
               {events.length === 0 ? (
@@ -141,6 +155,8 @@ export function EventPickerModal({
                 placeholderTextColor={Colors.textLight}
                 style={styles.input}
               />
+
+              <ProgramPicker value={program} onChange={setProgram} />
 
               <AttendeePicker
                 students={students}

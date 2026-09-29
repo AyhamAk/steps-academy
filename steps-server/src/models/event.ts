@@ -1,4 +1,4 @@
-import { Event as PrismaEvent, Student } from "@prisma/client";
+import { Event as PrismaEvent, Program, Student } from "@prisma/client";
 
 import { prisma } from "../lib/prisma";
 
@@ -10,6 +10,8 @@ type CreateEventInput = {
   date: string;
   attendeeIds: string[];
   createdBy: string;
+  /** Left out by apps that predate programs; the column defaults to "both". */
+  program?: Program;
 };
 
 export const DEFAULT_PAGE_SIZE = 50;
@@ -29,6 +31,7 @@ export const EventModel = {
       data: {
         name: input.name,
         date: input.date,
+        ...(input.program ? { program: input.program } : {}),
         createdBy: input.createdBy,
         attendees: {
           create: input.attendeeIds.map((studentId) => ({ studentId })),
@@ -104,11 +107,12 @@ export const EventModel = {
     }
   },
 
-  /** Rename an album or move it to another date. Caption and attendees have
-   *  their own endpoints, so this deliberately touches neither. */
+  /** Rename an album, move it to another date or change its program. Caption
+   *  and attendees have their own endpoints, so this deliberately touches
+   *  neither. */
   async updateDetails(
     id: string,
-    data: { name?: string; date?: string }
+    data: { name?: string; date?: string; program?: Program }
   ): Promise<EventWithAttendees | null> {
     try {
       const event = await prisma.event.update({

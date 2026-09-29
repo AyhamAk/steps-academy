@@ -3,14 +3,22 @@ import { useLocalSearchParams } from "expo-router";
 import { useMemo, useState } from "react";
 import { Alert, ScrollView, StyleSheet, Text, View } from "react-native";
 
-import { CourseRow, courseListStyles } from "../../components/courses/CourseRow";
+import {
+  CourseRow,
+  courseListStyles,
+} from "../../components/courses/CourseRow";
 import { CourseDetailModal } from "../../components/home/CourseDetailModal";
-import { JoinCourseSheet, LeaveCourseSheet } from "../../components/home/CourseSheet";
+import { PillarPhotoGallery } from "../../components/gallery/PillarPhotoGallery";
+import {
+  JoinCourseSheet,
+  LeaveCourseSheet,
+} from "../../components/home/CourseSheet";
 import { Screen } from "../../components/Screen";
 import { DataErrorState } from "../../components/ui/DataErrorState";
 import { ScreenFadeIn } from "../../components/ui/ScreenFadeIn";
 import { SkeletonCourseRow } from "../../components/ui/Skeleton";
 import { StepsHeader } from "../../components/ui/StepsHeader";
+import { SubTabSwitcher } from "../../components/ui/SubTabSwitcher";
 import { Touchable } from "../../components/ui/Touchable";
 import { Colors } from "../../constants/Colors";
 import { Fonts } from "../../constants/Fonts";
@@ -36,19 +44,30 @@ export default function AcademyCoursesScreen() {
   const children = useChildren();
   const queryClient = useQueryClient();
 
+  const [tab, setTab] = useState<0 | 1>(0);
   const [filter, setFilter] = useState<Filter>("all");
   const [detailId, setDetailId] = useState<string | null>(null);
   const [joinCourse, setJoinCourse] = useState<Course | null>(null);
-  const [leaving, setLeaving] = useState<{ course: Course; enrollment: MyEnrollment } | null>(null);
+  const [leaving, setLeaving] = useState<{
+    course: Course;
+    enrollment: MyEnrollment;
+  } | null>(null);
 
   // Same key as CoursesSection, so arriving here from Home is instant.
-  const { data: courses, isPending, isError, refetch } = useQuery({
+  const {
+    data: courses,
+    isPending,
+    isError,
+    refetch,
+  } = useQuery({
     queryKey: ["courses"],
     queryFn: listCourses,
   });
-  const refresh = () => queryClient.invalidateQueries({ queryKey: ["courses"] });
+  const refresh = () =>
+    queryClient.invalidateQueries({ queryKey: ["courses"] });
 
-  const activeBand: AgeBand | null = band === "nursery" || band === "courses" ? band : null;
+  const activeBand: AgeBand | null =
+    band === "nursery" || band === "courses" ? band : null;
 
   /**
    * Age filtering only applies to courses that actually declare a range. A
@@ -71,11 +90,15 @@ export default function AcademyCoursesScreen() {
       // Live enrolments only — a rejected or cancelled request is not a place,
       // and listing it under "Enrolled" is the same mistake the row made.
       return inScope.filter((course) =>
-        course.myEnrollments.some((e) => e.status === "pending" || e.status === "approved")
+        course.myEnrollments.some(
+          (e) => e.status === "pending" || e.status === "approved",
+        ),
       );
     }
     if (filter === "open") {
-      return inScope.filter((course) => course.spotsLeft === null || course.spotsLeft > 0);
+      return inScope.filter(
+        (course) => course.spotsLeft === null || course.spotsLeft > 0,
+      );
     }
     return inScope;
   }, [courses, filter, activeBand]);
@@ -86,11 +109,15 @@ export default function AcademyCoursesScreen() {
     ? t.academy.ageRange(AGE_BANDS[activeBand].min, AGE_BANDS[activeBand].max)
     : null;
   const inScopeCount = (courses ?? []).filter(inBand).length;
-  const subtitle = [bandRange, t.academy.runningNow(inScopeCount)].filter(Boolean).join(" · ");
+  const subtitle = [bandRange, t.academy.runningNow(inScopeCount)]
+    .filter(Boolean)
+    .join(" · ");
 
   const startRequest = (course: Course) => {
     if (children.length === 0) {
-      Alert.alert(t.courses.noChildrenTitle, t.courses.noChildrenMessage, [{ text: t.common.ok }]);
+      Alert.alert(t.courses.noChildrenTitle, t.courses.noChildrenMessage, [
+        { text: t.common.ok },
+      ]);
       return;
     }
     setJoinCourse(course);
@@ -106,40 +133,57 @@ export default function AcademyCoursesScreen() {
   return (
     <Screen>
       <ScreenFadeIn>
-        <StepsHeader title={t.academy.coursesTitle} subtitle={subtitle} showBack />
+        <StepsHeader
+          title={t.academy.coursesTitle}
+          subtitle={subtitle}
+          showBack
+        />
 
-        <View style={[styles.filters, isRTL && styles.rowReverse]}>
-          {(["all", "enrolled", "open"] as Filter[]).map((key) => {
-            const isActive = filter === key;
-            const label =
-              key === "all"
-                ? t.academy.filterAll
-                : key === "enrolled"
-                  ? t.academy.filterEnrolled
-                  : t.academy.filterOpen;
-            return (
-              <Touchable
-                key={key}
-                accessibilityLabel={label}
-                style={[styles.filter, isActive && styles.filterActive]}
-                onPress={() => setFilter(key)}
-              >
-                <Text
-                  style={[styles.filterText, isActive && styles.filterTextActive]}
-                  maxFontSizeMultiplier={1.3}
+        <SubTabSwitcher
+          tabs={[t.academy.tabCourses, t.academy.tabPhotos]}
+          activeIndex={tab}
+          onChange={setTab}
+        />
+
+        {tab === 0 ? (
+          <View style={[styles.filters, isRTL && styles.rowReverse]}>
+            {(["all", "enrolled", "open"] as Filter[]).map((key) => {
+              const isActive = filter === key;
+              const label =
+                key === "all"
+                  ? t.academy.filterAll
+                  : key === "enrolled"
+                    ? t.academy.filterEnrolled
+                    : t.academy.filterOpen;
+              return (
+                <Touchable
+                  key={key}
+                  accessibilityLabel={label}
+                  style={[styles.filter, isActive && styles.filterActive]}
+                  onPress={() => setFilter(key)}
                 >
-                  {label}
-                </Text>
-              </Touchable>
-            );
-          })}
-        </View>
+                  <Text
+                    style={[
+                      styles.filterText,
+                      isActive && styles.filterTextActive,
+                    ]}
+                    maxFontSizeMultiplier={1.3}
+                  >
+                    {label}
+                  </Text>
+                </Touchable>
+              );
+            })}
+          </View>
+        ) : null}
 
         <ScrollView
           contentContainerStyle={styles.scroll}
           showsVerticalScrollIndicator={false}
         >
-          {isPending ? (
+          {tab === 1 ? (
+            <PillarPhotoGallery section="courses" />
+          ) : isPending ? (
             <View style={courseListStyles.list}>
               <SkeletonCourseRow />
             </View>
@@ -161,7 +205,9 @@ export default function AcademyCoursesScreen() {
                     setDetailId(c.id);
                   }}
                   onJoin={startRequest}
-                  onLeave={(c, enrollment) => setLeaving({ course: c, enrollment })}
+                  onLeave={(c, enrollment) =>
+                    setLeaving({ course: c, enrollment })
+                  }
                 />
               ))}
             </View>
@@ -183,7 +229,9 @@ export default function AcademyCoursesScreen() {
         />
 
         <CourseDetailModal
-          course={(courses ?? []).find((course) => course.id === detailId) ?? null}
+          course={
+            (courses ?? []).find((course) => course.id === detailId) ?? null
+          }
           isBusy={false}
           onClose={() => setDetailId(null)}
           onRequest={(course) => {
@@ -192,7 +240,9 @@ export default function AcademyCoursesScreen() {
           }}
           onCancel={(enrollmentId) => {
             const course = (courses ?? []).find((c) => c.id === detailId);
-            const enrollment = course?.myEnrollments.find((e) => e.id === enrollmentId);
+            const enrollment = course?.myEnrollments.find(
+              (e) => e.id === enrollmentId,
+            );
             setDetailId(null);
             if (course && enrollment) setLeaving({ course, enrollment });
           }}

@@ -152,6 +152,9 @@ export const en = {
     nurseryThisWeek: "This week",
     nurseryLatestPhotos: "Latest photos",
     nurseryOpenGallery: "Open gallery",
+    tabSchedule: "Schedule",
+    tabPhotos: "Photos",
+    tabCourses: "Courses",
     nurseryDaySummary: (count: number, time: string) =>
       `${count} ${count === 1 ? "activity" : "activities"} done · see you tomorrow at ${time}`,
     nurseryDaySummaryNoTomorrow: (count: number) =>
@@ -761,6 +764,15 @@ Open the app, tap "${button}", and enter the code.`,
     noPhotosYetParent: "No photos yet",
     noPhotosYetParentSubtitle:
       "When your child is tagged in event photos, they'll show up here.",
+    sectionNursery: "Nursery",
+    sectionCourses: "Courses",
+    emptySection: "No photos yet",
+    emptySectionSubtitle: "Albums from here will show up as soon as they are shared.",
+    programLabel: "Which program is this for?",
+    programNursery: "Nursery",
+    programCourses: "Courses",
+    programBoth: "Both",
+    programRequired: "Choose which program this album is for.",
     parentEventMeta: (date: string, photoCount: number) =>
       `${date} · ${photoCount} photo${photoCount === 1 ? "" : "s"}`,
 
@@ -937,6 +949,9 @@ export const ar: Translations = {
     nurseryThisWeek: "هذا الأسبوع",
     nurseryLatestPhotos: "أحدث الصور",
     nurseryOpenGallery: "افتح المعرض",
+    tabSchedule: "الجدول",
+    tabPhotos: "الصور",
+    tabCourses: "الدورات",
     nurseryDaySummary: (count: number, time: string) =>
       `${count === 1 ? "انتهى نشاط واحد" : count === 2 ? "انتهى نشاطان" : `انتهت ${count} أنشطة`} · نراكم غداً الساعة ${time}`,
     nurseryDaySummaryNoTomorrow: (count: number) =>
@@ -1529,6 +1544,15 @@ ${code}
     checkConnection: "تحقق من اتصالك وحاول مرة أخرى.",
     noPhotosYetParent: "لا توجد صور بعد",
     noPhotosYetParentSubtitle: "عندما يتم وسم طفلك في صور الفعاليات، ستظهر هنا.",
+    sectionNursery: "الحضانة",
+    sectionCourses: "الدورات",
+    emptySection: "لا توجد صور بعد",
+    emptySectionSubtitle: "ستظهر الألبومات هنا فور مشاركتها.",
+    programLabel: "لأي برنامج هذه الفعالية؟",
+    programNursery: "الحضانة",
+    programCourses: "الدورات",
+    programBoth: "كلاهما",
+    programRequired: "اختر البرنامج الذي يخصه هذا الألبوم.",
     parentEventMeta: (date: string, photoCount: number) => {
       // Arabic counted nouns: 1 singular, 2 dual, 3-10 plural, 11+ singular.
       const noun =
@@ -1712,6 +1736,9 @@ export const he: Translations = {
     nurseryThisWeek: "השבוע",
     nurseryLatestPhotos: "תמונות אחרונות",
     nurseryOpenGallery: "לגלריה",
+    tabSchedule: "לוח זמנים",
+    tabPhotos: "תמונות",
+    tabCourses: "חוגים",
     nurseryDaySummary: (count: number, time: string) =>
       `${count === 1 ? "פעילות אחת הסתיימה" : `${count} פעילויות הסתיימו`} · נתראה מחר ב־${time}`,
     nurseryDaySummaryNoTomorrow: (count: number) =>
@@ -2301,6 +2328,15 @@ ${code}
     checkConnection: "בדוק את החיבור שלך ונסה שוב.",
     noPhotosYetParent: "אין עדיין תמונות",
     noPhotosYetParentSubtitle: "כשילדך יתויג בתמונות מאירועים, הן יופיעו כאן.",
+    sectionNursery: "פעוטון",
+    sectionCourses: "חוגים",
+    emptySection: "אין עדיין תמונות",
+    emptySectionSubtitle: "אלבומים יופיעו כאן ברגע שישותפו.",
+    programLabel: "לאיזו תוכנית זה מיועד?",
+    programNursery: "פעוטון",
+    programCourses: "חוגים",
+    programBoth: "שניהם",
+    programRequired: "בחרו לאיזו תוכנית שייך האלבום.",
     parentEventMeta: (date: string, photoCount: number) =>
       photoCount === 1
         ? `${date} · תמונה אחת`

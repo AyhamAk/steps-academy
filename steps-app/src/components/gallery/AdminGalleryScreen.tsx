@@ -40,6 +40,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { EmptyState } from "./EmptyState";
 import { EventEditModal } from "./EventEditModal";
 import { EventPickerModal } from "./EventPickerModal";
+import { ProgramBadges } from "./ProgramPicker";
 import { ReviewGridModal } from "./ReviewGridModal";
 import { TagEditorModal } from "./TagEditorModal";
 import { UploadItem } from "./UploadProgressList";
@@ -319,6 +320,7 @@ export function AdminGalleryScreen() {
                     )}
                   </Text>
                 )}
+                <ProgramBadges program={event.program ?? "both"} />
               </View>
               <Touchable
                 onPress={() => setEditingEvent(event)}

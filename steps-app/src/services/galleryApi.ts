@@ -19,6 +19,22 @@ export type Photo = {
 
 export type EventAttendee = { id: string; name: string };
 
+/** Which program an album belongs to. Albums made before this existed are "both". */
+export type Program = "nursery" | "courses" | "both";
+
+/** One side of the gallery: the nursery's albums, or the courses'. */
+export type PhotoSection = Exclude<Program, "both">;
+
+export const PROGRAMS: Program[] = ["nursery", "courses", "both"];
+
+/** True if an album shows on this side. "Both" shows on either. */
+export function isInSection(event: { program?: Program }, section: PhotoSection): boolean {
+  // An older server sends no program at all; treat that as "both" rather than
+  // hiding every album until it is updated.
+  const program = event.program ?? "both";
+  return program === "both" || program === section;
+}
+
 export type GalleryEvent = {
   id: string;
   name: string;
@@ -26,6 +42,7 @@ export type GalleryEvent = {
   attendees: EventAttendee[];
   /** Admin-written note shown to parents. Null when none has been set. */
   caption: string | null;
+  program: Program;
   photoCount: number;
   /** A few signed thumbnails so the admin list can preview without drilling in. */
   previewUrls: string[];
@@ -36,6 +53,7 @@ export type EventSummary = {
   name: string;
   date: string;
   caption: string | null;
+  program: Program;
 };
 
 export type GalleryGroup = {
@@ -63,13 +81,21 @@ export async function listEvents() {
   return data.events;
 }
 
-export async function createEvent(input: { name: string; date: string; attendeeIds: string[] }) {
+export async function createEvent(input: {
+  name: string;
+  date: string;
+  attendeeIds: string[];
+  program: Program;
+}) {
   const { data } = await api.post<{ event: GalleryEvent }>("/api/gallery/events", input);
   return data.event;
 }
 
-/** Admin: rename an album or move it to another date. */
-export async function updateEvent(eventId: string, input: { name?: string; date?: string }) {
+/** Admin: rename an album, move it to another date or change its program. */
+export async function updateEvent(
+  eventId: string,
+  input: { name?: string; date?: string; program?: Program }
+) {
   const { data } = await api.patch<{ event: GalleryEvent }>(
     `/api/gallery/events/${eventId}`,
     input

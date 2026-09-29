@@ -51,11 +51,18 @@ async function serializePhoto(photoId: string) {
   return serializePhotoWithTags(photo, tags);
 }
 
+/** Albums from before programs existed are "both" in the database already. */
+const PROGRAMS = ["nursery", "courses", "both"] as const;
+type ProgramValue = (typeof PROGRAMS)[number];
+const isProgram = (value: unknown): value is ProgramValue =>
+  typeof value === "string" && (PROGRAMS as readonly string[]).includes(value);
+
 function serializeEvent(event: {
   id: string;
   name: string;
   date: string;
   caption: string | null;
+  program: ProgramValue;
   attendees?: { id: string; name: string }[];
 }) {
   return {
@@ -63,6 +70,7 @@ function serializeEvent(event: {
     name: event.name,
     date: event.date,
     caption: event.caption,
+    program: event.program,
     // Always an array, never absent: the app reads .length off this without
     // guarding, so omitting it crashed the gallery the moment an album was
     // created. An event with no attendees is [], not undefined.
@@ -71,14 +79,20 @@ function serializeEvent(event: {
 }
 
 export async function createEvent(req: Request, res: Response) {
-  const { name, date, attendeeIds } = req.body as {
+  const { name, date, attendeeIds, program } = req.body as {
     name?: string;
     date?: string;
     attendeeIds?: unknown;
+    program?: unknown;
   };
 
   if (!name || !date) {
     return res.status(400).json({ message: "name and date are required" });
+  }
+  // Optional: apps installed before programs existed never send it, and their
+  // albums fall back to "both" so they still show everywhere.
+  if (program !== undefined && !isProgram(program)) {
+    return res.status(400).json({ message: "program must be nursery, courses or both" });
   }
   if (attendeeIds !== undefined && !Array.isArray(attendeeIds)) {
     return res.status(400).json({ message: "attendeeIds must be an array of student ids" });
@@ -97,6 +111,7 @@ export async function createEvent(req: Request, res: Response) {
     date,
     attendeeIds: students.map((student) => student.id),
     createdBy: req.userId!,
+    ...(program !== undefined ? { program } : {}),
   });
 
   // Deliberately silent. An event is created empty and the admin then uploads
@@ -149,9 +164,9 @@ export async function updateEventCaption(req: Request, res: Response) {
   res.json({ event: serializeEvent(event) });
 }
 
-/** Admin: rename an album or change its date. */
+/** Admin: rename an album, change its date or move it to another program. */
 export async function updateEvent(req: Request, res: Response) {
-  const { name, date } = req.body as { name?: unknown; date?: unknown };
+  const { name, date, program } = req.body as { name?: unknown; date?: unknown; program?: unknown };
 
   if (name !== undefined && (typeof name !== "string" || !name.trim())) {
     return res.status(400).json({ message: "name must be a non-empty string" });
@@ -163,13 +178,17 @@ export async function updateEvent(req: Request, res: Response) {
   if (date !== undefined && (typeof date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(date))) {
     return res.status(400).json({ message: "date must be an ISO date (YYYY-MM-DD)" });
   }
-  if (name === undefined && date === undefined) {
+  if (program !== undefined && !isProgram(program)) {
+    return res.status(400).json({ message: "program must be nursery, courses or both" });
+  }
+  if (name === undefined && date === undefined && program === undefined) {
     return res.status(400).json({ message: "nothing to update" });
   }
 
   const event = await EventModel.updateDetails(param(req, "eventId"), {
     ...(typeof name === "string" ? { name: name.trim() } : {}),
     ...(typeof date === "string" ? { date } : {}),
+    ...(program !== undefined ? { program } : {}),
   });
   if (!event) {
     return res.status(404).json({ message: "Event not found" });
