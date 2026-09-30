@@ -3,6 +3,8 @@ import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
 
+import { Colors } from "../constants/Colors";
+
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowBanner: true,
@@ -30,7 +32,7 @@ export async function registerForPushNotificationsAsync(): Promise<string | null
         name: "Steps Academy",
         importance: Notifications.AndroidImportance.MAX,
         vibrationPattern: [0, 250, 250, 250],
-        lightColor: "#E07A3A",
+        lightColor: Colors.primary,
         sound: "default",
         showBadge: true,
       });

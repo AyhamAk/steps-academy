@@ -11,9 +11,9 @@ import { SkeletonBlock } from "../ui/Skeleton";
 import { Touchable } from "../ui/Touchable";
 
 const STATUS_TINT: Record<Invite["status"], string> = {
-  active: Colors.forest,
+  active: Colors.coral,
   spent: Colors.textLight,
-  revoked: Colors.clay,
+  revoked: Colors.rose,
   expired: Colors.textLight,
 };
 
@@ -121,7 +121,7 @@ export function InviteCodesSection({
                       disabled={revoke.isPending}
                     >
                       {revoke.isPending && revoke.variables === invite.id ? (
-                        <ActivityIndicator color={Colors.clay} />
+                        <ActivityIndicator color={Colors.rose} />
                       ) : (
                         <Text style={[styles.action, styles.destructive]}>
                           {t.invite.adminRevoke}
@@ -142,7 +142,7 @@ export function InviteCodesSection({
         disabled={generate.isPending}
       >
         {generate.isPending ? (
-          <ActivityIndicator color={Colors.terracotta} />
+          <ActivityIndicator color={Colors.sage} />
         ) : (
           <Text style={styles.generateText}>+ {t.invite.adminGenerate}</Text>
         )}
@@ -191,8 +191,8 @@ const styles = StyleSheet.create({
   chipText: { fontFamily: Fonts.bold, fontSize: 11 },
   uses: { ...Type.caption, color: Colors.textLight },
   actions: { flexDirection: "row", gap: 16 },
-  action: { fontFamily: Fonts.bold, fontSize: 13, color: Colors.terracotta },
-  destructive: { color: Colors.clay },
+  action: { fontFamily: Fonts.bold, fontSize: 13, color: Colors.sage },
+  destructive: { color: Colors.rose },
   generate: { paddingVertical: 10, alignItems: "center" },
-  generateText: { fontFamily: Fonts.bold, fontSize: 13, color: Colors.forest },
+  generateText: { fontFamily: Fonts.bold, fontSize: 13, color: Colors.coral },
 });

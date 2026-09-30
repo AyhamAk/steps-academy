@@ -268,7 +268,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.linen,
   },
   filterActive: {
-    backgroundColor: Colors.forest,
+    backgroundColor: Colors.coral,
   },
   filterText: {
     ...Type.body,

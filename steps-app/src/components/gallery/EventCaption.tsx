@@ -43,7 +43,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "flex-start",
     gap: 8,
-    backgroundColor: `${Colors.honey}1A`,
+    backgroundColor: `${Colors.gold}1A`,
     borderRadius: 10,
     padding: 10,
     marginTop: 10,
@@ -70,16 +70,16 @@ const styles = StyleSheet.create({
   },
   detailAccentLTR: {
     borderLeftWidth: 4,
-    borderLeftColor: Colors.honey,
+    borderLeftColor: Colors.gold,
   },
   detailAccentRTL: {
     borderRightWidth: 4,
-    borderRightColor: Colors.honey,
+    borderRightColor: Colors.gold,
   },
   detailLabel: {
     fontFamily: Fonts.bold,
     fontSize: 12,
-    color: Colors.honey,
+    color: Colors.gold,
     letterSpacing: 0.5,
     textTransform: "uppercase",
     marginBottom: 6,

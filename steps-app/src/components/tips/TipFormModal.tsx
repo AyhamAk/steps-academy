@@ -255,7 +255,7 @@ export function TipFormModal({
               <Switch
                 value={isPublished}
                 onValueChange={setIsPublished}
-                trackColor={{ false: Colors.border, true: Colors.forest }}
+                trackColor={{ false: Colors.border, true: Colors.coral }}
               />
             </View>
 
@@ -334,12 +334,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  emojiTileActive: { borderColor: Colors.honey, backgroundColor: Colors.honeyLight },
+  emojiTileActive: { borderColor: Colors.gold, backgroundColor: Colors.goldLight },
   emojiText: { fontSize: 22 },
   error: {
     fontFamily: Fonts.semiBold,
     fontSize: 13,
-    color: Colors.clay,
+    color: Colors.rose,
     marginTop: 14,
   },
   submit: { marginTop: 20, marginBottom: 8 },

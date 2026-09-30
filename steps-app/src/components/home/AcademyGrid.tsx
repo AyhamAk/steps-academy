@@ -3,6 +3,7 @@ import { useRouter } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
 
 import { Colors } from "../../constants/Colors";
+import { CornerLeafDecoration } from "../ui/CornerLeafDecoration";
 import { Fonts } from "../../constants/Fonts";
 import { Type } from "../../constants/Typography";
 import { useTranslation } from "../../i18n/useTranslation";
@@ -38,7 +39,7 @@ export function AcademyGrid() {
     {
       key: "nursery",
       icon: "happy-outline",
-      tint: Colors.sky,
+      tint: Colors.blue,
       title: t.home.tileNursery,
       subtitle: t.academy.ageRange(0, 3) ?? "",
       href: "/academy/nursery",
@@ -46,7 +47,7 @@ export function AcademyGrid() {
     {
       key: "courses",
       icon: "library-outline",
-      tint: Colors.forest,
+      tint: Colors.coral,
       title: t.home.tileCourses,
       subtitle: t.academy.ageRange(3, 7) ?? "",
       href: "/academy/courses",
@@ -54,7 +55,7 @@ export function AcademyGrid() {
     {
       key: "dafi",
       icon: "trail-sign-outline",
-      tint: Colors.clay,
+      tint: Colors.rose,
       title: t.home.tileDafi,
       subtitle: t.home.tileDafiSubtitle,
       href: "/academy/dafi",
@@ -62,7 +63,7 @@ export function AcademyGrid() {
     {
       key: "tips",
       icon: "bulb-outline",
-      tint: Colors.honey,
+      tint: Colors.gold,
       title: t.home.tileTips,
       // No second line: the other three describe an age range or a promise,
       // and there is nothing true and short to say about tips.
@@ -84,6 +85,7 @@ export function AcademyGrid() {
               router.push(tile.href as never);
             }}
           >
+            <CornerLeafDecoration corner="bottom-end" />
             <View style={styles.tileTop}>
               <IconTile tint={tile.tint} size={44}>
                 <Ionicons name={tile.icon} size={23} color={tile.tint} />
@@ -115,6 +117,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   tile: {
+    overflow: "hidden",
     // Two per row, with the gap taken out of the shared width. Percentages
     // rather than a measured width so it survives every screen size.
     width: "48%",
@@ -125,8 +128,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.linen,
     borderRadius: 18,
     padding: 16,
-    borderWidth: 1,
-    borderColor: Colors.border,
   },
   // Was a `flexDirection: row` with flex:1, which pinned the icon to the
   // start of the row — top-left, or top-right in Arabic — while the title

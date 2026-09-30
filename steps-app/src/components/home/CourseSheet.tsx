@@ -41,7 +41,7 @@ function SheetShell({
 }) {
   const { t, isRTL, locale } = useTranslation();
   const { sheetPadding } = useSheetPadding(28);
-  const accent = course.accentColor ?? Colors.terracotta;
+  const accent = course.accentColor ?? Colors.sage;
   const meta = [formatCourseDays(course, t), formatCourseDates(course, t)]
     .filter(Boolean)
     .join(" · ");
@@ -69,7 +69,7 @@ function SheetShell({
 
         {isBusy ? (
           <View style={styles.busy}>
-            <ActivityIndicator color={Colors.terracotta} />
+            <ActivityIndicator color={Colors.sage} />
           </View>
         ) : null}
       </View>
@@ -168,7 +168,7 @@ export function JoinCourseSheet({
         {outcome ? (
           <Result
             icon={outcome.joined ? "checkmark-circle" : "hourglass-outline"}
-            tint={outcome.joined ? Colors.forest : Colors.honey}
+            tint={outcome.joined ? Colors.coral : Colors.gold}
             title={outcome.joined ? t.courses.joinedTitle : t.courses.waitlistedTitle}
             body={
               outcome.joined
@@ -182,10 +182,10 @@ export function JoinCourseSheet({
             <View
               style={[
                 styles.notice,
-                { backgroundColor: isFull ? `${Colors.clay}1A` : `${Colors.forest}14` },
+                { backgroundColor: isFull ? `${Colors.rose}1A` : `${Colors.coral}14` },
               ]}
             >
-              <Text style={[styles.noticeText, { color: isFull ? Colors.clay : Colors.forest }]}>
+              <Text style={[styles.noticeText, { color: isFull ? Colors.rose : Colors.coral }]}>
                 {course.spotsLeft === null
                   ? t.courses.openToAll
                   : isFull
@@ -296,8 +296,8 @@ export function LeaveCourseSheet({
           />
         ) : (
           <>
-            <View style={[styles.notice, { backgroundColor: `${Colors.clay}1A` }]}>
-              <Text style={[styles.noticeText, { color: Colors.clay }]}>
+            <View style={[styles.notice, { backgroundColor: `${Colors.rose}1A` }]}>
+              <Text style={[styles.noticeText, { color: Colors.rose }]}>
                 {isApproved
                   ? t.myCourses.leaveMessage(enrollment.studentName, courseName(course, locale))
                   : t.myCourses.withdrawMessage(enrollment.studentName, courseName(course, locale))}
@@ -385,13 +385,13 @@ const styles = StyleSheet.create({
     minHeight: 44,
     justifyContent: "center",
   },
-  childChipSelected: { backgroundColor: Colors.terracotta, borderColor: Colors.terracotta },
+  childChipSelected: { backgroundColor: Colors.sage, borderColor: Colors.sage },
   childChipText: { fontFamily: Fonts.semiBold, fontSize: 15, color: Colors.bark },
   childChipTextSelected: { color: Colors.cream },
   error: {
     fontFamily: Fonts.semiBold,
     fontSize: 13,
-    color: Colors.clay,
+    color: Colors.rose,
     textAlign: "center",
     marginTop: 16,
   },
@@ -400,7 +400,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
     minHeight: 52,
     borderRadius: 16,
-    backgroundColor: Colors.clay,
+    backgroundColor: Colors.rose,
     alignItems: "center",
     justifyContent: "center",
   },

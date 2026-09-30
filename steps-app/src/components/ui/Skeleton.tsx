@@ -253,8 +253,6 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: Colors.card,
     borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Colors.border,
     padding: 16,
     marginTop: 16,
   },
@@ -273,8 +271,6 @@ const styles = StyleSheet.create({
   courseList: {
     backgroundColor: Colors.card,
     borderRadius: 20,
-    borderWidth: 1,
-    borderColor: Colors.border,
     overflow: "hidden",
   },
   courseGap: {

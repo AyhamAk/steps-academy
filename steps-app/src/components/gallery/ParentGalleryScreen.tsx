@@ -65,8 +65,6 @@ const styles = StyleSheet.create({
 
   quoteBanner: {
     backgroundColor: Colors.linen,
-    borderWidth: 1,
-    borderColor: Colors.border,
     borderRadius: 12,
     paddingVertical: 10,
     paddingHorizontal: 14,

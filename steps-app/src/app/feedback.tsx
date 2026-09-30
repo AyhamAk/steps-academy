@@ -44,7 +44,7 @@ function FeedbackRow({ item }: { item: FeedbackItem }) {
   return (
     <View style={[styles.card, isRTL && styles.rowReverse]}>
       {item.rating === null ? (
-        <Ionicons name="bulb-outline" size={26} color={Colors.honey} style={styles.face} />
+        <Ionicons name="bulb-outline" size={26} color={Colors.gold} style={styles.face} />
       ) : (
         <Text style={styles.face}>{faceForRating(item.rating)}</Text>
       )}
@@ -139,8 +139,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-around",
     backgroundColor: Colors.linen,
-    borderWidth: 1,
-    borderColor: Colors.border,
     borderRadius: 18,
     paddingVertical: 16,
     marginBottom: 16,
@@ -153,7 +151,7 @@ const styles = StyleSheet.create({
   summaryValue: {
     fontFamily: Fonts.extraBold,
     fontSize: 26,
-    color: Colors.terracotta,
+    color: Colors.sage,
     textAlign: "center",
   },
   summaryLabel: {
@@ -166,8 +164,6 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     gap: 12,
     backgroundColor: Colors.card,
-    borderWidth: 1,
-    borderColor: Colors.border,
     borderRadius: 18,
     padding: 14,
     marginBottom: 10,

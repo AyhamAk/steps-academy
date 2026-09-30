@@ -233,8 +233,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   eventRow: {
-    borderWidth: 1,
-    borderColor: Colors.border,
     borderRadius: 16,
     padding: 14,
     marginBottom: 10,
@@ -276,7 +274,7 @@ const styles = StyleSheet.create({
   },
   error: {
     fontFamily: Fonts.semiBold,
-    color: Colors.clay,
+    color: Colors.rose,
     marginTop: 12,
     textAlign: "center",
   },

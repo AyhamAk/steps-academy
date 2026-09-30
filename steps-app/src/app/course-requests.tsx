@@ -47,9 +47,9 @@ function groupByCourse(requests: EnrollmentRequest[]) {
 }
 
 const STATUS_COLORS: Record<EnrollmentStatus, string> = {
-  pending: Colors.honey,
-  approved: Colors.forest,
-  rejected: Colors.clay,
+  pending: Colors.gold,
+  approved: Colors.coral,
+  rejected: Colors.rose,
   cancelled: Colors.textLight,
 };
 
@@ -139,7 +139,7 @@ function RequestCard({ request }: { request: EnrollmentRequest }) {
             onPress={() => decide.mutate({ status: "rejected" })}
           >
             {decide.isPending && decide.variables?.status === "rejected" ? (
-              <ActivityIndicator color={Colors.clay} />
+              <ActivityIndicator color={Colors.rose} />
             ) : (
               <Text style={[styles.buttonText, styles.declineText]}>{t.courses.decline}</Text>
             )}
@@ -286,7 +286,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.linen,
     paddingHorizontal: 18,
   },
-  filterChipActive: { backgroundColor: Colors.terracotta, borderColor: Colors.terracotta },
+  filterChipActive: { backgroundColor: Colors.sage, borderColor: Colors.sage },
   filterText: { fontFamily: Fonts.semiBold, fontSize: 14, color: Colors.textLight },
   filterTextActive: { color: Colors.cream },
   list: { paddingTop: 12, paddingBottom: 32 },
@@ -319,15 +319,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  sectionCountUrgent: { backgroundColor: Colors.honey, borderColor: Colors.honey },
+  sectionCountUrgent: { backgroundColor: Colors.gold, borderColor: Colors.gold },
   sectionCountText: { fontFamily: Fonts.semiBold, fontSize: 12, color: Colors.textLight },
   sectionCountTextUrgent: { color: Colors.bark },
   hidden: { height: 0, paddingVertical: 0, marginTop: 0, opacity: 0 },
   card: {
     backgroundColor: Colors.linen,
     borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Colors.border,
     padding: 16,
     marginBottom: 12,
   },
@@ -347,8 +345,8 @@ const styles = StyleSheet.create({
   },
   actions: { flexDirection: "row", gap: 12, marginTop: 16 },
   button: { flex: 1, borderRadius: 12, minHeight: 44, justifyContent: "center", alignItems: "center" },
-  approve: { backgroundColor: Colors.forest },
-  decline: { backgroundColor: Colors.cream, borderWidth: 1, borderColor: Colors.clay },
+  approve: { backgroundColor: Colors.coral },
+  decline: { backgroundColor: Colors.cream, borderWidth: 1, borderColor: Colors.rose },
   buttonText: { fontFamily: Fonts.semiBold, fontSize: 15, color: Colors.cream },
-  declineText: { fontFamily: Fonts.regular, fontSize: 14, color: Colors.clay },
+  declineText: { fontFamily: Fonts.regular, fontSize: 14, color: Colors.rose },
 });

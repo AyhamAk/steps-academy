@@ -30,8 +30,6 @@ const styles = StyleSheet.create({
     flexBasis: "47%",
     backgroundColor: Colors.linen,
     borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Colors.border,
     paddingVertical: 14,
     paddingHorizontal: 14,
   },

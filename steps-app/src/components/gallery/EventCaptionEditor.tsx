@@ -76,16 +76,16 @@ const styles = StyleSheet.create({
   },
   accentLTR: {
     borderLeftWidth: 4,
-    borderLeftColor: Colors.terracotta,
+    borderLeftColor: Colors.sage,
   },
   accentRTL: {
     borderRightWidth: 4,
-    borderRightColor: Colors.terracotta,
+    borderRightColor: Colors.sage,
   },
   label: {
     fontFamily: Fonts.bold,
     fontSize: 13,
-    color: Colors.terracotta,
+    color: Colors.sage,
     marginBottom: 10,
   },
   input: {
@@ -111,7 +111,7 @@ const styles = StyleSheet.create({
     textAlign: "left",
   },
   saveButton: {
-    backgroundColor: Colors.terracotta,
+    backgroundColor: Colors.sage,
     borderRadius: 10,
     paddingVertical: 12,
     alignItems: "center",

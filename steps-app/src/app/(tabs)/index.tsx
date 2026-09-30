@@ -471,7 +471,7 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   greetingName: {
-    color: Colors.terracotta,
+    color: Colors.sage,
   },
   // The child's recent photos, inside the slide rather than behind it — text
   // keeps a flat gradient underneath it, so legibility never depends on what
@@ -502,7 +502,7 @@ const styles = StyleSheet.create({
   },
   childChipSelected: {
     backgroundColor: Colors.cream,
-    borderColor: Colors.terracotta,
+    borderColor: Colors.sage,
   },
   childChipName: {
     fontFamily: Fonts.semiBold,
@@ -510,7 +510,7 @@ const styles = StyleSheet.create({
     color: Colors.textLight,
   },
   childChipNameSelected: {
-    color: Colors.terracotta,
+    color: Colors.sage,
   },
   section: {
     marginBottom: 24,
@@ -531,7 +531,7 @@ const styles = StyleSheet.create({
   sectionAddLink: {
     fontFamily: Fonts.semiBold,
     fontSize: 14,
-    color: Colors.terracotta,
+    color: Colors.sage,
   },
   announcementAvatarEmoji: {
     fontSize: 13,
@@ -616,7 +616,7 @@ const styles = StyleSheet.create({
   },
   modalError: {
     fontFamily: Fonts.semiBold,
-    color: Colors.clay,
+    color: Colors.rose,
     marginTop: 12,
     textAlign: "center",
   },

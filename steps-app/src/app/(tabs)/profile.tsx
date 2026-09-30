@@ -19,6 +19,7 @@ import { StepsCard } from "../../components/ui/StepsCard";
 import { ToastBanner, useToast } from "../../components/ui/Toast";
 import { API_BASE_URL } from "../../services/api";
 import { Colors } from "../../constants/Colors";
+import { CornerLeafDecoration } from "../../components/ui/CornerLeafDecoration";
 import { Fonts } from "../../constants/Fonts";
 import { Type } from "../../constants/Typography";
 import { useAuth } from "../../hooks/useAuth";
@@ -134,7 +135,7 @@ export default function ProfileScreen() {
             key: "admin",
             label: t.admin.title,
             icon: "settings-outline" as keyof typeof Ionicons.glyphMap,
-            tint: Colors.honey,
+            tint: Colors.gold,
             onPress: () => router.push("/admin"),
             badge: pendingRequests,
           },
@@ -148,7 +149,7 @@ export default function ProfileScreen() {
             key: "child",
             label: t.invite.addOwnChild,
             icon: "person-add-outline" as keyof typeof Ionicons.glyphMap,
-            tint: Colors.honey,
+            tint: Colors.gold,
             onPress: () => setActiveSheet("child"),
           },
         ]
@@ -157,7 +158,7 @@ export default function ProfileScreen() {
       key: "notifications",
       label: t.profile.notifications,
       icon: "notifications-outline",
-      tint: Colors.terracotta,
+      tint: Colors.sage,
       onPress: () => router.push("/notifications"),
       badge: unreadCount,
     },
@@ -165,14 +166,14 @@ export default function ProfileScreen() {
       key: "password",
       label: t.profile.changePassword,
       icon: "lock-closed-outline",
-      tint: Colors.forest,
+      tint: Colors.coral,
       onPress: () => setActiveSheet("password"),
     },
     {
       key: "contact",
       label: t.profile.contactAcademy,
       icon: "mail-outline",
-      tint: Colors.sky,
+      tint: Colors.blue,
       onPress: () => setActiveSheet("contact"),
     },
   ];
@@ -197,7 +198,7 @@ export default function ProfileScreen() {
             {user?.role ? (
               <RoleBadge
                 label={roleLabel}
-                color={user.role === "admin" ? Colors.terracotta : Colors.forest}
+                color={user.role === "admin" ? Colors.sage : Colors.coral}
               />
             ) : null}
           </View>
@@ -232,6 +233,7 @@ export default function ProfileScreen() {
 
             {selectedChildId ? (
               <View style={styles.dashCard}>
+                <CornerLeafDecoration corner="bottom-end" />
                 <View style={styles.dashRowWrap}>
                   <View style={styles.dashAccent} />
                   <View style={styles.dashBody}>
@@ -266,7 +268,7 @@ export default function ProfileScreen() {
                       <Ionicons
                         name="images-outline"
                         size={18}
-                        color={Colors.terracotta}
+                        color={Colors.sage}
                         style={styles.dashIcon}
                       />
                       <Text style={[styles.dashText, styles.dashTextAccent, rtlText]} maxFontSizeMultiplier={1.4}>
@@ -387,16 +389,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 20,
     overflow: "hidden",
-    borderWidth: 1,
-    borderColor: Colors.border,
   },
   identityAvatar: {
     width: 88,
     height: 88,
     borderRadius: 44,
-    backgroundColor: `${Colors.terracotta}26`,
+    backgroundColor: `${Colors.sage}26`,
     borderWidth: 3,
-    borderColor: `${Colors.terracotta}40`,
+    borderColor: `${Colors.sage}40`,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 14,
@@ -418,7 +418,7 @@ const styles = StyleSheet.create({
   identityMonogram: {
     fontFamily: Fonts.extraBold,
     fontSize: 34,
-    color: Colors.terracotta,
+    color: Colors.sage,
   },
   identityEmail: {
     fontFamily: Fonts.regular,
@@ -439,19 +439,17 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.border,
   },
-  chipActive: { backgroundColor: `${Colors.terracotta}18`, borderColor: Colors.terracotta },
+  chipActive: { backgroundColor: `${Colors.sage}18`, borderColor: Colors.sage },
   chipEmoji: { fontSize: 18 },
   chipLabel: { fontSize: 15, fontFamily: Fonts.semiBold, color: Colors.textLight },
   chipLabelActive: { color: Colors.bark },
   dashCard: {
     backgroundColor: Colors.linen,
     borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Colors.border,
     overflow: "hidden",
   },
   dashRowWrap: { flexDirection: "row" },
-  dashAccent: { width: 4, backgroundColor: Colors.honey },
+  dashAccent: { width: 4, backgroundColor: Colors.gold },
   dashBody: { flex: 1, paddingHorizontal: 16, paddingVertical: 4 },
   dashHeader: {
     flexDirection: "row",
@@ -483,13 +481,11 @@ const styles = StyleSheet.create({
     lineHeight: 19,
     color: Colors.bark,
   },
-  dashTextAccent: { fontFamily: Fonts.semiBold, fontSize: 15, color: Colors.terracotta },
+  dashTextAccent: { fontFamily: Fonts.semiBold, fontSize: 15, color: Colors.sage },
   prefsGroup: {
     marginTop: 24,
     backgroundColor: Colors.linen,
     borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Colors.border,
     padding: 16,
   },
   prefsSubLabel: {
@@ -538,7 +534,7 @@ const styles = StyleSheet.create({
     minWidth: 22,
     height: 22,
     borderRadius: 11,
-    backgroundColor: Colors.terracotta,
+    backgroundColor: Colors.sage,
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 6,
@@ -552,7 +548,7 @@ const styles = StyleSheet.create({
     marginTop: 24,
     borderRadius: 16,
     borderWidth: 2,
-    backgroundColor: `${Colors.terracotta}0D`,
+    backgroundColor: `${Colors.sage}0D`,
     height: 54,
     justifyContent: "center",
   },
@@ -569,7 +565,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginTop: 16,
   },
-  deleteAccountText: { fontFamily: Fonts.regular, fontSize: 13, color: Colors.clay },
+  deleteAccountText: { fontFamily: Fonts.regular, fontSize: 13, color: Colors.rose },
   mascotFooter: {
     alignItems: "center",
     marginTop: 28,

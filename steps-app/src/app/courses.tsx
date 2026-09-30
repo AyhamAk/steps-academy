@@ -38,7 +38,7 @@ function CourseCard({
   isDeleting: boolean;
 }) {
   const { t, isRTL, rtlText } = useTranslation();
-  const accent = course.accentColor ?? Colors.terracotta;
+  const accent = course.accentColor ?? Colors.sage;
   const isFull = course.spotsLeft !== null && course.spotsLeft === 0;
 
   return (
@@ -76,12 +76,12 @@ function CourseCard({
       {/* Enrolment at a glance: filled places, free places, and anything waiting. */}
       <View style={[styles.statRow, isRTL && styles.rowReverse]}>
         <View style={styles.stat}>
-          <Text style={[styles.statValue, { color: Colors.forest }]}>{course.approvedCount}</Text>
+          <Text style={[styles.statValue, { color: Colors.coral }]}>{course.approvedCount}</Text>
           <Text style={styles.statLabel}>{t.coursesAdmin.statEnrolled}</Text>
         </View>
         <View style={styles.statDivider} />
         <View style={styles.stat}>
-          <Text style={[styles.statValue, { color: isFull ? Colors.clay : Colors.bark }]}>
+          <Text style={[styles.statValue, { color: isFull ? Colors.rose : Colors.bark }]}>
             {course.spotsLeft === null ? "∞" : course.spotsLeft}
           </Text>
           <Text style={styles.statLabel}>{t.coursesAdmin.statSpots}</Text>
@@ -91,7 +91,7 @@ function CourseCard({
           <Text
             style={[
               styles.statValue,
-              { color: course.pendingCount > 0 ? Colors.honey : Colors.textLight },
+              { color: course.pendingCount > 0 ? Colors.gold : Colors.textLight },
             ]}
           >
             {course.pendingCount}
@@ -131,7 +131,7 @@ function CourseCard({
         </Touchable>
         <Touchable style={styles.action} onPress={onDelete} disabled={isDeleting}>
           {isDeleting ? (
-            <ActivityIndicator color={Colors.clay} />
+            <ActivityIndicator color={Colors.rose} />
           ) : (
             <Text style={styles.deleteText}>{t.coursesAdmin.delete}</Text>
           )}
@@ -248,8 +248,6 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: Colors.linen,
     borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Colors.border,
     padding: 16,
     paddingTop: 20,
     overflow: "hidden",
@@ -289,8 +287,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: Colors.cream,
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Colors.border,
     padding: 12,
     marginTop: 12,
   },
@@ -316,10 +312,10 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     minHeight: 44,
   },
-  reviewText: { fontFamily: Fonts.semiBold, fontSize: 15, color: Colors.terracotta },
+  reviewText: { fontFamily: Fonts.semiBold, fontSize: 15, color: Colors.sage },
   reviewTextUrgent: { color: Colors.bark },
   actionRow: { flexDirection: "row", gap: 12, marginTop: 4 },
   action: { flex: 1, alignItems: "center", justifyContent: "center", minHeight: 44 },
-  editText: { fontFamily: Fonts.semiBold, fontSize: 15, color: Colors.terracotta },
-  deleteText: { fontFamily: Fonts.regular, fontSize: 14, color: Colors.clay },
+  editText: { fontFamily: Fonts.semiBold, fontSize: 15, color: Colors.sage },
+  deleteText: { fontFamily: Fonts.regular, fontSize: 14, color: Colors.rose },
 });

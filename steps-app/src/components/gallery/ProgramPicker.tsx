@@ -113,17 +113,17 @@ const styles = StyleSheet.create({
     minHeight: 44,
   },
   optionActive: {
-    backgroundColor: Colors.terracotta,
-    borderColor: Colors.terracotta,
+    backgroundColor: Colors.sage,
+    borderColor: Colors.sage,
   },
   optionText: { fontFamily: Fonts.semiBold, fontSize: 13, color: Colors.bark },
   optionTextActive: { color: Colors.cream },
 
   badges: { flexDirection: "row", gap: 6, marginTop: 6 },
   badge: { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 2 },
-  badgeNursery: { backgroundColor: Colors.skyTint },
-  badgeCourses: { backgroundColor: Colors.forestTint },
+  badgeNursery: { backgroundColor: Colors.blueTint },
+  badgeCourses: { backgroundColor: Colors.coralTint },
   badgeText: { fontFamily: Fonts.semiBold, fontSize: 11 },
-  badgeTextNursery: { color: Colors.skyDeep },
-  badgeTextCourses: { color: Colors.forestDeep },
+  badgeTextNursery: { color: Colors.blueDeep },
+  badgeTextCourses: { color: Colors.coralDeep },
 });

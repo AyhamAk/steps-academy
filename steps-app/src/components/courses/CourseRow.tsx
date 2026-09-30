@@ -65,7 +65,7 @@ export function CourseRow({
   const { t, isRTL, rtlText, locale } = useTranslation();
 
   const isFull = course.spotsLeft !== null && course.spotsLeft === 0;
-  const accent = course.accentColor ?? Colors.terracotta;
+  const accent = course.accentColor ?? Colors.sage;
   const days = formatCourseDays(course, t);
   const dates = formatCourseDates(course, t);
   // Who is in it reads better as a line of the course's own detail than as a
@@ -169,8 +169,6 @@ export const courseListStyles = StyleSheet.create({
     backgroundColor: Colors.linen,
     borderRadius: 20,
     overflow: "hidden",
-    borderWidth: 1,
-    borderColor: Colors.border,
   },
 });
 
@@ -199,20 +197,20 @@ const styles = StyleSheet.create({
   meta: { ...Type.caption, color: Colors.textLight, flex: 1, writingDirection: "auto" },
   metaRTL: { textAlign: "right" },
   actionButton: {
-    backgroundColor: Colors.terracotta,
+    backgroundColor: Colors.sage,
     borderRadius: 10,
     paddingHorizontal: 12,
     minHeight: 36,
     justifyContent: "center",
     maxWidth: 110,
   },
-  joinButtonWaitlist: { backgroundColor: Colors.honey },
+  joinButtonWaitlist: { backgroundColor: Colors.gold },
   // Leaving is the destructive one, so it is outlined rather than filled —
   // present when you need it, never the thing your thumb lands on first.
   leaveButton: {
     backgroundColor: "transparent",
     borderWidth: 1.5,
-    borderColor: Colors.clay,
+    borderColor: Colors.rose,
   },
   actionText: {
     fontFamily: Fonts.bold,
@@ -220,14 +218,14 @@ const styles = StyleSheet.create({
     color: Colors.cream,
     textAlign: "center",
   },
-  leaveText: { color: Colors.clay },
+  leaveText: { color: Colors.rose },
   // A pending request is a state, not an action — so it reads as a label
   // rather than borrowing the button's shape and inviting a tap.
   waitingTag: {
     borderRadius: 999,
     paddingHorizontal: 10,
     paddingVertical: 5,
-    backgroundColor: `${Colors.honey}33`,
+    backgroundColor: `${Colors.gold}33`,
     maxWidth: 110,
   },
   waitingText: {

@@ -87,9 +87,9 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 12,
-    backgroundColor: Colors.honeyLight,
+    backgroundColor: Colors.goldLight,
     borderWidth: 1,
-    borderColor: Colors.honey,
+    borderColor: Colors.gold,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -97,7 +97,7 @@ const styles = StyleSheet.create({
   month: {
     fontFamily: Fonts.semiBold,
     fontSize: 12,
-    color: Colors.honeyDeep,
+    color: Colors.goldDeep,
   },
   title: {
     fontFamily: Fonts.bold,

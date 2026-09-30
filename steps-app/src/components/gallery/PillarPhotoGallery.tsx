@@ -300,8 +300,6 @@ const styles = StyleSheet.create({
 
   albumCard: {
     backgroundColor: Colors.linen,
-    borderWidth: 1,
-    borderColor: Colors.border,
     borderRadius: 16,
     padding: 14,
     marginBottom: 12,
@@ -363,14 +361,14 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.linen,
   },
   countTile: {
-    backgroundColor: Colors.clayLight,
+    backgroundColor: Colors.roseLight,
     alignItems: "center",
     justifyContent: "center",
   },
   countTileText: {
     fontFamily: Fonts.semiBold,
     fontSize: 14,
-    color: Colors.clay,
+    color: Colors.rose,
   },
   emptyTile: {
     backgroundColor: Colors.cream,

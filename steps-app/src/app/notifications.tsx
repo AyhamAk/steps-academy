@@ -56,11 +56,11 @@ function itemText(n: AppNotification, t: Translations): string {
  * one-off computed colour.
  */
 const TYPE_TILE: Record<NotificationType, string> = {
-  photo: Colors.skyTint,
-  announcement: Colors.clayLight,
-  event: Colors.honeyLight,
-  course: Colors.skyTint,
-  tip: Colors.honeyLight,
+  photo: Colors.blueTint,
+  announcement: Colors.roseLight,
+  event: Colors.goldLight,
+  course: Colors.blueTint,
+  tip: Colors.goldLight,
 };
 
 /** Today / this week / earlier — nothing older gets its own bucket. */
@@ -103,11 +103,11 @@ const TYPE_STYLE: Record<
   NotificationType,
   { icon: keyof typeof Ionicons.glyphMap; tint: string }
 > = {
-  photo: { icon: "images", tint: Colors.sky },
-  event: { icon: "calendar", tint: Colors.honey },
-  course: { icon: "school", tint: Colors.forest },
-  announcement: { icon: "megaphone", tint: Colors.terracotta },
-  tip: { icon: "bulb", tint: Colors.honey },
+  photo: { icon: "images", tint: Colors.blue },
+  event: { icon: "calendar", tint: Colors.gold },
+  course: { icon: "school", tint: Colors.coral },
+  announcement: { icon: "megaphone", tint: Colors.sage },
+  tip: { icon: "bulb", tint: Colors.gold },
 };
 
 function typeLabel(type: NotificationType, t: Translations): string {
@@ -298,8 +298,6 @@ const styles = StyleSheet.create({
     gap: 10,
     backgroundColor: Colors.card,
     borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Colors.border,
     paddingVertical: 14,
     paddingHorizontal: 14,
   },
@@ -308,7 +306,7 @@ const styles = StyleSheet.create({
   },
   rowUnread: {
     backgroundColor: Colors.linen,
-    borderColor: Colors.terracotta,
+    borderColor: Colors.sage,
   },
   sectionLabel: {
     fontFamily: Fonts.semiBold,
@@ -323,7 +321,7 @@ const styles = StyleSheet.create({
     width: DOT,
     height: DOT,
     borderRadius: DOT / 2,
-    backgroundColor: Colors.terracotta,
+    backgroundColor: Colors.sage,
   },
   rowText: {
     flex: 1,

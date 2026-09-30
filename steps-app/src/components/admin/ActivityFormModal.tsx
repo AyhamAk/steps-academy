@@ -18,7 +18,7 @@ import { StepsButton } from "../ui/StepsButton";
 import { Touchable } from "../ui/Touchable";
 
 const EMOJI_CHOICES = ["🌟", "☀️", "🎨", "🎵", "🌿", "📖", "🧩", "🔢", "🧘", "🍪", "🎈", "🖐", "⚽", "🔬"];
-const COLOR_CHOICES = [Colors.honey, Colors.terracotta, Colors.forest, Colors.sky, Colors.clay];
+const COLOR_CHOICES = [Colors.gold, Colors.sage, Colors.coral, Colors.blue, Colors.rose];
 const DURATIONS = [15, 20, 30, 45, 60, 90];
 
 type ActivityFormModalProps = {
@@ -45,7 +45,7 @@ export function ActivityFormModal({
   const [hour, setHour] = useState("09");
   const [minute, setMinute] = useState("00");
   const [duration, setDuration] = useState(30);
-  const [accentColor, setAccentColor] = useState<string>(Colors.honey);
+  const [accentColor, setAccentColor] = useState<string>(Colors.gold);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -56,7 +56,7 @@ export function ActivityFormModal({
     setHour(h);
     setMinute(m);
     setDuration(activity?.durationMinutes ?? 30);
-    setAccentColor(activity?.accentColor ?? Colors.honey);
+    setAccentColor(activity?.accentColor ?? Colors.gold);
     setError(null);
   }, [visible, activity]);
 
@@ -218,7 +218,7 @@ const styles = StyleSheet.create({
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   title: { fontFamily: Fonts.extraBold, fontSize: 20, color: Colors.bark },
   close: { fontSize: 20, color: Colors.textLight },
-  dayHint: { ...Type.caption, color: Colors.terracotta, fontFamily: Fonts.bold, marginTop: 2 },
+  dayHint: { ...Type.caption, color: Colors.sage, fontFamily: Fonts.bold, marginTop: 2 },
   label: {
     fontFamily: Fonts.semiBold,
     fontSize: 12,
@@ -251,9 +251,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   emojiTileActive: {
-    borderColor: Colors.terracotta,
+    borderColor: Colors.sage,
     borderWidth: 2.5,
-    backgroundColor: `${Colors.terracotta}18`,
+    backgroundColor: `${Colors.sage}18`,
   },
   emojiText: { fontSize: 21 },
   timeRow: { flexDirection: "row", alignItems: "center", gap: 8 },
@@ -270,7 +270,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.linen,
     alignItems: "center",
   },
-  durationTileActive: { backgroundColor: Colors.terracotta, borderColor: Colors.terracotta },
+  durationTileActive: { backgroundColor: Colors.sage, borderColor: Colors.sage },
   durationText: { fontFamily: Fonts.semiBold, fontSize: 14, color: Colors.bark },
   durationTextActive: { color: "#FFFFFF" },
   colorTile: {
@@ -287,7 +287,7 @@ const styles = StyleSheet.create({
   error: {
     fontFamily: Fonts.semiBold,
     fontSize: 13.5,
-    color: Colors.clay,
+    color: Colors.rose,
     marginTop: 14,
     textAlign: "center",
   },

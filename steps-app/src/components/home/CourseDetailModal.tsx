@@ -57,7 +57,7 @@ export function CourseDetailModal({
   const { sheetPadding } = useSheetPadding(30);
   if (!course) return null;
 
-  const accent = course.accentColor ?? Colors.terracotta;
+  const accent = course.accentColor ?? Colors.sage;
   const days = formatCourseDays(course, t);
   const dates = formatCourseDates(course, t);
   const ended = hasCourseEnded(course);
@@ -128,8 +128,8 @@ export function CourseDetailModal({
                         {
                           backgroundColor:
                             enrollment.status === "approved"
-                              ? `${Colors.forest}1A`
-                              : `${Colors.honey}26`,
+                              ? `${Colors.coral}1A`
+                              : `${Colors.gold}26`,
                         },
                       ]}
                     >

@@ -73,7 +73,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   pillCompact: { height: 36, borderRadius: 999 },
-  pillActive: { backgroundColor: Colors.terracotta, borderColor: Colors.terracotta },
+  pillActive: { backgroundColor: Colors.sage, borderColor: Colors.sage },
   label: { fontFamily: Fonts.semiBold, fontSize: 15, color: Colors.bark },
   labelCompact: { fontSize: 13 },
   labelActive: { color: Colors.cream },

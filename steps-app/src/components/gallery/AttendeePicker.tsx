@@ -95,7 +95,7 @@ const styles = StyleSheet.create({
   toggle: {
     fontFamily: Fonts.semiBold,
     fontSize: 13,
-    color: Colors.terracotta,
+    color: Colors.sage,
   },
   grid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   chip: {
@@ -107,7 +107,7 @@ const styles = StyleSheet.create({
     minHeight: 44,
     justifyContent: "center",
   },
-  chipSelected: { backgroundColor: Colors.terracotta, borderColor: Colors.terracotta },
+  chipSelected: { backgroundColor: Colors.sage, borderColor: Colors.sage },
   chipText: { fontFamily: Fonts.semiBold, fontSize: 14, color: Colors.bark },
   chipTextSelected: { color: Colors.cream },
   emptyText: { fontFamily: Fonts.regular, fontSize: 13, color: Colors.textLight },

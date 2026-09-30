@@ -28,7 +28,7 @@ export function StepProgressHeader({
         <Ionicons
           name={isRTL ? "arrow-forward" : "arrow-back"}
           size={22}
-          color={Colors.terracotta}
+          color={Colors.sage}
         />
       </Touchable>
       <View
@@ -57,5 +57,5 @@ const styles = StyleSheet.create({
   back: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
   segments: { flexDirection: "row", gap: 5 },
   segment: { width: 18, height: 5, borderRadius: 3, backgroundColor: Colors.border },
-  segmentFilled: { backgroundColor: Colors.terracotta },
+  segmentFilled: { backgroundColor: Colors.sage },
 });

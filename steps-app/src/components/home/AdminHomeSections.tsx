@@ -4,6 +4,8 @@ import { router } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
 
 import { Colors } from "../../constants/Colors";
+import { CornerLeafDecoration } from "../ui/CornerLeafDecoration";
+import { CountBadge } from "../ui/CountBadge";
 import { Fonts } from "../../constants/Fonts";
 import { useLayout } from "../../hooks/useLayout";
 import { useTranslation } from "../../i18n/useTranslation";
@@ -50,8 +52,8 @@ function AlertRow({
       onPress={onPress}
       style={[styles.alertRow, isRTL && styles.rowReverse, isLast && styles.alertRowLast]}
     >
-      <IconTile tint={Colors.honey} size={36}>
-        <Ionicons name={icon} size={18} color={Colors.honey} />
+      <IconTile tint={Colors.gold} size={36}>
+        <Ionicons name={icon} size={18} color={Colors.gold} />
       </IconTile>
       <View style={styles.alertTextWrap}>
         <Text
@@ -62,11 +64,7 @@ function AlertRow({
           {label}
         </Text>
       </View>
-      <View style={styles.countBadge}>
-        <Text style={styles.countText} maxFontSizeMultiplier={1.2}>
-          {count}
-        </Text>
-      </View>
+      <CountBadge count={count} />
       <Ionicons
         name={isRTL ? "chevron-back" : "chevron-forward"}
         size={18}
@@ -113,18 +111,18 @@ export function AdminHomeSections() {
    * level inside Students.
    */
   const actions: Action[] = [
-    { key: "upload", label: t.adminHome.actionPhotos, icon: "camera", tint: Colors.sky, route: "/gallery" },
-    { key: "students", label: t.adminHome.actionStudents, icon: "people", tint: Colors.honey, route: "/students" },
-    { key: "courses", label: t.adminHome.actionCourses, icon: "school", tint: Colors.forest, route: "/courses" },
-    { key: "requests", label: t.courses.requestsTitle, icon: "clipboard", tint: Colors.clay, route: "/course-requests" },
-    { key: "schedule", label: t.adminHome.actionSchedule, icon: "calendar", tint: Colors.terracotta, route: "/schedule" },
+    { key: "upload", label: t.adminHome.actionPhotos, icon: "camera", tint: Colors.blue, route: "/gallery" },
+    { key: "students", label: t.adminHome.actionStudents, icon: "people", tint: Colors.gold, route: "/students" },
+    { key: "courses", label: t.adminHome.actionCourses, icon: "school", tint: Colors.coral, route: "/courses" },
+    { key: "requests", label: t.courses.requestsTitle, icon: "clipboard", tint: Colors.rose, route: "/course-requests" },
+    { key: "schedule", label: t.adminHome.actionSchedule, icon: "calendar", tint: Colors.sage, route: "/schedule" },
     // The tips screen has had a full editor since it shipped, but an admin
     // never sees the academy grid the parent tile lives in — so there was no
     // way to reach it. Same label and colour as that tile, so the two doors
     // lead somewhere recognisably identical.
-    { key: "tips", label: t.home.tileTips, icon: "bulb", tint: Colors.honey, route: "/academy/tips" },
-    { key: "invites", label: t.invite.sendTitle, icon: "key", tint: Colors.forest, route: "/invite-send" },
-    { key: "feedback", label: t.adminHome.actionFeedback, icon: "chatbubble", tint: Colors.sky, route: "/feedback" },
+    { key: "tips", label: t.home.tileTips, icon: "bulb", tint: Colors.gold, route: "/academy/tips" },
+    { key: "invites", label: t.invite.sendTitle, icon: "key", tint: Colors.coral, route: "/invite-send" },
+    { key: "feedback", label: t.adminHome.actionFeedback, icon: "chatbubble", tint: Colors.blue, route: "/feedback" },
   ];
 
   /**
@@ -165,9 +163,10 @@ export function AdminHomeSections() {
             {t.adminHome.allClearBody}
           </Text>
         ) : (
-          // One plain card. The honey is kept for the badges alone — when four
-          // things are outlined in amber at once, none of them reads as urgent.
+          // One plain card, the counts on sage chips — when four things are
+          // outlined at once, none of them reads as urgent.
           <View style={styles.card}>
+            <CornerLeafDecoration corner="bottom-end" />
             {alerts.map((alert, index) => (
               <AlertRow
                 key={alert.key}
@@ -229,13 +228,13 @@ export function AdminHomeSections() {
           // the Management screen, two screens above the things an admin can
           // actually do something about.
           <View style={[styles.card, styles.statStrip, isRTL && styles.rowReverse]}>
-            <Stat value={data.students} label={t.admin.statStudents} tint={Colors.terracotta} />
+            <Stat value={data.students} label={t.admin.statStudents} tint={Colors.sage} />
             <View style={styles.statDivider} />
-            <Stat value={data.parents} label={t.admin.statParents} tint={Colors.forest} />
+            <Stat value={data.parents} label={t.admin.statParents} tint={Colors.coral} />
             <View style={styles.statDivider} />
-            <Stat value={data.photos} label={t.admin.statPhotos} tint={Colors.sky} />
+            <Stat value={data.photos} label={t.admin.statPhotos} tint={Colors.blue} />
             <View style={styles.statDivider} />
-            <Stat value={data.courses} label={t.adminHome.statCourses} tint={Colors.honey} />
+            <Stat value={data.courses} label={t.adminHome.statCourses} tint={Colors.gold} />
           </View>
         )}
       </View>
@@ -249,10 +248,9 @@ const styles = StyleSheet.create({
   textRight: { textAlign: "right" },
 
   card: {
+    overflow: "hidden",
     backgroundColor: Colors.linen,
     borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Colors.border,
     paddingHorizontal: 14,
   },
 
@@ -268,16 +266,6 @@ const styles = StyleSheet.create({
   alertRowLast: { borderBottomWidth: 0 },
   alertTextWrap: { flex: 1, minWidth: 0 },
   alertLabel: { fontSize: 15, fontFamily: Fonts.semiBold, color: Colors.bark },
-  countBadge: {
-    minWidth: 26,
-    height: 26,
-    borderRadius: 13,
-    paddingHorizontal: 7,
-    backgroundColor: Colors.honey,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  countText: { fontSize: 13, fontFamily: Fonts.bold, color: Colors.bark },
 
   allClear: {
     fontFamily: Fonts.regular,
@@ -308,8 +296,6 @@ const styles = StyleSheet.create({
     minHeight: 92,
     backgroundColor: Colors.linen,
     borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Colors.border,
     padding: 14,
     justifyContent: "space-between",
   },
@@ -326,7 +312,7 @@ const styles = StyleSheet.create({
   manageText: {
     fontFamily: Fonts.semiBold,
     fontSize: 15,
-    color: Colors.terracotta,
+    color: Colors.sage,
   },
 
   statStrip: {

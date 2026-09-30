@@ -57,11 +57,11 @@ const styles = StyleSheet.create({
     fontSize: 17,
     lineHeight: 22,
     fontFamily: Fonts.bold,
-    color: Colors.bark,
+    color: Colors.textLight,
   },
   action: {
     fontSize: 15,
     fontFamily: Fonts.semiBold,
-    color: Colors.terracotta,
+    color: Colors.sage,
   },
 });

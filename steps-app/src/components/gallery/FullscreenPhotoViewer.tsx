@@ -245,10 +245,10 @@ export function FullscreenPhotoViewer({
               disabled={!!busy}
             >
               {busy === "share" ? (
-                <ActivityIndicator color={Colors.terracottaLight} />
+                <ActivityIndicator color={Colors.sageLight} />
               ) : (
                 <View style={[styles.actionInner, isRTL && styles.rowReverse]}>
-                  <Ionicons name="share-outline" size={18} color={Colors.terracottaLight} />
+                  <Ionicons name="share-outline" size={18} color={Colors.sageLight} />
                   <Text style={[styles.actionText, styles.shareText]}>{t.gallery.share}</Text>
                 </View>
               )}
@@ -336,7 +336,7 @@ const styles = StyleSheet.create({
     writingDirection: "auto",
   },
   captionName: {
-    color: Colors.honey,
+    color: Colors.gold,
     fontFamily: Fonts.semiBold,
     fontSize: 14,
     writingDirection: "auto",
@@ -353,8 +353,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   saveButton: {
-    backgroundColor: Colors.terracotta,
-    shadowColor: Colors.terracottaDeep,
+    backgroundColor: Colors.sage,
+    shadowColor: Colors.sageDeep,
     shadowOpacity: 0.4,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
@@ -365,7 +365,7 @@ const styles = StyleSheet.create({
   shareButton: {
     backgroundColor: "rgba(44,36,22,0.55)",
     borderWidth: 1.5,
-    borderColor: Colors.terracotta,
+    borderColor: Colors.sage,
   },
   actionInner: { flexDirection: "row", alignItems: "center", gap: 8 },
   actionText: {
@@ -373,5 +373,5 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   saveText: { color: Colors.cream },
-  shareText: { color: Colors.terracottaLight },
+  shareText: { color: Colors.sageLight },
 });

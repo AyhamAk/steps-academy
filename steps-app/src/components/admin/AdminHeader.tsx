@@ -85,7 +85,7 @@ const styles = StyleSheet.create({
   backArrow: {
     fontSize: 26,
     lineHeight: 30,
-    color: Colors.terracotta,
+    color: Colors.sage,
     fontFamily: Fonts.regular,
   },
   title: {
@@ -93,7 +93,7 @@ const styles = StyleSheet.create({
     fontSize: 28,
     lineHeight: 34,
     fontFamily: Fonts.extraBold,
-    color: Colors.terracotta,
+    color: Colors.sage,
   },
   subtitle: {
     marginTop: 2,

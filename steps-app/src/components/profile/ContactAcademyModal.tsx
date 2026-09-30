@@ -42,21 +42,21 @@ export function ContactAcademyModal({ visible, onClose, onError }: ContactAcadem
     {
       key: "call",
       icon: "call-outline",
-      tint: Colors.forest,
+      tint: Colors.coral,
       label: t.profile.contactCall,
       url: `tel:${ACADEMY_CONTACT.phone}`,
     },
     {
       key: "whatsapp",
       icon: "logo-whatsapp",
-      tint: Colors.forest,
+      tint: Colors.coral,
       label: t.profile.contactWhatsApp,
       url: `https://wa.me/${ACADEMY_CONTACT.whatsapp}`,
     },
     {
       key: "email",
       icon: "mail-outline",
-      tint: Colors.sky,
+      tint: Colors.blue,
       label: t.profile.contactEmail,
       url: `mailto:${ACADEMY_CONTACT.email}`,
     },
@@ -132,8 +132,6 @@ const styles = StyleSheet.create({
   option: {
     backgroundColor: Colors.linen,
     borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Colors.border,
     paddingVertical: 14,
     paddingHorizontal: 16,
     marginBottom: 14,

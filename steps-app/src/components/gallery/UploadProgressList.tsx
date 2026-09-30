@@ -26,7 +26,7 @@ export function UploadProgressList({ uploads }: { uploads: UploadItem[] }) {
                   styles.progressFill,
                   {
                     width: `${item.progress}%`,
-                    backgroundColor: item.status === "error" ? Colors.clay : Colors.forest,
+                    backgroundColor: item.status === "error" ? Colors.rose : Colors.coral,
                   },
                 ]}
               />
@@ -51,8 +51,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.card,
     borderRadius: 16,
     padding: 12,
-    borderWidth: 1,
-    borderColor: Colors.border,
   },
   title: {
     fontFamily: Fonts.semiBold,

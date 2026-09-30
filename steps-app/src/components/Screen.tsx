@@ -20,7 +20,7 @@ export function Screen({ children, safeBottom = false }: ScreenProps) {
   const insets = useSafeAreaInsets();
 
   return (
-    <SafeAreaView className="flex-1 bg-cream" edges={["top", "left", "right"]}>
+    <SafeAreaView className="flex-1 bg-background" edges={["top", "left", "right"]}>
       <View
         className="flex-1 px-6 pt-4"
         style={safeBottom ? { paddingBottom: insets.bottom } : undefined}

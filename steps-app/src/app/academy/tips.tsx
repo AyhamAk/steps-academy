@@ -11,6 +11,7 @@ import SectionLabel from "../../components/ui/SectionLabel";
 import { SkeletonBlock } from "../../components/ui/Skeleton";
 import { StepsHeader } from "../../components/ui/StepsHeader";
 import { Colors } from "../../constants/Colors";
+import { CornerLeafDecoration } from "../../components/ui/CornerLeafDecoration";
 import { Fonts } from "../../constants/Fonts";
 import { useTranslation } from "../../i18n/useTranslation";
 import {
@@ -167,6 +168,7 @@ export default function ParentingTipsScreen() {
 
             {featured ? (
               <View style={styles.featuredCard}>
+                <CornerLeafDecoration corner="bottom-end" />
                 <View style={[styles.featuredBadgeRow, { flexDirection: rowDirection }]}>
                   <View style={styles.monthPill}>
                     <Text style={styles.monthPillText} maxFontSizeMultiplier={1.2}>
@@ -347,16 +349,15 @@ const styles = StyleSheet.create({
     marginBottom: 18,
   },
   featuredCard: {
-    backgroundColor: Colors.honeyLight,
-    borderWidth: 1,
-    borderColor: Colors.honey,
+    overflow: "hidden",
+    backgroundColor: Colors.goldLight,
     borderRadius: 16,
     padding: 16,
     marginBottom: 20,
   },
   featuredBadgeRow: { alignItems: "center", gap: 8, marginBottom: 10 },
   monthPill: {
-    backgroundColor: Colors.honey,
+    backgroundColor: Colors.gold,
     borderRadius: 99,
     paddingHorizontal: 10,
     paddingVertical: 3,
@@ -399,7 +400,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 8,
   },
-  readCtaText: { fontFamily: Fonts.semiBold, fontSize: 13, color: Colors.terracotta },
+  readCtaText: { fontFamily: Fonts.semiBold, fontSize: 13, color: Colors.sage },
   iconButton: {
     minHeight: 44,
     minWidth: 44,
@@ -407,11 +408,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   iconButtonText: { fontSize: 17, color: Colors.textLight },
-  deleteIcon: { color: Colors.clay },
+  deleteIcon: { color: Colors.rose },
   tipRow: {
     backgroundColor: Colors.linen,
-    borderWidth: 1,
-    borderColor: Colors.border,
     borderRadius: 14,
     padding: 12,
     alignItems: "center",
@@ -435,14 +434,14 @@ const styles = StyleSheet.create({
   draftPill: {
     backgroundColor: Colors.linen,
     borderWidth: 1,
-    borderColor: Colors.honey,
+    borderColor: Colors.gold,
     borderRadius: 99,
     paddingHorizontal: 6,
     paddingVertical: 1,
   },
-  draftText: { fontFamily: Fonts.semiBold, fontSize: 10, color: Colors.honeyDeep },
-  unreadDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.terracotta },
-  readCheck: { fontSize: 16, color: Colors.forest },
+  draftText: { fontFamily: Fonts.semiBold, fontSize: 10, color: Colors.goldDeep },
+  unreadDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.sage },
+  readCheck: { fontSize: 16, color: Colors.coral },
   empty: { flex: 1, alignItems: "center", justifyContent: "center", paddingBottom: 60 },
   emptyEmoji: { fontSize: 48, marginBottom: 12 },
   emptyTitle: {

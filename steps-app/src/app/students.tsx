@@ -95,7 +95,7 @@ function GuardianPicker({ student, onDone }: { student: Student; onDone: () => v
               <Text style={styles.pickerEmail}>{parent.email}</Text>
             </View>
             {link.isPending && link.variables === parent.id ? (
-              <ActivityIndicator color={Colors.forest} />
+              <ActivityIndicator color={Colors.coral} />
             ) : (
               <Text style={styles.linkAction}>+ {t.students.link}</Text>
             )}
@@ -189,7 +189,7 @@ function StudentCard({ student }: { student: Student }) {
                     disabled={unlink.isPending}
                   >
                     {unlink.isPending && unlink.variables === guardian.id ? (
-                      <ActivityIndicator color={Colors.clay} />
+                      <ActivityIndicator color={Colors.rose} />
                     ) : (
                       <Text style={styles.unlink}>{t.students.unlink}</Text>
                     )}
@@ -219,7 +219,7 @@ function StudentCard({ student }: { student: Student }) {
               accessibilityLabel={t.students.delete}
             >
               {remove.isPending ? (
-                <ActivityIndicator color={Colors.clay} />
+                <ActivityIndicator color={Colors.rose} />
               ) : (
                 <Ionicons name="trash-outline" size={20} color={Colors.textLight} />
               )}
@@ -368,19 +368,17 @@ export default function StudentsScreen() {
 const styles = StyleSheet.create({
   parentTagRow: { flexDirection: "row", marginTop: 4 },
   parentTag: {
-    backgroundColor: Colors.honeyLight,
+    backgroundColor: Colors.goldLight,
     borderRadius: 8,
     paddingHorizontal: 8,
     paddingVertical: 2,
   },
-  parentTagText: { fontFamily: Fonts.semiBold, fontSize: 11, color: Colors.honeyDeep },
+  parentTagText: { fontFamily: Fonts.semiBold, fontSize: 11, color: Colors.goldDeep },
   flex: { flex: 1 },
   rowReverse: { flexDirection: "row-reverse" },
   addCard: {
     backgroundColor: Colors.linen,
     borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Colors.border,
     padding: 16,
   },
   addCardLabel: {
@@ -430,7 +428,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 14,
-    backgroundColor: Colors.terracotta,
+    backgroundColor: Colors.sage,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -439,18 +437,16 @@ const styles = StyleSheet.create({
     height: 48,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: Colors.forest,
+    borderColor: Colors.coral,
     alignItems: "center",
     justifyContent: "center",
     marginTop: 12,
   },
-  sendCodesText: { fontFamily: Fonts.semiBold, fontSize: 15, color: Colors.forest },
+  sendCodesText: { fontFamily: Fonts.semiBold, fontSize: 15, color: Colors.coral },
   list: { paddingTop: 4, paddingBottom: 32, gap: 12 },
   card: {
     backgroundColor: Colors.linen,
     borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Colors.border,
     padding: 16,
   },
   cardHeader: { flexDirection: "row", alignItems: "center", gap: 12, minHeight: 44 },
@@ -458,7 +454,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: `${Colors.terracotta}26`,
+    backgroundColor: `${Colors.sage}26`,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -492,9 +488,9 @@ const styles = StyleSheet.create({
   guardianRow: { flexDirection: "row", alignItems: "center", gap: 12 },
   guardianName: { fontFamily: Fonts.semiBold, fontSize: 16, lineHeight: 22, color: Colors.bark },
   guardianEmail: { fontFamily: Fonts.regular, fontSize: 13, lineHeight: 18, color: Colors.textLight },
-  unlink: { fontFamily: Fonts.regular, fontSize: 14, color: Colors.clay },
+  unlink: { fontFamily: Fonts.regular, fontSize: 14, color: Colors.rose },
   addGuardian: { marginTop: 12, minHeight: 44, justifyContent: "center" },
-  addGuardianText: { fontFamily: Fonts.semiBold, fontSize: 15, color: Colors.terracotta },
+  addGuardianText: { fontFamily: Fonts.semiBold, fontSize: 15, color: Colors.sage },
   picker: {
     marginTop: 12,
     backgroundColor: Colors.cream,
@@ -527,7 +523,7 @@ const styles = StyleSheet.create({
   },
   pickerName: { fontFamily: Fonts.semiBold, fontSize: 16, lineHeight: 22, color: Colors.bark },
   pickerEmail: { fontFamily: Fonts.regular, fontSize: 13, lineHeight: 18, color: Colors.textLight },
-  linkAction: { fontFamily: Fonts.semiBold, fontSize: 15, color: Colors.forest },
+  linkAction: { fontFamily: Fonts.semiBold, fontSize: 15, color: Colors.coral },
   pickerDone: { marginTop: 12 },
   muted: { fontFamily: Fonts.regular, fontSize: 13, color: Colors.textLight, paddingVertical: 8 },
 });

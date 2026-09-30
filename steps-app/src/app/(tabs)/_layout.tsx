@@ -26,11 +26,11 @@ const TAB_ORDER = ["index", "gallery", "profile"];
 const HIDDEN_TABS = ["games", "shop"];
 
 const TAB_GRADIENTS: Record<string, [string, string, string]> = {
-  index: [Colors.terracotta, Colors.clay, Colors.forest],
-  games: [Colors.forest, Colors.sky, Colors.terracotta],
-  shop: [Colors.honey, Colors.terracotta, Colors.clay],
-  gallery: [Colors.sky, Colors.forest, Colors.honey],
-  profile: [Colors.clay, Colors.honey, Colors.sky],
+  index: [Colors.sage, Colors.rose, Colors.coral],
+  games: [Colors.coral, Colors.blue, Colors.sage],
+  shop: [Colors.gold, Colors.sage, Colors.rose],
+  gallery: [Colors.blue, Colors.coral, Colors.gold],
+  profile: [Colors.rose, Colors.gold, Colors.blue],
 };
 
 function TabIcon({

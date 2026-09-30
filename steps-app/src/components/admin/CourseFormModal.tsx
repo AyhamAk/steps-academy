@@ -20,11 +20,11 @@ import { Touchable } from "../ui/Touchable";
 
 const EMOJI_CHOICES = ["🎓", "🏊", "✍️", "🔬", "🎨", "🎵", "⚽", "🧘", "🍪", "📖", "🧩", "🌿"];
 const COLOR_CHOICES = [
-  Colors.terracotta,
-  Colors.forest,
-  Colors.sky,
-  Colors.honey,
-  Colors.clay,
+  Colors.sage,
+  Colors.coral,
+  Colors.blue,
+  Colors.gold,
+  Colors.rose,
 ];
 
 type CourseFormModalProps = {
@@ -61,7 +61,7 @@ export function CourseFormModal({
   const [ageMin, setAgeMin] = useState("");
   const [ageMax, setAgeMax] = useState("");
   const [emoji, setEmoji] = useState("🎓");
-  const [accentColor, setAccentColor] = useState<string>(Colors.terracotta);
+  const [accentColor, setAccentColor] = useState<string>(Colors.sage);
   const [error, setError] = useState<string | null>(null);
 
   // Refill whenever the sheet opens, so editing never shows a stale course.
@@ -84,7 +84,7 @@ export function CourseFormModal({
     setAgeMin(course?.ageMinYears != null ? String(course.ageMinYears) : "");
     setAgeMax(course?.ageMaxYears != null ? String(course.ageMaxYears) : "");
     setEmoji(course?.emoji ?? "🎓");
-    setAccentColor(course?.accentColor ?? Colors.terracotta);
+    setAccentColor(course?.accentColor ?? Colors.sage);
     setError(null);
   }, [visible, course]);
 
@@ -454,9 +454,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   emojiTileActive: {
-    borderColor: Colors.terracotta,
+    borderColor: Colors.sage,
     borderWidth: 2.5,
-    backgroundColor: `${Colors.terracotta}18`,
+    backgroundColor: `${Colors.sage}18`,
   },
   emojiText: { fontSize: 21 },
   colorTile: {
@@ -495,7 +495,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.linen,
     alignItems: "center",
   },
-  dayTileActive: { backgroundColor: Colors.terracotta, borderColor: Colors.terracotta },
+  dayTileActive: { backgroundColor: Colors.sage, borderColor: Colors.sage },
   dayText: { fontFamily: Fonts.semiBold, fontSize: 12, color: Colors.bark },
   dayTextActive: { color: "#FFFFFF" },
   timeRow: { flexDirection: "row", alignItems: "center", gap: 8 },
@@ -505,7 +505,7 @@ const styles = StyleSheet.create({
   error: {
     fontFamily: Fonts.semiBold,
     fontSize: 13.5,
-    color: Colors.clay,
+    color: Colors.rose,
     marginTop: 14,
     textAlign: "center",
   },

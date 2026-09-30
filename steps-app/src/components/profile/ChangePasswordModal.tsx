@@ -180,7 +180,7 @@ const styles = StyleSheet.create({
   },
   error: {
     fontFamily: Fonts.semiBold,
-    color: Colors.clay,
+    color: Colors.rose,
     marginTop: 12,
     textAlign: "center",
   },

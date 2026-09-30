@@ -133,8 +133,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   faceActive: {
-    borderColor: Colors.terracotta,
-    backgroundColor: `${Colors.terracotta}1F`,
+    borderColor: Colors.sage,
+    backgroundColor: `${Colors.sage}1F`,
     transform: [{ scale: 1.06 }],
   },
   faceEmoji: { fontSize: 27 },
@@ -155,7 +155,7 @@ const styles = StyleSheet.create({
   error: {
     fontFamily: Fonts.semiBold,
     fontSize: 13,
-    color: Colors.clay,
+    color: Colors.rose,
     textAlign: "center",
     marginTop: 12,
   },

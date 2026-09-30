@@ -19,6 +19,7 @@ import { StepsHeader } from "../../components/ui/StepsHeader";
 import { SubTabSwitcher } from "../../components/ui/SubTabSwitcher";
 import { Touchable } from "../../components/ui/Touchable";
 import { Colors } from "../../constants/Colors";
+import { CornerLeafDecoration } from "../../components/ui/CornerLeafDecoration";
 import { Fonts } from "../../constants/Fonts";
 import { useTranslation } from "../../i18n/useTranslation";
 import {
@@ -174,6 +175,7 @@ export default function NurseryScreen() {
           ) : (
             <>
               <View style={styles.todayCard}>
+                <CornerLeafDecoration corner="bottom-end" />
                 {/* Separate nodes around the "·": composing one string from words,
                 a separator and digits lets the bidi algorithm move the
                 separator in Arabic. */}
@@ -337,9 +339,8 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   todayCard: {
-    backgroundColor: Colors.skyTint,
-    borderWidth: 1,
-    borderColor: Colors.sky,
+    overflow: "hidden",
+    backgroundColor: Colors.blueTint,
     borderRadius: 14,
     paddingVertical: 12,
     paddingHorizontal: 14,
@@ -349,7 +350,7 @@ const styles = StyleSheet.create({
   todayLabel: {
     fontFamily: Fonts.semiBold,
     fontSize: 11,
-    color: Colors.skyDeep,
+    color: Colors.blueDeep,
     letterSpacing: 0.5,
   },
   todayTitle: {
@@ -372,8 +373,6 @@ const styles = StyleSheet.create({
   },
   photosCard: {
     backgroundColor: Colors.linen,
-    borderWidth: 1,
-    borderColor: Colors.border,
     borderRadius: 14,
     paddingVertical: 12,
     paddingHorizontal: 14,
@@ -389,7 +388,7 @@ const styles = StyleSheet.create({
   photosCta: {
     fontFamily: Fonts.semiBold,
     fontSize: 12,
-    color: Colors.terracotta,
+    color: Colors.sage,
   },
   photosStrip: { flexDirection: "row", gap: 6, marginTop: 10 },
   // Fixed, not flex + aspectRatio: that combination let a portrait photo
@@ -402,14 +401,14 @@ const styles = StyleSheet.create({
   },
   photoImage: { width: 64, height: 64, borderRadius: 10 },
   countTile: {
-    backgroundColor: Colors.clayLight,
+    backgroundColor: Colors.roseLight,
     alignItems: "center",
     justifyContent: "center",
   },
   countTileText: {
     fontFamily: Fonts.semiBold,
     fontSize: 13,
-    color: Colors.clay,
+    color: Colors.rose,
   },
   sectionLabel: {
     fontFamily: Fonts.semiBold,

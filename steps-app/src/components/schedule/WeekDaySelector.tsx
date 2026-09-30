@@ -95,12 +95,12 @@ const styles = StyleSheet.create({
   // Today is marked with a border only — tinting the text as well as the
   // background made honey-on-honey, which read as the label disappearing.
   chipToday: {
-    borderColor: Colors.honey,
+    borderColor: Colors.gold,
     borderWidth: 2,
   },
   chipActive: {
-    backgroundColor: Colors.terracotta,
-    borderColor: Colors.terracotta,
+    backgroundColor: Colors.sage,
+    borderColor: Colors.sage,
   },
   dayName: {
     fontFamily: Fonts.semiBold,

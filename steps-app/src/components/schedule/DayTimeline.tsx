@@ -12,10 +12,10 @@ const DOT_CENTER = 11;
 
 /**
  * The rail has to carry the "sequence" meaning on a dim screen, and
- * Colors.border against the cream background is barely above 1:1. This is
- * the same hue family, several steps darker.
+ * Colors.border against the cream background is barely above 1:1. The leaf
+ * stem's sage-grey is several steps darker and belongs to the palette.
  */
-const RAIL_COLOR = "#C6B594";
+const RAIL_COLOR = Colors.leafStem;
 
 /**
  * Where the day has got to, drawn across the rail.
@@ -191,7 +191,7 @@ const styles = StyleSheet.create({
   // A tinted pill behind the next thing due, pulled out by its own padding so
   // the rail and the time column stay on the same grid as every other row.
   slotCurrent: {
-    backgroundColor: Colors.skyTint,
+    backgroundColor: Colors.blueTint,
     borderRadius: 12,
     paddingHorizontal: 8,
     marginHorizontal: -8,
@@ -233,8 +233,8 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
   },
   // Done, not disabled: the dot fills forest and the row keeps its contrast.
-  dotPast: { backgroundColor: Colors.forest, borderColor: Colors.forest },
-  dotCurrent: { backgroundColor: Colors.terracotta, borderColor: Colors.terracotta },
+  dotPast: { backgroundColor: Colors.coral, borderColor: Colors.coral },
+  dotCurrent: { backgroundColor: Colors.sage, borderColor: Colors.sage },
   slotBody: {
     flex: 1,
     flexDirection: "row",
@@ -253,7 +253,7 @@ const styles = StyleSheet.create({
     writingDirection: "auto",
   },
   nameCurrent: { fontFamily: Fonts.bold },
-  doneCheck: { color: Colors.forest, fontSize: 13, fontFamily: Fonts.bold },
+  doneCheck: { color: Colors.coral, fontSize: 13, fontFamily: Fonts.bold },
   duration: { ...Type.caption, color: Colors.textLight },
   // No alignItems and no padding of its own: the rail has to stretch the
   // full height of the row, exactly as it does on an activity row.
@@ -263,7 +263,7 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.semiBold,
     fontSize: 12,
     lineHeight: 20,
-    color: Colors.terracotta,
+    color: Colors.sage,
     writingDirection: "ltr",
     fontVariant: ["tabular-nums"],
   },
@@ -274,13 +274,13 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
     marginTop: DOT_CENTER - 4,
-    backgroundColor: Colors.terracotta,
+    backgroundColor: Colors.sage,
   },
   nowBody: { flex: 1, paddingBottom: 8 },
   nowLine: {
     height: 1,
     marginTop: DOT_CENTER - 0.5,
-    backgroundColor: Colors.terracotta,
+    backgroundColor: Colors.sage,
     opacity: 0.4,
   },
 });

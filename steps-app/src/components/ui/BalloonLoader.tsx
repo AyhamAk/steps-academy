@@ -15,9 +15,9 @@ import { Type } from "../../constants/Typography";
 import { useReduceMotionSetting } from "../../hooks/useReduceMotionSetting";
 
 const DOTS = [
-  { color: Colors.terracotta, left: "22%" as const, delay: 0 },
-  { color: Colors.forest, left: "72%" as const, delay: 500 },
-  { color: Colors.sky, left: "50%" as const, delay: 1000 },
+  { color: Colors.sage, left: "22%" as const, delay: 0 },
+  { color: Colors.coral, left: "72%" as const, delay: 500 },
+  { color: Colors.blue, left: "50%" as const, delay: 1000 },
 ];
 
 function FloatingDot({ color, left, delay, reduceMotion }: (typeof DOTS)[number] & { reduceMotion: boolean }) {
@@ -109,7 +109,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 68,
     borderRadius: 32,
-    backgroundColor: Colors.honey,
+    backgroundColor: Colors.gold,
     alignItems: "flex-start",
     justifyContent: "flex-start",
     overflow: "hidden",
@@ -126,7 +126,7 @@ const styles = StyleSheet.create({
   knot: {
     width: 8,
     height: 8,
-    backgroundColor: Colors.honey,
+    backgroundColor: Colors.gold,
     transform: [{ rotate: "45deg" }],
     marginTop: -4,
   },

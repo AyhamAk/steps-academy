@@ -51,14 +51,14 @@
           "image": "./assets/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#FFFDF8"
+          "backgroundColor": "#FBF6EC"
         }
       ],
       [
         "expo-notifications",
         {
           "icon": "./assets/android-icon-foreground.png",
-          "color": "#D4A843"
+          "color": "#D9A441"
         }
       ],
       [

@@ -270,7 +270,7 @@ export default function OnboardingScreen() {
               <Switch
                 value={hasConsented}
                 onValueChange={setHasConsented}
-                trackColor={{ true: Colors.forest, false: Colors.border }}
+                trackColor={{ true: Colors.coral, false: Colors.border }}
               />
               <Text style={[styles.switchLabel, rtlText]}>{t.invite.consentLabel}</Text>
             </View>
@@ -279,7 +279,7 @@ export default function OnboardingScreen() {
               <Switch
                 value={wantsNotifications}
                 onValueChange={setWantsNotifications}
-                trackColor={{ true: Colors.forest, false: Colors.border }}
+                trackColor={{ true: Colors.coral, false: Colors.border }}
               />
               <Text style={[styles.switchLabel, rtlText]}>{t.invite.notifyLabel}</Text>
             </View>
@@ -295,7 +295,7 @@ export default function OnboardingScreen() {
         ) : null}
 
         {isLoading && step === "finish" ? (
-          <ActivityIndicator color={Colors.terracotta} style={styles.spinner} />
+          <ActivityIndicator color={Colors.sage} style={styles.spinner} />
         ) : null}
 
         {message ? <Text style={styles.error}>{message}</Text> : null}
@@ -361,7 +361,7 @@ const styles = StyleSheet.create({
   primaryButton: { marginTop: 8 },
   secondaryButton: { marginTop: 12 },
   linkButton: { marginTop: 18, alignSelf: "center" },
-  link: { ...Type.body, color: Colors.terracotta, fontFamily: Fonts.bold },
+  link: { ...Type.body, color: Colors.sage, fontFamily: Fonts.bold },
   linkCentered: { textAlign: "center" },
   fieldLabel: {
     fontFamily: Fonts.semiBold,
@@ -373,7 +373,7 @@ const styles = StyleSheet.create({
   spinner: { marginTop: 16 },
   error: {
     ...Type.caption,
-    color: Colors.clay,
+    color: Colors.rose,
     textAlign: "center",
     marginTop: 16,
   },

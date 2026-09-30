@@ -71,5 +71,5 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: Colors.textLight,
   },
-  tabTextActive: { color: Colors.terracotta },
+  tabTextActive: { color: Colors.sage },
 });

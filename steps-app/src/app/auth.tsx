@@ -241,10 +241,10 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.regular,
     fontSize: 14,
   },
-  linkAccent: { color: Colors.terracotta, fontFamily: Fonts.bold },
+  linkAccent: { color: Colors.sage, fontFamily: Fonts.bold },
   error: {
     textAlign: "center",
-    color: Colors.clay,
+    color: Colors.rose,
     fontFamily: Fonts.semiBold,
   },
 });

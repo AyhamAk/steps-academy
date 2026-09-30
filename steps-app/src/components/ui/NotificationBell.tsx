@@ -83,7 +83,7 @@ export function NotificationBell() {
         <Ionicons
           name={unread > 0 ? "notifications" : "notifications-outline"}
           size={18}
-          color={unread > 0 ? Colors.terracotta : Colors.textLight}
+          color={unread > 0 ? Colors.sage : Colors.textLight}
         />
       </Animated.View>
       {unread > 0 ? (
@@ -116,7 +116,7 @@ const styles = StyleSheet.create({
     height: 19,
     borderRadius: 10,
     paddingHorizontal: 5,
-    backgroundColor: Colors.terracotta,
+    backgroundColor: Colors.sage,
     borderWidth: 2,
     borderColor: Colors.cream,
     alignItems: "center",

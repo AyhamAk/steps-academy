@@ -40,7 +40,7 @@ export type SlideVariant = "terracotta" | "forest" | "sky";
 
 const VARIANTS: Record<SlideVariant, Variant> = {
   terracotta: {
-    gradient: [Colors.terracottaDeep, Colors.terracotta, Colors.terracottaLight],
+    gradient: [Colors.sageDeep, Colors.sage, Colors.sageLight],
     butterfly: require("../../assets/logo-butterfly-1.png"),
     butterflySize: 78,
     butterflyRotation: "-16deg",
@@ -50,7 +50,7 @@ const VARIANTS: Record<SlideVariant, Variant> = {
     ],
   },
   forest: {
-    gradient: [Colors.forestDeep, Colors.forest, Colors.forestLight],
+    gradient: [Colors.coralDeep, Colors.coral, Colors.coralLight],
     butterfly: require("../../assets/logo-butterfly-3.png"),
     butterflySize: 66,
     butterflyRotation: "12deg",
@@ -60,7 +60,7 @@ const VARIANTS: Record<SlideVariant, Variant> = {
     ],
   },
   sky: {
-    gradient: [Colors.skyDeep, Colors.sky, Colors.skyLight],
+    gradient: [Colors.blueDeep, Colors.blue, Colors.blueLight],
     butterfly: require("../../assets/logo-butterfly-5.png"),
     butterflySize: 72,
     butterflyRotation: "-8deg",

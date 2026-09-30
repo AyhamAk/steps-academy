@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   chip: {
-    backgroundColor: `${Colors.forest}20`,
+    backgroundColor: `${Colors.coral}20`,
     borderRadius: 16,
     paddingHorizontal: 12,
     paddingVertical: 6,
@@ -177,7 +177,7 @@ const styles = StyleSheet.create({
   chipText: {
     fontFamily: Fonts.semiBold,
     fontSize: 13,
-    color: Colors.forest,
+    color: Colors.coral,
   },
   noTags: {
     fontFamily: Fonts.regular,

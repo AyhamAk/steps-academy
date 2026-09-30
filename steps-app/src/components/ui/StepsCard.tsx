@@ -2,27 +2,38 @@ import { PropsWithChildren, useRef } from "react";
 import { Animated, Pressable, StyleSheet, View, ViewStyle } from "react-native";
 
 import { Colors } from "../../constants/Colors";
+import { CornerLeafDecoration } from "./CornerLeafDecoration";
 
 export type CardElevation = "featured" | "regular" | "flat";
 
 type StepsCardProps = PropsWithChildren<{
   style?: ViewStyle;
   onPress?: () => void;
+  /** Kept for callers; the sage & gold style has no card shadows at all. */
   elevation?: CardElevation;
+  /** A leaf sprig in the bottom-end corner, away from where text starts. Off for dense lists and small rows. */
+  decorated?: boolean;
 }>;
 
-// Depth hierarchy: featured cards (hero, dashboard) sit higher; regular content
-// cards are the default; flat cards read as secondary (border only, no shadow).
+// Cards are a soft tint with no border and no shadow. The table stays so the
+// press lift still animates translateY without every caller changing.
 const SHADOWS: Record<
   CardElevation,
   { restOpacity: number; pressOpacity: number; restRadius: number; pressRadius: number; restElev: number; pressElev: number }
 > = {
-  featured: { restOpacity: 0.14, pressOpacity: 0.22, restRadius: 16, pressRadius: 22, restElev: 6, pressElev: 10 },
-  regular: { restOpacity: 0.06, pressOpacity: 0.18, restRadius: 10, pressRadius: 18, restElev: 2, pressElev: 8 },
+  featured: { restOpacity: 0, pressOpacity: 0, restRadius: 0, pressRadius: 0, restElev: 0, pressElev: 0 },
+  regular: { restOpacity: 0, pressOpacity: 0, restRadius: 0, pressRadius: 0, restElev: 0, pressElev: 0 },
   flat: { restOpacity: 0, pressOpacity: 0, restRadius: 0, pressRadius: 0, restElev: 0, pressElev: 0 },
 };
 
-export function StepsCard({ children, style, onPress, elevation = "regular" }: StepsCardProps) {
+export function StepsCard({
+  children,
+  style,
+  onPress,
+  elevation = "regular",
+  decorated = true,
+}: StepsCardProps) {
+  const leaves = decorated ? <CornerLeafDecoration corner="bottom-end" size="sm" /> : null;
   const lift = useRef(new Animated.Value(0)).current;
   const shadow = SHADOWS[elevation];
 
@@ -33,7 +44,12 @@ export function StepsCard({ children, style, onPress, elevation = "regular" }: S
   };
 
   if (!onPress) {
-    return <View style={[styles.card, restShadow, style]}>{children}</View>;
+    return (
+      <View style={[styles.card, restShadow, style]}>
+        {leaves}
+        {children}
+      </View>
+    );
   }
 
   const animateTo = (toValue: number) => {
@@ -49,7 +65,10 @@ export function StepsCard({ children, style, onPress, elevation = "regular" }: S
 
   return (
     <Pressable onPress={onPress} onPressIn={() => animateTo(1)} onPressOut={() => animateTo(0)}>
-      <Animated.View style={[styles.card, animatedCardStyle, style]}>{children}</Animated.View>
+      <Animated.View style={[styles.card, animatedCardStyle, style]}>
+        {leaves}
+        {children}
+      </Animated.View>
     </Pressable>
   );
 }
@@ -58,10 +77,8 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: Colors.card,
     borderRadius: 20,
-    borderWidth: 1,
-    borderColor: Colors.border,
     padding: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
+    // The sprig tucks into the corner rather than spilling past the radius.
+    overflow: "hidden",
   },
 });

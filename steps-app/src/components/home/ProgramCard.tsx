@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, View } from "react-native";
 
 import { Colors } from "../../constants/Colors";
+import { CornerLeafDecoration } from "../ui/CornerLeafDecoration";
 import { Fonts } from "../../constants/Fonts";
 import { useTranslation } from "../../i18n/useTranslation";
 
@@ -29,6 +30,7 @@ export function ProgramCard({
 
   return (
     <View style={styles.card}>
+      <CornerLeafDecoration corner="bottom-end" />
       <Text style={styles.title} maxFontSizeMultiplier={1.3}>
         {t.home.programLabel(childName)}
         {programName ? ` · ${programName}` : ""}
@@ -56,7 +58,7 @@ function Stat({
 }) {
   return (
     <View style={styles.col}>
-      <Ionicons name={icon} size={18} color={Colors.sky} />
+      <Ionicons name={icon} size={18} color={Colors.blue} />
       <Text style={styles.value} maxFontSizeMultiplier={1.3}>
         {value}
       </Text>
@@ -77,9 +79,8 @@ const styles = StyleSheet.create({
    * landed on the right in Arabic, where it was most visible.
    */
   card: {
-    backgroundColor: Colors.skyTint,
-    borderWidth: 1,
-    borderColor: Colors.sky,
+    overflow: "hidden",
+    backgroundColor: Colors.blueTint,
     borderRadius: 16,
     paddingVertical: 14,
     paddingHorizontal: 16,
@@ -88,7 +89,7 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: Fonts.semiBold,
     fontSize: 13,
-    color: Colors.skyDeep,
+    color: Colors.blueDeep,
     textAlign: "center",
     marginBottom: 12,
   },
@@ -110,7 +111,7 @@ const styles = StyleSheet.create({
   },
   divider: {
     width: 1,
-    backgroundColor: Colors.sky,
+    backgroundColor: Colors.blue,
     opacity: 0.35,
     marginHorizontal: 4,
   },

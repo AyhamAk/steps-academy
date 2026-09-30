@@ -127,8 +127,6 @@ const styles = StyleSheet.create({
     height: 100,
     backgroundColor: Colors.linen,
     borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Colors.border,
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
@@ -153,7 +151,7 @@ const styles = StyleSheet.create({
   },
   notifyButton: {
     borderWidth: 1.5,
-    borderColor: Colors.terracotta,
+    borderColor: Colors.sage,
     borderRadius: 50,
     paddingVertical: 14,
     paddingHorizontal: 28,
@@ -161,6 +159,6 @@ const styles = StyleSheet.create({
   notifyButtonText: {
     fontFamily: Fonts.bold,
     fontSize: 15,
-    color: Colors.terracotta,
+    color: Colors.sage,
   },
 });

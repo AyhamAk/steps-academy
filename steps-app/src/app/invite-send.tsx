@@ -117,7 +117,7 @@ export default function InviteSendScreen() {
         : t.invite.stateNotSent;
 
   const stateTint = (state: SendState) =>
-    state === "signedUp" ? Colors.forest : state === "waiting" ? Colors.honey : Colors.textLight;
+    state === "signedUp" ? Colors.coral : state === "waiting" ? Colors.gold : Colors.textLight;
 
   return (
     <Screen safeBottom>
@@ -209,8 +209,6 @@ const styles = StyleSheet.create({
   importCard: {
     backgroundColor: Colors.card,
     borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Colors.border,
     padding: 16,
     marginBottom: 16,
   },
@@ -236,17 +234,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: Colors.card,
     borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Colors.border,
     padding: 14,
     marginBottom: 10,
   },
   rowReverse: { flexDirection: "row-reverse" },
   childName: { fontFamily: Fonts.bold, fontSize: 15, color: Colors.text },
-  code: { fontFamily: Fonts.bold, fontSize: 14, letterSpacing: 2, color: Colors.terracotta, marginTop: 2 },
+  code: { fontFamily: Fonts.bold, fontSize: 14, letterSpacing: 2, color: Colors.sage, marginTop: 2 },
   state: { ...Type.caption, marginTop: 4 },
   sendButton: {
-    backgroundColor: Colors.forest,
+    backgroundColor: Colors.coral,
     borderRadius: 10,
     paddingVertical: 10,
     paddingHorizontal: 18,

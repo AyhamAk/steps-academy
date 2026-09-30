@@ -65,7 +65,7 @@ export function BirthDateField({
         >
           {selected ? formatBirthDate(selected, t) : t.invite.birthDatePlaceholder}
         </Text>
-        <Ionicons name="calendar-outline" size={18} color={Colors.terracotta} />
+        <Ionicons name="calendar-outline" size={18} color={Colors.sage} />
       </Touchable>
 
       {isOpen ? (
@@ -105,7 +105,7 @@ const styles = StyleSheet.create({
   doneText: {
     fontFamily: Fonts.bold,
     fontSize: 15,
-    color: Colors.terracotta,
+    color: Colors.sage,
     textAlign: "center",
   },
 });

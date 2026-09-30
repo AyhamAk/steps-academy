@@ -87,7 +87,7 @@ const styles = StyleSheet.create({
   },
   button: {
     borderWidth: 1.5,
-    borderColor: Colors.terracotta,
+    borderColor: Colors.sage,
     borderRadius: 50,
     paddingVertical: 12,
     paddingHorizontal: 28,
@@ -98,6 +98,6 @@ const styles = StyleSheet.create({
   buttonText: {
     fontFamily: Fonts.bold,
     fontSize: 15,
-    color: Colors.terracotta,
+    color: Colors.sage,
   },
 });

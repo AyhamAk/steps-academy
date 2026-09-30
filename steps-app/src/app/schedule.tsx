@@ -126,11 +126,11 @@ export default function ScheduleAdminScreen() {
                 <View
                   style={[
                     styles.accent,
-                    { backgroundColor: activity.accentColor ?? Colors.honey },
+                    { backgroundColor: activity.accentColor ?? Colors.gold },
                   ]}
                 />
                 <View style={[styles.cardRow, isRTL && styles.rowReverse]}>
-                  <IconTile tint={activity.accentColor ?? Colors.honey} size={40}>
+                  <IconTile tint={activity.accentColor ?? Colors.gold} size={40}>
                     <Text style={styles.emoji}>{activity.emoji}</Text>
                   </IconTile>
                   <View style={styles.flex}>
@@ -155,7 +155,7 @@ export default function ScheduleAdminScreen() {
                     style={styles.iconAction}
                     accessibilityLabel={t.scheduleAdmin.edit}
                   >
-                    <Ionicons name="pencil-outline" size={20} color={Colors.terracotta} />
+                    <Ionicons name="pencil-outline" size={20} color={Colors.sage} />
                   </Touchable>
                   <Touchable
                     onPress={() => confirmDelete(activity)}
@@ -164,7 +164,7 @@ export default function ScheduleAdminScreen() {
                     accessibilityLabel={t.scheduleAdmin.delete}
                   >
                     {remove.isPending && remove.variables === activity.id ? (
-                      <ActivityIndicator color={Colors.clay} />
+                      <ActivityIndicator color={Colors.rose} />
                     ) : (
                       <Ionicons name="trash-outline" size={20} color={Colors.textLight} />
                     )}
@@ -205,7 +205,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  dayTabActive: { backgroundColor: Colors.terracotta, borderColor: Colors.terracotta },
+  dayTabActive: { backgroundColor: Colors.sage, borderColor: Colors.sage },
   dayLabel: { fontSize: 14, fontFamily: Fonts.semiBold, color: Colors.textLight },
   dayLabelActive: { color: Colors.cream },
   dayDot: {
@@ -213,7 +213,7 @@ const styles = StyleSheet.create({
     height: 6,
     borderRadius: 3,
     marginTop: 6,
-    backgroundColor: Colors.terracotta,
+    backgroundColor: Colors.sage,
   },
   dayDotActive: { backgroundColor: Colors.cream },
   dayDotSpacer: { width: 6, height: 6, marginTop: 6 },
@@ -222,8 +222,6 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: Colors.linen,
     borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Colors.border,
     padding: 12,
     paddingStart: 16,
     minHeight: 68,

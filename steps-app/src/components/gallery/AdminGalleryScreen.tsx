@@ -45,7 +45,7 @@ import { ReviewGridModal } from "./ReviewGridModal";
 import { TagEditorModal } from "./TagEditorModal";
 import { UploadItem } from "./UploadProgressList";
 
-const EVENT_BORDER_COLORS = [Colors.terracotta, Colors.forest, Colors.sky, Colors.honey];
+const EVENT_BORDER_COLORS = [Colors.sage, Colors.coral, Colors.blue, Colors.gold];
 
 export function AdminGalleryScreen() {
   const { t, isRTL, rtlText } = useTranslation();
@@ -298,6 +298,7 @@ export function AdminGalleryScreen() {
             key={event.id}
             onPress={() => openEventForReview(event)}
             style={styles.eventCard}
+            decorated={false}
           >
             <View
               style={[
@@ -476,15 +477,13 @@ const styles = StyleSheet.create({
   quoteBox: {
     backgroundColor: Colors.linen,
     borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Colors.border,
     padding: 14,
     marginTop: 16,
   },
   quoteLabel: {
     fontFamily: Fonts.bold,
     fontSize: 12,
-    color: Colors.honey,
+    color: Colors.gold,
     letterSpacing: 0.4,
     textTransform: "uppercase",
     marginBottom: 8,
@@ -511,7 +510,7 @@ const styles = StyleSheet.create({
   },
   quoteCount: { ...Type.caption, fontSize: 11, color: Colors.textLight },
   quoteSave: {
-    backgroundColor: Colors.terracotta,
+    backgroundColor: Colors.sage,
     borderRadius: 10,
     paddingHorizontal: 18,
     paddingVertical: 8,

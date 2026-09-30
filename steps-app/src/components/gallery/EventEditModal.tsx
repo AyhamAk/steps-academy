@@ -227,7 +227,7 @@ const styles = StyleSheet.create({
   error: {
     fontFamily: Fonts.semiBold,
     fontSize: 13,
-    color: Colors.clay,
+    color: Colors.rose,
     textAlign: "center",
     marginTop: 16,
   },
@@ -238,5 +238,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  deleteText: { fontFamily: Fonts.regular, fontSize: 14, color: Colors.clay },
+  deleteText: { fontFamily: Fonts.regular, fontSize: 14, color: Colors.rose },
 });

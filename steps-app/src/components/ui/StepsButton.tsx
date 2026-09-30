@@ -30,8 +30,8 @@ type StepsButtonProps = {
   loading?: boolean;
   disabled?: boolean;
   /**
-   * Squared-off corners and no shadow — the bordered, shadow-free look of the
-   * sign-in and sign-up screens. Every other screen keeps the raised pill.
+   * Squared-off corners — the sign-in and sign-up screens. Every other screen
+   * keeps the pill.
    */
   flat?: boolean;
 };
@@ -144,12 +144,6 @@ export function StepsButton({
             paddingHorizontal: sizeStyle.paddingHorizontal,
             borderWidth: isOutline ? 1.5 : 0,
             borderColor: Colors.primary,
-            shadowOpacity: isOutline ? 0 : 0.2,
-            // Android ignores shadowOpacity and draws from elevation alone.
-            // On the outline button the fill is 5% terracotta, so that
-            // shadow showed straight through it as a second, lighter block
-            // inside the pill — the "box in a box".
-            elevation: isOutline ? 0 : 3,
           },
           flat && styles.flat,
           isInactive && styles.inactive,
@@ -225,18 +219,13 @@ const styles = StyleSheet.create({
     minHeight: 48,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: Colors.primary,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 3,
+    // No shadow: the sage & gold style is flat colour, no raised surfaces.
   },
   inactive: {
     opacity: 0.55,
   },
   flat: {
     borderRadius: 14,
-    shadowOpacity: 0,
-    elevation: 0,
   },
   rippleClip: {
     ...StyleSheet.absoluteFillObject,

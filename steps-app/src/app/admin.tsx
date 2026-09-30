@@ -57,7 +57,7 @@ export default function AdminScreen() {
       label: t.students.title,
       hint: t.admin.studentsHint,
       icon: "people-outline",
-      tint: Colors.honey,
+      tint: Colors.gold,
       route: "/students",
     },
     {
@@ -65,7 +65,7 @@ export default function AdminScreen() {
       label: t.coursesAdmin.title,
       hint: t.admin.coursesHint,
       icon: "school-outline",
-      tint: Colors.forest,
+      tint: Colors.coral,
       route: "/courses",
       badge: data?.pendingRequests,
     },
@@ -74,7 +74,7 @@ export default function AdminScreen() {
       label: t.courses.requestsTitle,
       hint: t.admin.requestsHint,
       icon: "clipboard-outline",
-      tint: Colors.clay,
+      tint: Colors.rose,
       route: "/course-requests",
     },
     {
@@ -82,7 +82,7 @@ export default function AdminScreen() {
       label: t.scheduleAdmin.title,
       hint: t.admin.scheduleHint,
       icon: "calendar-outline",
-      tint: Colors.honey,
+      tint: Colors.gold,
       route: "/schedule",
     },
     {
@@ -90,7 +90,7 @@ export default function AdminScreen() {
       label: t.admin.galleryLabel,
       hint: t.admin.galleryHint,
       icon: "images-outline",
-      tint: Colors.sky,
+      tint: Colors.blue,
       route: "/gallery",
     },
   ];
@@ -126,16 +126,16 @@ export default function AdminScreen() {
                 key: "students",
                 value: data?.students,
                 label: t.admin.statStudents,
-                tint: Colors.terracotta,
+                tint: Colors.sage,
               },
               {
                 key: "parents",
                 value: data?.parents,
                 label: t.admin.statParents,
-                tint: Colors.forest,
+                tint: Colors.coral,
               },
-              { key: "photos", value: data?.photos, label: t.admin.statPhotos, tint: Colors.sky },
-              { key: "events", value: data?.events, label: t.admin.statEvents, tint: Colors.honey },
+              { key: "photos", value: data?.photos, label: t.admin.statPhotos, tint: Colors.blue },
+              { key: "events", value: data?.events, label: t.admin.statEvents, tint: Colors.gold },
             ]}
           />
 
@@ -179,8 +179,6 @@ const styles = StyleSheet.create({
   alert: {
     backgroundColor: Colors.linen,
     borderRadius: 16,
-    borderWidth: 1.5,
-    borderColor: Colors.honey,
     padding: 16,
     marginTop: 8,
   },
@@ -198,8 +196,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: Colors.linen,
     borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Colors.border,
     padding: 16,
     marginTop: 12,
   },
@@ -216,8 +212,6 @@ const styles = StyleSheet.create({
   row: {
     backgroundColor: Colors.linen,
     borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Colors.border,
     paddingHorizontal: 14,
     marginBottom: 10,
   },
@@ -235,7 +229,7 @@ const styles = StyleSheet.create({
     height: 24,
     borderRadius: 12,
     paddingHorizontal: 7,
-    backgroundColor: Colors.clay,
+    backgroundColor: Colors.rose,
     alignItems: "center",
     justifyContent: "center",
   },

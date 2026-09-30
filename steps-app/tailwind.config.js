@@ -1,4 +1,5 @@
 /** @type {import('tailwindcss').Config} */
+// Kept in step with src/constants/Colors.ts — the sage & gold palette.
 module.exports = {
   content: [
     "./src/app/**/*.{js,jsx,ts,tsx}",
@@ -8,14 +9,15 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        bark: "#2C2416",
-        cream: "#FFFDF8",
-        linen: "#F5EFE4",
-        terracotta: "#E07A3A",
-        forest: "#5B8A5E",
-        honey: "#D4A843",
-        sky: "#7B9EC4",
-        clay: "#C4756A",
+        bark: "#2C2A24",
+        cream: "#FFFCF5",
+        linen: "#F6EEDF",
+        background: "#FBF6EC",
+        sage: "#4F8074",
+        gold: "#D9A441",
+        blue: "#4A90A4",
+        rose: "#C97B72",
+        coral: "#C15B45",
       },
     },
   },

@@ -76,6 +76,6 @@ const styles = StyleSheet.create({
   },
   action: {
     ...Type.caption,
-    color: Colors.terracotta,
+    color: Colors.sage,
   },
 });
