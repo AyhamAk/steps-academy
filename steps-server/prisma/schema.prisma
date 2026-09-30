@@ -456,3 +456,19 @@ model TipRead {
   @@id([tipId, userId])
   @@index([userId])
 }
+
+/// A sign-in code sent to a phone number by WhatsApp. Only a hash is kept, so
+/// a database leak does not leak live codes. Each code is single-use, expires
+/// after ten minutes and allows five guesses.
+model PhoneCode {
+  id         String    @id @default(uuid())
+  /// E.164, e.g. +972501234567
+  phone      String
+  codeHash   String
+  attempts   Int       @default(0)
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([phone, createdAt])
+}

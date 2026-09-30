@@ -27,8 +27,8 @@ const router = Router();
 // so it can't be used to sweep for valid codes.
 router.post("/invite/check", authRateLimit, checkInvite);
 router.post("/register", authRateLimit, register);
-// Phone sign-in. Each /phone/start sends a paid SMS, so it sits behind the
-// same limiter; Twilio also caps sends per number on its side.
+// Phone sign-in. Each /phone/start sends a paid WhatsApp message, so it sits behind the
+// same limiter, and phoneCodes caps sends per number on top.
 router.post("/phone/start", authRateLimit, startPhoneSignIn);
 router.post("/phone/verify", authRateLimit, verifyPhoneSignIn);
 router.post("/phone/register", authRateLimit, registerWithPhone);

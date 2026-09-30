@@ -31,10 +31,13 @@ export const env = {
   // A year: every sign-in costs an SMS, and a parent should not be asked for a
   // new code every month.
   jwtExpiresIn: process.env.JWT_EXPIRES_IN ?? "365d",
-  twilio: {
-    accountSid: process.env.TWILIO_ACCOUNT_SID ?? "",
-    authToken: process.env.TWILIO_AUTH_TOKEN ?? "",
-    verifyServiceSid: process.env.TWILIO_VERIFY_SERVICE_SID ?? "",
+  /** Meta WhatsApp Cloud API, for sign-in codes. */
+  whatsapp: {
+    token: process.env.WHATSAPP_TOKEN ?? "",
+    phoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID ?? "",
+    /** The approved Authentication template, created in Arabic, Hebrew and English. */
+    template: process.env.WHATSAPP_TEMPLATE ?? "steps_login_code",
+    apiVersion: process.env.WHATSAPP_API_VERSION ?? "v23.0",
   },
   /** One number app reviewers sign in with, using a fixed code and no SMS. */
   reviewPhone: process.env.REVIEW_PHONE ?? "",

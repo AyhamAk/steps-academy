@@ -4,14 +4,14 @@ import jwt from "jsonwebtoken";
 import { env } from "../config/env";
 import { InviteModel } from "../models/invite";
 import { UserModel } from "../models/user";
-import { checkSignInCode, sendSignInCode } from "../services/smsVerify";
+import { checkSignInCode, sendSignInCode } from "../services/phoneCodes";
 import { parseChildInput } from "../utils/childInput";
 import { signToken } from "../utils/jwt";
 import { toE164 } from "../utils/phone";
 import { validateInviteCode } from "./inviteController";
 
 /**
- * Phone sign-in: a number, an SMS code, and — the first time only — a name
+ * Phone sign-in: a number, a WhatsApp code, and — the first time only — a name
  * and a child. No email, no password.
  *
  *   POST /phone/start     { phone }              → code sent
@@ -52,6 +52,12 @@ export async function startPhoneSignIn(req: Request, res: Response) {
   const locale = typeof req.body?.locale === "string" ? req.body.locale : undefined;
   const result = await sendSignInCode(phone, locale);
   if (!result.ok) {
+    if (result.reason === "too_soon") {
+      return res.status(429).json({ message: "Please wait 30 seconds before asking for another code." });
+    }
+    if (result.reason === "too_many") {
+      return res.status(429).json({ message: "Too many codes for this number. Please try again in an hour." });
+    }
     return res
       .status(result.reason === "not_configured" ? 503 : 502)
       .json({ message: "We couldn't send the code right now. Please try again in a minute." });
