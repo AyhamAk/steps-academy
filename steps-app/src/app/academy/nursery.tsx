@@ -19,7 +19,7 @@ import { StepsHeader } from "../../components/ui/StepsHeader";
 import { SubTabSwitcher } from "../../components/ui/SubTabSwitcher";
 import { Touchable } from "../../components/ui/Touchable";
 import { Colors } from "../../constants/Colors";
-import { CornerLeafDecoration } from "../../components/ui/CornerLeafDecoration";
+import { CardWash } from "../../components/ui/CardWash";
 import { Fonts } from "../../constants/Fonts";
 import { useTranslation } from "../../i18n/useTranslation";
 import {
@@ -175,7 +175,7 @@ export default function NurseryScreen() {
           ) : (
             <>
               <View style={styles.todayCard}>
-                <CornerLeafDecoration corner="bottom-end" size="md" />
+                <CardWash index={2} />
                 {/* Separate nodes around the "·": composing one string from words,
                 a separator and digits lets the bidi algorithm move the
                 separator in Arabic. */}

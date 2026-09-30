@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, View } from "react-native";
 
 import { Colors } from "../../constants/Colors";
-import { CornerLeafDecoration } from "../ui/CornerLeafDecoration";
+import { CardWash } from "../ui/CardWash";
 import { Fonts } from "../../constants/Fonts";
 import { useTranslation } from "../../i18n/useTranslation";
 
@@ -30,7 +30,7 @@ export function ProgramCard({
 
   return (
     <View style={styles.card}>
-      <CornerLeafDecoration corner="bottom-end" size="md" />
+      <CardWash index={1} />
       <Text style={styles.title} maxFontSizeMultiplier={1.3}>
         {t.home.programLabel(childName)}
         {programName ? ` · ${programName}` : ""}

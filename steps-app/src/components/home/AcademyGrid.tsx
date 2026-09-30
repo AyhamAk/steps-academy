@@ -3,7 +3,7 @@ import { useRouter } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
 
 import { Colors } from "../../constants/Colors";
-import { CornerLeafDecoration } from "../ui/CornerLeafDecoration";
+import { CardWash } from "../ui/CardWash";
 import { Fonts } from "../../constants/Fonts";
 import { Type } from "../../constants/Typography";
 import { useTranslation } from "../../i18n/useTranslation";
@@ -75,7 +75,7 @@ export function AcademyGrid() {
     <View style={styles.section}>
       <SectionLabel label={t.home.academySectionTitle} centered />
       <View style={styles.grid}>
-        {tiles.map((tile) => (
+        {tiles.map((tile, index) => (
           <Touchable
             key={tile.key}
             accessibilityLabel={tile.title}
@@ -85,7 +85,7 @@ export function AcademyGrid() {
               router.push(tile.href as never);
             }}
           >
-            <CornerLeafDecoration corner="bottom-end" />
+            <CardWash index={index} />
             <View style={styles.tileTop}>
               <IconTile tint={tile.tint} size={44}>
                 <Ionicons name={tile.icon} size={23} color={tile.tint} />

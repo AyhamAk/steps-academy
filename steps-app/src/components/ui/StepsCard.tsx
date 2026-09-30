@@ -2,7 +2,7 @@ import { PropsWithChildren, useRef } from "react";
 import { Animated, Pressable, StyleSheet, View, ViewStyle } from "react-native";
 
 import { Colors } from "../../constants/Colors";
-import { CornerLeafDecoration } from "./CornerLeafDecoration";
+import { CardWash } from "./CardWash";
 
 export type CardElevation = "featured" | "regular" | "flat";
 
@@ -11,8 +11,10 @@ type StepsCardProps = PropsWithChildren<{
   onPress?: () => void;
   /** Kept for callers; the sage & gold style has no card shadows at all. */
   elevation?: CardElevation;
-  /** A leaf sprig in the bottom-end corner, away from where text starts. Off for dense lists and small rows. */
+  /** A soft wash in the bottom-end corner. Off for dense lists and small rows. */
   decorated?: boolean;
+  /** Which of the wash variants, so neighbouring cards differ. */
+  washIndex?: number;
 }>;
 
 // Cards are a soft tint with no border and no shadow. The table stays so the
@@ -32,8 +34,9 @@ export function StepsCard({
   onPress,
   elevation = "regular",
   decorated = true,
+  washIndex = 0,
 }: StepsCardProps) {
-  const leaves = decorated ? <CornerLeafDecoration corner="bottom-end" size="sm" /> : null;
+  const leaves = decorated ? <CardWash index={washIndex} /> : null;
   const lift = useRef(new Animated.Value(0)).current;
   const shadow = SHADOWS[elevation];
 

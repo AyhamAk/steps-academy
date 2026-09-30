@@ -3,6 +3,7 @@ import { View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { ErrorBoundary } from "./ErrorBoundary";
+import { useTranslation } from "../i18n/useTranslation";
 import { CornerLeafDecoration } from "./ui/CornerLeafDecoration";
 
 type ScreenProps = PropsWithChildren<{
@@ -21,15 +22,19 @@ type ScreenProps = PropsWithChildren<{
 
 export function Screen({ children, safeBottom = false, decorated = true }: ScreenProps) {
   const insets = useSafeAreaInsets();
+  const { isRTL } = useTranslation();
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["top", "left", "right"]}>
       {/* The screen-level branch. It lives here, not in a header, because only
           here can it run off the screen's own top and side edges: everything
           below sits inside 24pt padding and a scroll view that clips.
-          Top-start is the corner opposite the bell and the header actions, and
-          it is drawn first, so the greeting and all content paint over it. */}
-      {decorated ? <CornerLeafDecoration corner="top-start" size="xl" bleed={18} /> : null}
+          Always the physical top-left, in every language, as in the design
+          reference: in Arabic that is opposite the greeting. Drawn first, so
+          the greeting and all content paint over it. */}
+      {decorated ? (
+        <CornerLeafDecoration corner={isRTL ? "top-end" : "top-start"} size="xl" bleed={18} />
+      ) : null}
       <View
         className="flex-1 px-6 pt-4"
         style={safeBottom ? { paddingBottom: insets.bottom } : undefined}

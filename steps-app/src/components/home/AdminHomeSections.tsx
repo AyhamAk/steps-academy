@@ -4,7 +4,7 @@ import { router } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
 
 import { Colors } from "../../constants/Colors";
-import { CornerLeafDecoration } from "../ui/CornerLeafDecoration";
+import { CardWash } from "../ui/CardWash";
 import { CountBadge } from "../ui/CountBadge";
 import { Fonts } from "../../constants/Fonts";
 import { useLayout } from "../../hooks/useLayout";
@@ -166,7 +166,6 @@ export function AdminHomeSections() {
           // One plain card, the counts on sage chips — when four things are
           // outlined at once, none of them reads as urgent.
           <View style={styles.card}>
-            <CornerLeafDecoration corner="bottom-end" size="md" />
             {alerts.map((alert, index) => (
               <AlertRow
                 key={alert.key}
@@ -184,13 +183,14 @@ export function AdminHomeSections() {
       <View style={styles.section}>
         <SectionLabel label={t.adminHome.quickTitle} />
         <View style={[styles.actionGrid, isRTL && styles.actionGridRTL, { gap: cardGap }]}>
-          {actions.map((action) => (
+          {actions.map((action, index) => (
             <Touchable
               key={action.key}
               accessibilityLabel={action.label}
               style={styles.actionTile}
               onPress={() => router.push(action.route as never)}
             >
+              <CardWash index={index} />
               <IconTile tint={action.tint} size={40}>
                 <Ionicons name={action.icon} size={21} color={action.tint} />
               </IconTile>
@@ -285,6 +285,7 @@ const styles = StyleSheet.create({
     flexDirection: "row-reverse",
   },
   actionTile: {
+    overflow: "hidden",
     // Two per row, as a percentage rather than a measured width. Measuring
     // was tried twice and failed both times: the seed guessed the container
     // from `gutter * 2` = 40px while Screen actually applies `px-6` = 48px,

@@ -11,7 +11,7 @@ import SectionLabel from "../../components/ui/SectionLabel";
 import { SkeletonBlock } from "../../components/ui/Skeleton";
 import { StepsHeader } from "../../components/ui/StepsHeader";
 import { Colors } from "../../constants/Colors";
-import { CornerLeafDecoration } from "../../components/ui/CornerLeafDecoration";
+import { CardWash } from "../../components/ui/CardWash";
 import { Fonts } from "../../constants/Fonts";
 import { useTranslation } from "../../i18n/useTranslation";
 import {
@@ -168,7 +168,7 @@ export default function ParentingTipsScreen() {
 
             {featured ? (
               <View style={styles.featuredCard}>
-                <CornerLeafDecoration corner="bottom-end" size="md" />
+                <CardWash index={1} />
                 <View style={[styles.featuredBadgeRow, { flexDirection: rowDirection }]}>
                   <View style={styles.monthPill}>
                     <Text style={styles.monthPillText} maxFontSizeMultiplier={1.2}>

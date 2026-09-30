@@ -19,7 +19,7 @@ import { StepsCard } from "../../components/ui/StepsCard";
 import { ToastBanner, useToast } from "../../components/ui/Toast";
 import { API_BASE_URL } from "../../services/api";
 import { Colors } from "../../constants/Colors";
-import { CornerLeafDecoration } from "../../components/ui/CornerLeafDecoration";
+import { CardWash } from "../../components/ui/CardWash";
 import { Fonts } from "../../constants/Fonts";
 import { Type } from "../../constants/Typography";
 import { useAuth } from "../../hooks/useAuth";
@@ -246,7 +246,7 @@ export default function ProfileScreen() {
 
             {selectedChildId ? (
               <View style={styles.dashCard}>
-                <CornerLeafDecoration corner="bottom-end" />
+                <CardWash index={0} />
                 <View style={styles.dashRowWrap}>
                   <View style={styles.dashAccent} />
                   <View style={styles.dashBody}>
