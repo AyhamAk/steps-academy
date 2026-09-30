@@ -12,6 +12,18 @@ export function formatEventDate(date: Date, t: Translations): string {
   return `${t.common.weekdays[date.getDay()]}, ${t.common.months[date.getMonth()]} ${date.getDate()}`;
 }
 
+/** "12 March 2022" / "12 مارس 2022" — a birthday needs the year, an event doesn't. */
+export function formatBirthDate(date: Date, t: Translations): string {
+  return `${date.getDate()} ${t.common.months[date.getMonth()]} ${date.getFullYear()}`;
+}
+
+/** "2022-03-12" from a local calendar date — the inverse of parseIsoDate. */
+export function toIsoDate(date: Date): string {
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${date.getFullYear()}-${month}-${day}`;
+}
+
 export function formatIsoDate(iso: string, t: Translations): string {
   return formatEventDate(parseIsoDate(iso), t);
 }

@@ -29,6 +29,11 @@ type StepsButtonProps = {
   /** Shows a spinner in place of the label and blocks repeat taps. */
   loading?: boolean;
   disabled?: boolean;
+  /**
+   * Squared-off corners and no shadow — the bordered, shadow-free look of the
+   * sign-in and sign-up screens. Every other screen keeps the raised pill.
+   */
+  flat?: boolean;
 };
 
 const SIZE_STYLES: Record<Size, { paddingVertical: number; paddingHorizontal: number; fontSize: number }> = {
@@ -48,6 +53,7 @@ export function StepsButton({
   shimmerOnMount = false,
   loading = false,
   disabled = false,
+  flat = false,
 }: StepsButtonProps) {
   const reduceMotion = useReduceMotionSetting();
   const isInactive = loading || disabled;
@@ -71,7 +77,8 @@ export function StepsButton({
   // logout button uses 16) otherwise got a fully rounded layer inside a
   // near-square one, which reads as a second box drawn inside the button.
   const flatStyle = StyleSheet.flatten(style) ?? {};
-  const radius = typeof flatStyle.borderRadius === "number" ? flatStyle.borderRadius : 50;
+  const radius =
+    typeof flatStyle.borderRadius === "number" ? flatStyle.borderRadius : flat ? 14 : 50;
 
   const isOutline = variant === "outline";
   const backgroundColor = isOutline
@@ -144,6 +151,7 @@ export function StepsButton({
             // inside the pill — the "box in a box".
             elevation: isOutline ? 0 : 3,
           },
+          flat && styles.flat,
           isInactive && styles.inactive,
           style,
         ]}
@@ -224,6 +232,11 @@ const styles = StyleSheet.create({
   },
   inactive: {
     opacity: 0.55,
+  },
+  flat: {
+    borderRadius: 14,
+    shadowOpacity: 0,
+    elevation: 0,
   },
   rippleClip: {
     ...StyleSheet.absoluteFillObject,

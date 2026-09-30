@@ -11,12 +11,9 @@ import {
 
 import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
 import { Screen } from "../components/Screen";
-import {
-  BirthDateInput,
-  BirthDateParts,
-  EMPTY_BIRTH_DATE,
-  toIsoBirthDate,
-} from "../components/ui/BirthDateInput";
+import { AuthTextField } from "../components/auth/AuthTextField";
+import { BirthDateField } from "../components/auth/BirthDateField";
+import { StepProgressHeader } from "../components/auth/StepProgressHeader";
 import { StepsButton } from "../components/ui/StepsButton";
 import { StepsLogo } from "../components/ui/StepsLogo";
 import { Touchable } from "../components/ui/Touchable";
@@ -30,6 +27,15 @@ import { checkInviteCode } from "../services/inviteApi";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MIN_PASSWORD_LENGTH = 8;
+
+/**
+ * "abcd1234" -> "ABCD-1234" as it is typed, so nobody has to find the dash.
+ * The server ignores case and dashes anyway; this is only for the eye.
+ */
+function formatInviteCode(raw: string): string {
+  const chars = raw.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8);
+  return chars.length > 4 ? `${chars.slice(0, 4)}-${chars.slice(4)}` : chars;
+}
 
 type Step = "code" | "child" | "details" | "finish";
 
@@ -57,7 +63,7 @@ export default function OnboardingScreen() {
   const [isChecking, setIsChecking] = useState(false);
 
   const [ownChildName, setOwnChildName] = useState("");
-  const [birthDate, setBirthDate] = useState<BirthDateParts>(EMPTY_BIRTH_DATE);
+  const [birthDate, setBirthDate] = useState<string | null>(null);
 
   const steps: Step[] =
     mode === "code" ? ["code", "details", "finish"] : ["code", "child", "details", "finish"];
@@ -89,7 +95,7 @@ export default function OnboardingScreen() {
 
   const handleChild = () => {
     if (!ownChildName.trim()) return setFormError(t.invite.childNameRequired);
-    if (!toIsoBirthDate(birthDate)) return setFormError(t.invite.birthDateInvalid);
+    if (!birthDate) return setFormError(t.invite.birthDateInvalid);
     setFormError(null);
     track("onboarding_step_completed", { step: "child" });
     setStep("details");
@@ -129,7 +135,7 @@ export default function OnboardingScreen() {
     if (!hasConsented) return setFormError(t.invite.consentRequired);
     setFormError(null);
     track("onboarding_step_completed", { step: "consent" });
-    const birthDateIso = toIsoBirthDate(birthDate);
+    const birthDateIso = birthDate;
     const ok = await register({
       name: name.trim(),
       email: email.trim(),
@@ -152,8 +158,12 @@ export default function OnboardingScreen() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        <StepsLogo />
-        <Text style={styles.stepLabel}>{t.invite.stepOf(stepIndex + 1, steps.length)}</Text>
+        <StepProgressHeader
+          totalSteps={steps.length}
+          currentStep={stepIndex + 1}
+          onBack={goBack}
+        />
+        <StepsLogo maxWidth={100} />
 
         {step === "code" ? (
           <>
@@ -164,7 +174,7 @@ export default function OnboardingScreen() {
               placeholder={t.invite.codePlaceholder}
               placeholderTextColor={Colors.textLight}
               value={code}
-              onChangeText={setCode}
+              onChangeText={(text) => setCode(formatInviteCode(text))}
               autoCapitalize="characters"
               autoCorrect={false}
               maxLength={9}
@@ -180,10 +190,15 @@ export default function OnboardingScreen() {
               onPress={handleCheckCode}
               loading={isChecking}
               style={styles.primaryButton}
+              flat
             />
-            <Touchable onPress={startWithoutCode} style={styles.linkButton}>
-              <Text style={[styles.link, styles.linkCentered]}>{t.invite.noCode}</Text>
-            </Touchable>
+            <StepsButton
+              label={t.invite.noCode}
+              onPress={startWithoutCode}
+              variant="outline"
+              style={styles.secondaryButton}
+              flat
+            />
           </>
         ) : null}
 
@@ -191,20 +206,18 @@ export default function OnboardingScreen() {
           <>
             <Text style={[styles.title, rtlText]}>{t.invite.childTitle}</Text>
             <Text style={[styles.subtitle, rtlText]}>{t.invite.childSubtitle}</Text>
-            <TextInput
-              style={[styles.input, rtlText]}
-              placeholder={t.invite.childNamePlaceholder}
-              placeholderTextColor={Colors.textLight}
+            <AuthTextField
+              label={t.invite.childNamePlaceholder}
               value={ownChildName}
               onChangeText={setOwnChildName}
               maxLength={60}
             />
-            <Text style={[styles.fieldLabel, rtlText]}>{t.invite.birthDateLabel}</Text>
-            <BirthDateInput value={birthDate} onChange={setBirthDate} />
+            <BirthDateField value={birthDate} onChange={setBirthDate} />
             <StepsButton
               label={t.invite.checkCode}
               onPress={handleChild}
               style={styles.primaryButton}
+              flat
             />
           </>
         ) : null}
@@ -221,26 +234,16 @@ export default function OnboardingScreen() {
             ) : null}
 
             <Text style={[styles.sectionLabel, rtlText]}>{t.invite.yourDetailsTitle}</Text>
-            <TextInput
-              style={styles.input}
-              placeholder={t.auth.namePlaceholder}
-              placeholderTextColor={Colors.textLight}
-              value={name}
-              onChangeText={setName}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder={t.auth.emailPlaceholder}
-              placeholderTextColor={Colors.textLight}
+            <AuthTextField label={t.auth.namePlaceholder} value={name} onChangeText={setName} />
+            <AuthTextField
+              label={t.auth.emailPlaceholder}
               value={email}
               onChangeText={setEmail}
               autoCapitalize="none"
               keyboardType="email-address"
             />
-            <TextInput
-              style={styles.input}
-              placeholder={t.auth.passwordPlaceholder}
-              placeholderTextColor={Colors.textLight}
+            <AuthTextField
+              label={t.auth.passwordPlaceholder}
               value={password}
               onChangeText={setPassword}
               secureTextEntry
@@ -249,6 +252,7 @@ export default function OnboardingScreen() {
               label={t.invite.checkCode}
               onPress={handleDetails}
               style={styles.primaryButton}
+              flat
             />
             {mode === "code" ? (
               <Touchable onPress={goBack} style={styles.linkButton}>
@@ -285,6 +289,7 @@ export default function OnboardingScreen() {
               onPress={handleCreate}
               loading={isLoading}
               style={styles.primaryButton}
+              flat
             />
           </>
         ) : null}
@@ -295,12 +300,6 @@ export default function OnboardingScreen() {
 
         {message ? <Text style={styles.error}>{message}</Text> : null}
 
-        {/* The code path's details step has its own "not my child" back link. */}
-        {!(step === "details" && mode === "code") ? (
-          <Touchable onPress={goBack} style={styles.linkButton}>
-            <Text style={styles.link}>{t.common.back}</Text>
-          </Touchable>
-        ) : null}
       </KeyboardAwareScrollView>
     </Screen>
   );
@@ -360,6 +359,7 @@ const styles = StyleSheet.create({
   },
   switchLabel: { ...Type.body, color: Colors.text, flex: 1 },
   primaryButton: { marginTop: 8 },
+  secondaryButton: { marginTop: 12 },
   linkButton: { marginTop: 18, alignSelf: "center" },
   link: { ...Type.body, color: Colors.terracotta, fontFamily: Fonts.bold },
   linkCentered: { textAlign: "center" },

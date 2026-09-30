@@ -9,12 +9,7 @@ import { useTranslation } from "../../i18n/useTranslation";
 import { meRequest } from "../../services/authApi";
 import { addMyChild } from "../../services/studentsApi";
 import { useAuthStore } from "../../store/authStore";
-import {
-  BirthDateInput,
-  BirthDateParts,
-  EMPTY_BIRTH_DATE,
-  toIsoBirthDate,
-} from "../ui/BirthDateInput";
+import { BirthDateField } from "../auth/BirthDateField";
 import { StepsButton } from "../ui/StepsButton";
 import { Touchable } from "../ui/Touchable";
 
@@ -37,20 +32,20 @@ export function AddChildModal({
   const token = useAuthStore((state) => state.token);
   const setSession = useAuthStore((state) => state.setSession);
   const [name, setName] = useState("");
-  const [birthDate, setBirthDate] = useState<BirthDateParts>(EMPTY_BIRTH_DATE);
+  const [birthDate, setBirthDate] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
   const close = () => {
     setName("");
-    setBirthDate(EMPTY_BIRTH_DATE);
+    setBirthDate(null);
     setError(null);
     onClose();
   };
 
   const handleSave = async () => {
     if (!name.trim()) return setError(t.invite.childNameRequired);
-    const iso = toIsoBirthDate(birthDate);
+    const iso = birthDate;
     if (!iso) return setError(t.invite.birthDateInvalid);
     setIsSaving(true);
     setError(null);
@@ -97,8 +92,7 @@ export function AddChildModal({
             maxLength={60}
           />
 
-          <Text style={[styles.label, rtlText]}>{t.invite.birthDateLabel}</Text>
-          <BirthDateInput
+          <BirthDateField
             value={birthDate}
             onChange={(v) => {
               setBirthDate(v);

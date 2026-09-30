@@ -3,17 +3,11 @@ import * as Google from "expo-auth-session/providers/google";
 import { router } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import { PropsWithChildren, useEffect, useRef, useState } from "react";
-import {
-  Animated,
-  StyleSheet,
-  Text,
-  TextInput,
-  TextInputProps,
-  View,
-} from "react-native";
+import { Animated, StyleSheet, Text, View } from "react-native";
 
 import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
 import { Screen } from "../components/Screen";
+import { AuthTextField } from "../components/auth/AuthTextField";
 import { StepsButton } from "../components/ui/StepsButton";
 import { LanguagePicker } from "../components/ui/LanguagePicker";
 import { StepsLogo } from "../components/ui/StepsLogo";
@@ -55,56 +49,23 @@ function AnimatedPanel({ children }: PropsWithChildren) {
   return <Animated.View style={{ opacity, transform: [{ translateY }] }}>{children}</Animated.View>;
 }
 
-function AuthInput({ trailing, ...props }: TextInputProps & { trailing?: React.ReactNode }) {
-  const { isRTL } = useTranslation();
-  const focusAnim = useRef(new Animated.Value(0)).current;
-
-  return (
-    <View style={styles.inputWrapper}>
-      <TextInput
-        {...props}
-        onFocus={(e) => {
-          Animated.timing(focusAnim, { toValue: 1, duration: 200, useNativeDriver: false }).start();
-          props.onFocus?.(e);
-        }}
-        onBlur={(e) => {
-          Animated.timing(focusAnim, { toValue: 0, duration: 200, useNativeDriver: false }).start();
-          props.onBlur?.(e);
-        }}
-        style={[styles.input, trailing ? styles.inputWithTrailing : null]}
-      />
-      {trailing ? <View style={styles.trailing}>{trailing}</View> : null}
-      <Animated.View
-        style={[
-          styles.inputUnderline,
-          {
-            transform: [{ scaleX: focusAnim }],
-            transformOrigin: isRTL ? "right" : "left",
-          },
-        ]}
-      />
-    </View>
-  );
-}
-
 /** Password field with a reveal toggle — typing a password blind is the
  *  single most common reason a correct password gets rejected. */
-function PasswordInput({
+function PasswordField({
+  label,
   value,
   onChangeText,
-  placeholder,
 }: {
+  label: string;
   value: string;
   onChangeText: (value: string) => void;
-  placeholder: string;
 }) {
   const { t } = useTranslation();
   const [isVisible, setIsVisible] = useState(false);
 
   return (
-    <AuthInput
-      placeholder={placeholder}
-      placeholderTextColor={Colors.textLight}
+    <AuthTextField
+      label={label}
       value={value}
       onChangeText={onChangeText}
       secureTextEntry={!isVisible}
@@ -113,12 +74,12 @@ function PasswordInput({
       trailing={
         <Touchable
           onPress={() => setIsVisible((previous) => !previous)}
-          hitSlop={10}
+          style={styles.eye}
           accessibilityLabel={isVisible ? t.auth.hidePassword : t.auth.showPassword}
         >
           <Ionicons
             name={isVisible ? "eye-off-outline" : "eye-outline"}
-            size={21}
+            size={18}
             color={Colors.textLight}
           />
         </Touchable>
@@ -178,6 +139,7 @@ export default function AuthScreen() {
         label={t.auth.continueWithGoogle}
         onPress={() => promptAsync()}
         variant="outline"
+        flat
       />
     </>
   );
@@ -189,16 +151,14 @@ export default function AuthScreen() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        <StepsLogo />
+        {/* A mark, not a hero: at full size it pushed the form below the fold. */}
+        <StepsLogo maxWidth={140} />
 
         {mode === "login" ? (
           <AnimatedPanel>
             <View style={styles.stack}>
-              <Text style={styles.heading}>{t.auth.signInHeading}</Text>
-
-              <AuthInput
-                placeholder={t.auth.emailPlaceholder}
-                placeholderTextColor={Colors.textLight}
+              <AuthTextField
+                label={t.auth.emailPlaceholder}
                 value={email}
                 onChangeText={(v) => {
                   setEmail(v);
@@ -208,8 +168,8 @@ export default function AuthScreen() {
                 autoCorrect={false}
                 keyboardType="email-address"
               />
-              <PasswordInput
-                placeholder={t.auth.passwordPlaceholder}
+              <PasswordField
+                label={t.auth.passwordPlaceholder}
                 value={password}
                 onChangeText={(v) => {
                   setPassword(v);
@@ -219,7 +179,7 @@ export default function AuthScreen() {
 
               {message ? <Text style={styles.error}>{message}</Text> : null}
 
-              <StepsButton label={t.auth.signIn} onPress={handleLogin} loading={isLoading} />
+              <StepsButton label={t.auth.signIn} onPress={handleLogin} loading={isLoading} flat />
 
               {GOOGLE_SIGN_IN_ENABLED ? googleBlock : null}
 
@@ -247,48 +207,11 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   stack: {
-    marginTop: 20,
-    gap: 12,
+    marginTop: 12,
+    gap: 4,
   },
-  heading: {
-    fontFamily: Fonts.extraBold,
-    fontSize: 22,
-    color: Colors.bark,
-    textAlign: "center",
-    marginBottom: 4,
-  },
-  inputWrapper: {
-    position: "relative",
-    justifyContent: "center",
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: Colors.border,
-    backgroundColor: Colors.card,
-    borderRadius: 14,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontFamily: Fonts.regular,
-    fontSize: 15,
-    color: Colors.text,
-  },
-  // Room for the reveal toggle so long passwords never run under it.
-  inputWithTrailing: { paddingEnd: 48 },
-  trailing: {
-    position: "absolute",
-    end: 14,
-    height: "100%",
-    justifyContent: "center",
-  },
-  inputUnderline: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 2,
-    borderRadius: 1,
-    backgroundColor: Colors.terracotta,
-  },
+  // A real 44x44 target, not just the 18pt glyph.
+  eye: { width: 44, height: 44, alignItems: "center", justifyContent: "center", marginEnd: -10 },
   dividerRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -311,7 +234,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   linkButton: { paddingVertical: 8, marginTop: 2 },
-  languageBlock: { marginTop: 28, paddingHorizontal: 24 },
+  languageBlock: { marginTop: 12, paddingHorizontal: 24 },
   link: {
     textAlign: "center",
     color: Colors.textLight,
