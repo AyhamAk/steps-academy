@@ -88,8 +88,15 @@ model ScheduleActivity {
 
 model User {
   id               String   @id @default(uuid())
-  email            String   @unique
+  /// Null for families who signed up by phone. Admins and older accounts
+  /// still sign in with email and password.
+  email            String?  @unique
+  /// E.164, e.g. +972501234567. Verified by an SMS code before it is stored.
+  phone            String?  @unique
+  /// Full display name, "first family" for phone sign-ups.
   name             String
+  /// Kept apart so the academy can sort and search by family.
+  familyName       String?
   passwordHash     String?
   googleId         String?
   role             Role     @default(parent)

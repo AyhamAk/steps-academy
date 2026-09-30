@@ -138,7 +138,7 @@ export async function studentDetailPage(req: Request, res: Response) {
 
   const guardianRows = guardians.map((guardian) => [
     `<a href="/dashboard/users/${escapeHtml(guardian.id)}">${escapeHtml(guardian.name)}</a>`,
-    `<span class="muted">${escapeHtml(guardian.email)}</span>`,
+    `<span class="muted">${escapeHtml(guardian.email ?? guardian.phone)}</span>`,
     `${formStart(`${base}/unlink`, csrf, { inline: true })}
       <input type="hidden" name="parentId" value="${escapeHtml(guardian.id)}">
       ${button("Unlink", "quiet")}
@@ -188,7 +188,7 @@ export async function studentDetailPage(req: Request, res: Response) {
                 ${selectField(
                   "parentId",
                   "Link a guardian",
-                  linkable.map((u) => ({ value: u.id, label: `${u.name} (${u.email})` })),
+                  linkable.map((u) => ({ value: u.id, label: `${u.name} (${u.email ?? u.phone})` })),
                 )}
                 ${button("Link guardian")}
                </form>`

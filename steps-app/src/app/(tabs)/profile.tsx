@@ -31,6 +31,13 @@ import { getNotifications } from "../../services/notificationsApi";
 import { Locale, useLocaleStore } from "../../store/localeStore";
 import { Touchable } from "../../components/ui/Touchable";
 
+/** "+972501234567" → "050-123-4567". */
+function formatPhone(phone: string | null | undefined): string {
+  if (!phone) return "";
+  const local = phone.replace(/^\+972/, "0");
+  return local.length === 10 ? local.slice(0, 3) + "-" + local.slice(3, 6) + "-" + local.slice(6) : phone;
+}
+
 export default function ProfileScreen() {
   const { user, logout, deleteAccount, isLoading } = useAuth();
   const { t, isRTL, rtlText } = useTranslation();
@@ -162,13 +169,18 @@ export default function ProfileScreen() {
       onPress: () => router.push("/notifications"),
       badge: unreadCount,
     },
-    {
-      key: "password",
-      label: t.profile.changePassword,
-      icon: "lock-closed-outline",
-      tint: Colors.coral,
-      onPress: () => setActiveSheet("password"),
-    },
+    // Only accounts that have a password: phone sign-ups sign in with a code.
+    ...(user?.hasPassword !== false
+      ? [
+          {
+            key: "password",
+            label: t.profile.changePassword,
+            icon: "lock-closed-outline" as keyof typeof Ionicons.glyphMap,
+            tint: Colors.coral,
+            onPress: () => setActiveSheet("password"),
+          },
+        ]
+      : []),
     {
       key: "contact",
       label: t.profile.contactAcademy,
@@ -202,7 +214,8 @@ export default function ProfileScreen() {
               />
             ) : null}
           </View>
-          <Text style={styles.identityEmail}>{user?.email}</Text>
+          {/* Phone sign-ups have no email; show the number they sign in with. */}
+          <Text style={styles.identityEmail}>{user?.email ?? formatPhone(user?.phone)}</Text>
         </StepsCard>
 
         {children.length > 0 ? (

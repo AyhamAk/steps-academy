@@ -29,7 +29,8 @@ function serializeEnrollment(enrollment: EnrollmentWithContext) {
       ? {
           id: enrollment.requester.id,
           name: enrollment.requester.name,
-          email: enrollment.requester.email,
+          // Phone sign-ups have no email; the app shows this line as "how to reach them".
+          email: enrollment.requester.email ?? enrollment.requester.phone,
         }
       : null,
     decidedAt: enrollment.decidedAt,

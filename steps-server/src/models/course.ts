@@ -14,14 +14,14 @@ export type { EnrollmentStatus };
 export type EnrollmentWithContext = CourseEnrollment & {
   course: Course;
   student: Student;
-  requester: { id: string; name: string; email: string } | null;
+  requester: { id: string; name: string; email: string | null; phone: string | null } | null;
   decider: { id: string; name: string } | null;
 };
 
 const enrollmentContext = {
   course: true,
   student: true,
-  requester: { select: { id: true, name: true, email: true } },
+  requester: { select: { id: true, name: true, email: true, phone: true } },
   decider: { select: { id: true, name: true } },
 } as const;
 

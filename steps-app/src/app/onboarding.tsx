@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { Redirect, router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import {
   ActivityIndicator,
@@ -25,8 +25,6 @@ import { useTranslation } from "../i18n/useTranslation";
 import { useAuth } from "../hooks/useAuth";
 import { checkInviteCode } from "../services/inviteApi";
 
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const MIN_PASSWORD_LENGTH = 8;
 
 /**
  * "abcd1234" -> "ABCD-1234" as it is typed, so nobody has to find the dash.
@@ -54,7 +52,9 @@ type Step = "code" | "child" | "details" | "finish";
  */
 export default function OnboardingScreen() {
   const { t, rtlText } = useTranslation();
-  const { isLoading, error, register } = useAuth();
+  const { isLoading, error, registerWithPhone } = useAuth();
+  // Proof, from the sign-in screen, that this phone number was just verified.
+  const { signupToken } = useLocalSearchParams<{ signupToken?: string }>();
 
   const [mode, setMode] = useState<"code" | "courses">("code");
   const [step, setStep] = useState<Step>("code");
@@ -69,9 +69,8 @@ export default function OnboardingScreen() {
     mode === "code" ? ["code", "details", "finish"] : ["code", "child", "details", "finish"];
   const stepIndex = steps.indexOf(step);
 
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [familyName, setFamilyName] = useState("");
   const [hasConsented, setHasConsented] = useState(false);
   const [wantsNotifications, setWantsNotifications] = useState(true);
 
@@ -123,9 +122,7 @@ export default function OnboardingScreen() {
   };
 
   const handleDetails = () => {
-    if (!name.trim()) return setFormError(t.auth.nameRequired);
-    if (!EMAIL_REGEX.test(email.trim())) return setFormError(t.auth.emailInvalid);
-    if (password.length < MIN_PASSWORD_LENGTH) return setFormError(t.auth.passwordTooShort);
+    if (!firstName.trim() || !familyName.trim()) return setFormError(t.auth.namesRequired);
     setFormError(null);
     track("onboarding_step_completed", { step: "details" });
     setStep("finish");
@@ -136,10 +133,11 @@ export default function OnboardingScreen() {
     setFormError(null);
     track("onboarding_step_completed", { step: "consent" });
     const birthDateIso = birthDate;
-    const ok = await register({
-      name: name.trim(),
-      email: email.trim(),
-      password,
+    if (!signupToken) return;
+    const ok = await registerWithPhone({
+      signupToken,
+      firstName: firstName.trim(),
+      familyName: familyName.trim(),
       ...(mode === "code"
         ? { inviteCode: code }
         : birthDateIso
@@ -150,6 +148,9 @@ export default function OnboardingScreen() {
   };
 
   const message = formError ?? error;
+
+  // Sign-up only ever starts from a verified number on the sign-in screen.
+  if (!signupToken) return <Redirect href="/auth" />;
 
   return (
     <Screen safeBottom>
@@ -178,12 +179,8 @@ export default function OnboardingScreen() {
               autoCapitalize="characters"
               autoCorrect={false}
               maxLength={9}
-              // Lets iOS offer the code above the keyboard when it arrives by
-              // SMS, so a parent taps once instead of switching apps to copy
-              // it. Only works for SMS — WhatsApp messages are invisible to
-              // the OS — so it helps the share-sheet-to-Messages route.
-              textContentType="oneTimeCode"
-              autoComplete="one-time-code"
+              // Deliberately not textContentType="oneTimeCode": the SMS that
+              // just arrived is the sign-in code, and iOS would offer it here.
             />
             <StepsButton
               label={isChecking ? t.invite.checking : t.invite.checkCode}
@@ -234,19 +231,19 @@ export default function OnboardingScreen() {
             ) : null}
 
             <Text style={[styles.sectionLabel, rtlText]}>{t.invite.yourDetailsTitle}</Text>
-            <AuthTextField label={t.auth.namePlaceholder} value={name} onChangeText={setName} />
             <AuthTextField
-              label={t.auth.emailPlaceholder}
-              value={email}
-              onChangeText={setEmail}
-              autoCapitalize="none"
-              keyboardType="email-address"
+              label={t.auth.firstNameLabel}
+              value={firstName}
+              onChangeText={setFirstName}
+              textContentType="givenName"
+              maxLength={40}
             />
             <AuthTextField
-              label={t.auth.passwordPlaceholder}
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
+              label={t.auth.familyNameLabel}
+              value={familyName}
+              onChangeText={setFamilyName}
+              textContentType="familyName"
+              maxLength={40}
             />
             <StepsButton
               label={t.invite.checkCode}

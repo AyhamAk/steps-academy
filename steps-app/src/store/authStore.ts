@@ -13,8 +13,14 @@ export type Child = { id: string; name: string; birthDate?: string | null };
 
 export type AuthUser = {
   id: string;
-  email: string;
+  /** Null for families who signed up by phone. */
+  email: string | null;
+  /** E.164, e.g. +972501234567. Null for email accounts. */
+  phone?: string | null;
   name: string;
+  familyName?: string | null;
+  /** False for phone sign-ups, who have no password to change. */
+  hasPassword?: boolean;
   role: Role;
   children: Child[];
   createdAt: string;

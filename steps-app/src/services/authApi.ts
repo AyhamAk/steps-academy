@@ -60,3 +60,32 @@ export async function updatePushTokenRequest(pushToken: string, locale: string) 
 export async function updateLocaleRequest(locale: string) {
   await api.patch("/api/auth/locale", { locale });
 }
+
+/** Phone sign-in, step 1: text a code to this number. */
+export async function startPhoneSignInRequest(phone: string, locale: string) {
+  await api.post("/api/auth/phone/start", { phone, locale });
+}
+
+/**
+ * Phone sign-in, step 2. A known number comes back signed in; a new one gets
+ * a short-lived signupToken that proves the number was verified.
+ */
+export async function verifyPhoneSignInRequest(phone: string, code: string) {
+  const { data } = await api.post<AuthResponse | { signupToken: string }>(
+    "/api/auth/phone/verify",
+    { phone, code }
+  );
+  return data;
+}
+
+/** Phone sign-up, final step: the name and child for a verified new number. */
+export async function registerWithPhoneRequest(input: {
+  signupToken: string;
+  firstName: string;
+  familyName: string;
+  inviteCode?: string;
+  child?: { name: string; birthDate: string };
+}) {
+  const { data } = await api.post<AuthResponse>("/api/auth/phone/register", input);
+  return data;
+}

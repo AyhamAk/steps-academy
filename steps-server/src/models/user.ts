@@ -10,11 +10,17 @@ export type PublicUser = Omit<User, "passwordHash" | "googleId" | "pushToken"> &
   /** Children this account is a guardian of. Linked by the admin, an invite
    *  code, or — for course families — added by the parent themselves. */
   children: PublicChild[];
+  /** Phone sign-ups have no password, so the app hides "change password". */
+  hasPassword: boolean;
 };
 
 type CreateUserInput = {
-  email: string;
+  /** Email accounts (admins, older parents). */
+  email?: string | null;
+  /** Phone accounts, E.164 and already verified by SMS. */
+  phone?: string | null;
   name: string;
+  familyName?: string | null;
   passwordHash?: string | null;
   googleId?: string | null;
   role?: Role;
@@ -25,8 +31,10 @@ export const UserModel = {
   async create(input: CreateUserInput): Promise<User> {
     return prisma.user.create({
       data: {
-        email: input.email.toLowerCase(),
+        email: input.email?.toLowerCase() ?? null,
+        phone: input.phone ?? null,
         name: input.name,
+        familyName: input.familyName ?? null,
         passwordHash: input.passwordHash ?? null,
         googleId: input.googleId ?? null,
         role: input.role ?? "parent",
@@ -47,8 +55,10 @@ export const UserModel = {
     return prisma.$transaction(async (tx) => {
       const user = await tx.user.create({
         data: {
-          email: input.email.toLowerCase(),
+          email: input.email?.toLowerCase() ?? null,
+          phone: input.phone ?? null,
           name: input.name,
+          familyName: input.familyName ?? null,
           passwordHash: input.passwordHash ?? null,
           googleId: input.googleId ?? null,
           role: input.role ?? "parent",
@@ -72,6 +82,11 @@ export const UserModel = {
 
   async findByEmail(email: string): Promise<User | null> {
     return prisma.user.findUnique({ where: { email: email.toLowerCase() } });
+  },
+
+  /** `phone` must already be E.164 — see utils/phone. */
+  async findByPhone(phone: string): Promise<User | null> {
+    return prisma.user.findUnique({ where: { phone } });
   },
 
   async updateName(id: string, name: string): Promise<User | null> {
@@ -172,7 +187,8 @@ export const UserModel = {
       parents: parents.map((parent) => ({
         id: parent.id,
         name: parent.name,
-        email: parent.email,
+        // The admin app shows this line as "how to reach them"; phone sign-ups have no email.
+        email: parent.email ?? parent.phone,
         createdAt: parent.createdAt,
         // What they said their child is called at sign-up — shown to the admin
         // as a hint for who to link, never as access.
@@ -200,6 +216,8 @@ export const UserModel = {
           OR: [
             { name: { contains: term, mode: "insensitive" as const } },
             { email: { contains: term, mode: "insensitive" as const } },
+            // Stored as +9725…; searching "050…" should still find it.
+            { phone: { contains: term.replace(/\D/g, "").replace(/^0/, "") || term } },
           ],
         }
       : {};
@@ -223,6 +241,7 @@ export const UserModel = {
         id: user.id,
         name: user.name,
         email: user.email,
+        phone: user.phone,
         role: user.role,
         createdAt: user.createdAt,
         claimedChildName: user.claimedChildName,
@@ -285,9 +304,9 @@ export const UserModel = {
     const parents = await prisma.user.findMany({
       where: { role: "parent", children: { none: {} } },
       orderBy: { createdAt: "desc" },
-      select: { id: true, name: true, email: true, claimedChildName: true, createdAt: true },
+      select: { id: true, name: true, email: true, phone: true, claimedChildName: true, createdAt: true },
     });
-    return parents;
+    return parents.map(({ phone, ...parent }) => ({ ...parent, email: parent.email ?? phone }));
   },
 
   /** Always goes through the DB for children, so a client can never be told
@@ -304,6 +323,10 @@ export const UserModel = {
       include: { student: { select: { id: true, name: true, birthDate: true } } },
       orderBy: { student: { name: "asc" } },
     });
-    return { ...rest, children: links.map((link) => link.student) };
+    return {
+      ...rest,
+      children: links.map((link) => link.student),
+      hasPassword: Boolean(user.passwordHash),
+    };
   },
 };

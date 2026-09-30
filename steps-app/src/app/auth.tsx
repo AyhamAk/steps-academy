@@ -24,8 +24,8 @@ const MIN_PASSWORD_LENGTH = 8;
 
 WebBrowser.maybeCompleteAuthSession();
 
-/** Signing in is the default; registering is the deliberate detour. */
-type Mode = "login" | "register";
+/** Phone is the way in; email is kept for the admin and older accounts. */
+type Mode = "phone" | "email";
 
 function AnimatedPanel({ children }: PropsWithChildren) {
   const reduceMotion = useReduceMotionSetting();
@@ -88,13 +88,49 @@ function PasswordField({
   );
 }
 
+/** Seconds before "send the code again" unlocks — each resend is a paid SMS. */
+const RESEND_SECONDS = 30;
+
+/** "+972501234567" or "0501234567" → "050-123-4567", for the "we sent a code to" line. */
+function displayPhone(raw: string): string {
+  const digits = raw.replace(/\D/g, "").replace(/^972/, "0");
+  return digits.length === 10 ? `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}` : raw;
+}
+
+/** An Israeli mobile: 05x and seven more digits, however it was typed. */
+function isMobile(raw: string): boolean {
+  const digits = raw.replace(/\D/g, "").replace(/^972/, "0").replace(/^(?=5)/, "0");
+  return /^05\d{8}$/.test(digits);
+}
+
+/**
+ * Sign in — and, for a number we don't know yet, the start of sign-up.
+ *
+ * Families type their mobile number, get an SMS code, and type it back. A
+ * known number is signed straight in; a new one carries on to the sign-up
+ * screens with proof it was verified. No email, no password.
+ *
+ * Email and password stay behind a small link, for the admin account and the
+ * handful of accounts created before phone sign-in.
+ */
 export default function AuthScreen() {
-  const { t } = useTranslation();
-  const [mode] = useState<Mode>("login");
+  const { t, locale, isRTL } = useTranslation();
+  const [mode, setMode] = useState<Mode>("phone");
+  const [phoneStep, setPhoneStep] = useState<"number" | "code">("number");
+  const [phone, setPhone] = useState("");
+  const [code, setCode] = useState("");
+  const [resendIn, setResendIn] = useState(0);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
-  const { isLoading, error, login, signInWithGoogle } = useAuth();
+  const {
+    isLoading,
+    error,
+    login,
+    signInWithGoogle,
+    startPhoneSignIn,
+    verifyPhoneSignIn,
+  } = useAuth();
 
   const [, response, promptAsync] = Google.useAuthRequest({
     iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
@@ -111,6 +147,35 @@ export default function AuthScreen() {
     });
   }, [response]);
 
+  // Counts the resend lock down to zero, once a second.
+  useEffect(() => {
+    if (resendIn <= 0) return;
+    const id = setTimeout(() => setResendIn((s) => s - 1), 1000);
+    return () => clearTimeout(id);
+  }, [resendIn]);
+
+  const sendCode = async () => {
+    if (!isMobile(phone)) return setFormError(t.auth.phoneInvalid);
+    setFormError(null);
+    const ok = await startPhoneSignIn(phone, locale);
+    if (ok) {
+      setCode("");
+      setPhoneStep("code");
+      setResendIn(RESEND_SECONDS);
+    }
+  };
+
+  const checkCode = async () => {
+    if (code.replace(/\D/g, "").length < 6) return setFormError(t.auth.codeInvalid);
+    setFormError(null);
+    const result = await verifyPhoneSignIn(phone, code);
+    if (result === "signedIn") {
+      router.replace("/(tabs)");
+    } else if (result) {
+      router.push({ pathname: "/onboarding", params: { signupToken: result.signupToken } });
+    }
+  };
+
   const handleLogin = async () => {
     if (!EMAIL_REGEX.test(email.trim())) return setFormError(t.auth.emailInvalid);
     if (!password) return setFormError(t.auth.passwordTooShort);
@@ -118,6 +183,11 @@ export default function AuthScreen() {
     setFormError(null);
     const ok = await login({ email: email.trim(), password });
     if (ok) router.replace("/(tabs)");
+  };
+
+  const switchMode = (next: Mode) => {
+    setFormError(null);
+    setMode(next);
   };
 
   const message = formError ?? error;
@@ -144,6 +214,94 @@ export default function AuthScreen() {
     </>
   );
 
+  const phonePanel =
+    phoneStep === "number" ? (
+      <>
+        <AuthTextField
+          label={t.auth.phoneLabel}
+          placeholder={t.auth.phonePlaceholder}
+          value={phone}
+          onChangeText={(v) => {
+            setPhone(v);
+            setFormError(null);
+          }}
+          keyboardType="phone-pad"
+          textContentType="telephoneNumber"
+          autoComplete="tel"
+          // Digits read left to right in every language.
+          style={styles.ltrField}
+        />
+        {message ? <Text style={styles.error}>{message}</Text> : null}
+        <StepsButton label={t.auth.sendCode} onPress={sendCode} loading={isLoading} flat />
+      </>
+    ) : (
+      <>
+        <Text style={[styles.sentTo, { textAlign: isRTL ? "right" : "left" }]}>
+          {t.auth.codeSentTo(displayPhone(phone))}
+        </Text>
+        <AuthTextField
+          label={t.auth.codeLabel}
+          value={code}
+          onChangeText={(v) => {
+            setCode(v.replace(/\D/g, "").slice(0, 6));
+            setFormError(null);
+          }}
+          keyboardType="number-pad"
+          // iOS offers the code from the SMS above the keyboard.
+          textContentType="oneTimeCode"
+          autoComplete="sms-otp"
+          maxLength={6}
+          style={styles.codeField}
+          autoFocus
+        />
+        {message ? <Text style={styles.error}>{message}</Text> : null}
+        <StepsButton label={t.auth.verifyCode} onPress={checkCode} loading={isLoading} flat />
+        <View style={[styles.codeLinks, isRTL && styles.rowReverse]}>
+          <Touchable
+            onPress={() => {
+              setFormError(null);
+              setPhoneStep("number");
+            }}
+            style={styles.smallLink}
+          >
+            <Text style={styles.linkAccent}>{t.auth.changeNumber}</Text>
+          </Touchable>
+          <Touchable onPress={sendCode} disabled={resendIn > 0 || isLoading} style={styles.smallLink}>
+            <Text style={resendIn > 0 ? styles.link : styles.linkAccent}>
+              {resendIn > 0 ? t.auth.resendIn(resendIn) : t.auth.resendCode}
+            </Text>
+          </Touchable>
+        </View>
+      </>
+    );
+
+  const emailPanel = (
+    <>
+      <AuthTextField
+        label={t.auth.emailPlaceholder}
+        value={email}
+        onChangeText={(v) => {
+          setEmail(v);
+          setFormError(null);
+        }}
+        autoCapitalize="none"
+        autoCorrect={false}
+        keyboardType="email-address"
+      />
+      <PasswordField
+        label={t.auth.passwordPlaceholder}
+        value={password}
+        onChangeText={(v) => {
+          setPassword(v);
+          setFormError(null);
+        }}
+      />
+      {message ? <Text style={styles.error}>{message}</Text> : null}
+      <StepsButton label={t.auth.signIn} onPress={handleLogin} loading={isLoading} flat />
+      {GOOGLE_SIGN_IN_ENABLED ? googleBlock : null}
+    </>
+  );
+
   return (
     <Screen safeBottom>
       <KeyboardAwareScrollView
@@ -154,43 +312,20 @@ export default function AuthScreen() {
         {/* A mark, not a hero: at full size it pushed the form below the fold. */}
         <StepsLogo maxWidth={140} />
 
-        {mode === "login" ? (
-          <AnimatedPanel>
-            <View style={styles.stack}>
-              <AuthTextField
-                label={t.auth.emailPlaceholder}
-                value={email}
-                onChangeText={(v) => {
-                  setEmail(v);
-                  setFormError(null);
-                }}
-                autoCapitalize="none"
-                autoCorrect={false}
-                keyboardType="email-address"
-              />
-              <PasswordField
-                label={t.auth.passwordPlaceholder}
-                value={password}
-                onChangeText={(v) => {
-                  setPassword(v);
-                  setFormError(null);
-                }}
-              />
+        <AnimatedPanel>
+          <View style={styles.stack}>
+            {mode === "phone" ? phonePanel : emailPanel}
 
-              {message ? <Text style={styles.error}>{message}</Text> : null}
-
-              <StepsButton label={t.auth.signIn} onPress={handleLogin} loading={isLoading} flat />
-
-              {GOOGLE_SIGN_IN_ENABLED ? googleBlock : null}
-
-              <Touchable onPress={() => router.push("/onboarding")} style={styles.linkButton}>
-                <Text style={styles.link}>
-                  {t.auth.noAccount} <Text style={styles.linkAccent}>{t.invite.signUp}</Text>
-                </Text>
-              </Touchable>
-            </View>
-          </AnimatedPanel>
-        ) : null}
+            <Touchable
+              onPress={() => switchMode(mode === "phone" ? "email" : "phone")}
+              style={styles.linkButton}
+            >
+              <Text style={styles.link}>
+                {mode === "phone" ? t.auth.useEmail : t.auth.usePhone}
+              </Text>
+            </Touchable>
+          </View>
+        </AnimatedPanel>
         <View style={styles.languageBlock}>
           <LanguagePicker compact />
         </View>
@@ -241,7 +376,13 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.regular,
     fontSize: 14,
   },
-  linkAccent: { color: Colors.sage, fontFamily: Fonts.bold },
+  linkAccent: { color: Colors.sage, fontFamily: Fonts.bold, fontSize: 14 },
+  rowReverse: { flexDirection: "row-reverse" },
+  ltrField: { writingDirection: "ltr" },
+  codeField: { fontFamily: Fonts.bold, fontSize: 22, letterSpacing: 6, textAlign: "center" },
+  sentTo: { fontFamily: Fonts.regular, fontSize: 14, color: Colors.textLight, marginBottom: 12 },
+  codeLinks: { flexDirection: "row", justifyContent: "space-between", marginTop: 4 },
+  smallLink: { minHeight: 44, justifyContent: "center" },
   error: {
     textAlign: "center",
     color: Colors.rose,

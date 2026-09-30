@@ -138,7 +138,7 @@ export async function linkGuardian(req: Request, res: Response) {
   await StudentModel.linkParent(parent.id, student.id);
   const guardians = await StudentModel.listGuardians(student.id);
   res.json({
-    guardians: guardians.map((g) => ({ id: g.id, name: g.name, email: g.email })),
+    guardians: guardians.map((g) => ({ id: g.id, name: g.name, email: g.email ?? g.phone })),
   });
 }
 
@@ -147,7 +147,7 @@ export async function unlinkGuardian(req: Request, res: Response) {
   await StudentModel.unlinkParent(param(req, "parentId"), studentId);
   const guardians = await StudentModel.listGuardians(studentId);
   res.json({
-    guardians: guardians.map((g) => ({ id: g.id, name: g.name, email: g.email })),
+    guardians: guardians.map((g) => ({ id: g.id, name: g.name, email: g.email ?? g.phone })),
   });
 }
 

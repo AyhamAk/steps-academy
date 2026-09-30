@@ -37,7 +37,7 @@ export async function usersPage(req: Request, res: Response) {
 
   const rows = users.map((user) => [
     `<a href="${LIST}/${escapeHtml(user.id)}">${escapeHtml(user.name)}</a>`,
-    `<span class="muted">${escapeHtml(user.email)}</span>`,
+    `<span class="muted">${escapeHtml(user.email ?? user.phone)}</span>`,
     user.role === "admin" ? `<span class="pill pill-admin">admin</span>` : `<span class="pill">parent</span>`,
     user.children.length
       ? user.children.map((child) => escapeHtml(child.name)).join(", ")
@@ -178,7 +178,7 @@ export async function userDetailPage(req: Request, res: Response) {
       active: "users",
       title: user.name,
       heading: user.name,
-      sub: user.email,
+      sub: user.email ?? user.phone ?? undefined,
       who: res.locals.adminName,
       flash: flashFrom(req.query as Record<string, unknown>),
       body,
@@ -294,7 +294,7 @@ export async function userDeletePage(req: Request, res: Response) {
       active: "users",
       title: "Delete account",
       heading: `Delete ${user.name}?`,
-      sub: user.email,
+      sub: user.email ?? user.phone ?? undefined,
       who: res.locals.adminName,
       flash: flashFrom(req.query as Record<string, unknown>),
       body,
