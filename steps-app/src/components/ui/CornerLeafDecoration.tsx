@@ -1,40 +1,76 @@
 import { StyleSheet, View, ViewStyle } from "react-native";
-import Svg, { Circle, Ellipse, Path } from "react-native-svg";
+import Svg, { Circle, G, Path } from "react-native-svg";
 
 import { Colors } from "../../constants/Colors";
 import { useTranslation } from "../../i18n/useTranslation";
 
 export type LeafCorner = "bottom-start" | "bottom-end" | "top-start" | "top-end";
 
-/** sm: small cards · md: large cards and banners · lg: screen headers. */
+/**
+ * sm: small cards · md: large cards and banners · xl: the screen corner.
+ * All share the 120×90 drawing, so the branch keeps its shape at every size.
+ */
 const SIZES = {
-  sm: { width: 64, height: 50 },
-  md: { width: 90, height: 70 },
-  lg: { width: 150, height: 115 },
+  sm: { width: 80, height: 60 },
+  md: { width: 112, height: 84 },
+  xl: { width: 200, height: 150 },
 } as const;
 
+/** One leaf: a base shape, a lighter highlight on its upper half, and a midrib. */
+
+/** An almond with pointed tips, centred on (cx, cy): reads as a leaf where an ellipse reads as a pebble. */
+function leafPath(cx: number, cy: number, rx: number, ry: number): string {
+  const bulge = ry * 1.35;
+  return `M${cx - rx},${cy} Q${cx},${cy - bulge} ${cx + rx},${cy} Q${cx},${cy + bulge} ${cx - rx},${cy} Z`;
+}
+
+type Leaf = { cx: number; cy: number; rx: number; ry: number; rotate: number; fill: string };
+
+const LEAVES: Leaf[] = [
+  { cx: 30, cy: 24, rx: 23, ry: 11, rotate: -25, fill: Colors.leafFillA },
+  { cx: 47, cy: 41, rx: 21, ry: 10, rotate: 15, fill: Colors.leafFillB },
+  { cx: 24, cy: 57, rx: 19, ry: 9, rotate: -12, fill: Colors.leafFillA },
+  { cx: 13, cy: 75, rx: 16, ry: 8, rotate: 22, fill: Colors.leafFillB },
+  { cx: 59, cy: 12, rx: 15, ry: 7, rotate: -30, fill: Colors.leafFillB },
+  { cx: 66, cy: 44, rx: 14, ry: 6.5, rotate: 28, fill: Colors.leafFillA },
+];
+
+/** Gold dots in three sizes, some trailing well away from the leaves. */
+const DOTS: [number, number, number][] = [
+  [78, 22, 3.2],
+  [90, 32, 2.2],
+  [74, 56, 2.2],
+  [86, 9, 1.5],
+  [101, 21, 1.5],
+  [97, 46, 3],
+  [111, 35, 1.5],
+  [107, 7, 2.2],
+  [84, 70, 1.5],
+];
+
 /**
- * A leafy branch tucked into a corner: a curved stem, five leaves along it and
- * a trail of gold dots.
+ * A leafy branch tucked into a corner: a curved stem with a side twig, six
+ * two-tone leaves and a scatter of gold dots.
  *
  * A flat vector stand-in for the hand-painted watercolour branches in the
- * design reference. Real artwork can replace the <Svg> later with an <Image>;
- * every caller stays the same.
+ * design reference. The two tones suggest shading; real watercolour depth
+ * needs a painted asset, which can replace the <Svg> without touching callers.
  *
- * "start" and "end" follow the reading direction. The reference is an Arabic
- * screen with its branches on the left — the *end* side in Arabic, opposite
- * where text begins — so callers use the end corners to keep leaves out from
- * under titles in every language. The artwork is drawn growing out of the
- * bottom-left and flips to face inward from any other corner.
+ * "start" and "end" follow the reading direction. The drawing grows out of
+ * the bottom-left and flips to face inward from any other corner. `bleed`
+ * pulls it past the corner, so the branch runs off the edges instead of
+ * sitting neatly inside them.
  *
  * Never takes taps: the wrapper is pointerEvents="none".
  */
 export function CornerLeafDecoration({
   corner = "bottom-end",
   size = "sm",
+  bleed = 6,
 }: {
   corner?: LeafCorner;
   size?: keyof typeof SIZES;
+  bleed?: number;
 }) {
   const { isRTL } = useTranslation();
   const dims = SIZES[size];
@@ -44,39 +80,52 @@ export function CornerLeafDecoration({
   const isLeft = isStart ? !isRTL : isRTL;
 
   const position: ViewStyle = {
-    [isBottom ? "bottom" : "top"]: -6,
-    [isLeft ? "left" : "right"]: -6,
+    [isBottom ? "bottom" : "top"]: -bleed,
+    [isLeft ? "left" : "right"]: -bleed,
     transform: [{ scaleX: isLeft ? 1 : -1 }, { scaleY: isBottom ? 1 : -1 }],
   };
 
   return (
     <View pointerEvents="none" style={[styles.wrap, dims, position]}>
-      <Svg width={dims.width} height={dims.height} viewBox="0 0 100 78">
-        {/* the stem */}
+      <Svg width={dims.width} height={dims.height} viewBox="0 0 120 90">
+        {/* stem and side twig */}
         <Path
-          d="M2,78 Q35,60 28,30 Q24,10 45,4"
+          d="M2,90 Q40,70 32,36 Q28,12 56,4"
           stroke={Colors.leafStem}
           strokeWidth={2.5}
           fill="none"
-          opacity={0.6}
+          opacity={0.65}
         />
-        {/* leaves along it */}
-        <Ellipse cx={26} cy={22} rx={16} ry={8} fill={Colors.leafFillA} transform="rotate(-25 26 22)" opacity={0.75} />
-        <Ellipse cx={38} cy={35} rx={15} ry={7.5} fill={Colors.leafFillB} transform="rotate(15 38 35)" opacity={0.7} />
-        <Ellipse cx={22} cy={48} rx={13} ry={6.5} fill={Colors.leafFillC} transform="rotate(-10 22 48)" opacity={0.7} />
-        <Ellipse cx={12} cy={62} rx={11} ry={5.5} fill={Colors.leafFillA} transform="rotate(20 12 62)" opacity={0.65} />
-        <Ellipse cx={48} cy={12} rx={10} ry={5} fill={Colors.leafFillB} transform="rotate(-30 48 12)" opacity={0.7} />
-        {/* gold dots trailing off to the side */}
-        <Circle cx={62} cy={20} r={2.5} fill={Colors.leafGold} opacity={0.6} />
-        <Circle cx={72} cy={28} r={1.8} fill={Colors.leafGold} opacity={0.5} />
-        <Circle cx={58} cy={34} r={1.8} fill={Colors.leafGold} opacity={0.5} />
-        <Circle cx={68} cy={12} r={1.3} fill={Colors.leafGold} opacity={0.45} />
+        <Path d="M31,50 Q50,49 64,42" stroke={Colors.leafStem} strokeWidth={1.6} fill="none" opacity={0.55} />
+
+        {LEAVES.map((leaf, index) => (
+          <G key={index} transform={`rotate(${leaf.rotate} ${leaf.cx} ${leaf.cy})`}>
+            <Path d={leafPath(leaf.cx, leaf.cy, leaf.rx, leaf.ry)} fill={leaf.fill} opacity={0.82} />
+            {/* the lit upper half of the leaf */}
+            <Path
+              d={leafPath(leaf.cx - leaf.rx * 0.08, leaf.cy - leaf.ry * 0.32, leaf.rx * 0.7, leaf.ry * 0.42)}
+              fill={Colors.leafFillC}
+              opacity={0.75}
+            />
+            {/* midrib */}
+            <Path
+              d={`M${leaf.cx - leaf.rx * 0.85},${leaf.cy} L${leaf.cx + leaf.rx * 0.85},${leaf.cy}`}
+              stroke={Colors.leafStem}
+              strokeWidth={0.9}
+              opacity={0.45}
+            />
+          </G>
+        ))}
+
+        {DOTS.map(([cx, cy, r], index) => (
+          <Circle key={index} cx={cx} cy={cy} r={r} fill={Colors.leafGold} opacity={r > 2.5 ? 0.7 : 0.55} />
+        ))}
       </Svg>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  // Absolutely placed and drawn first, so the card's own content paints over it.
+  // Absolutely placed and drawn first, so the content around it paints over it.
   wrap: { position: "absolute", zIndex: 0 },
 });

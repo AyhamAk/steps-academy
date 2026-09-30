@@ -1,15 +1,18 @@
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
-import { Tabs, useSegments } from "expo-router";
-import { useEffect, useRef, useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { Tabs } from "expo-router";
+import { useEffect } from "react";
+import { StyleSheet, useWindowDimensions, View } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from "react-native-reanimated";
+import Svg, { Defs, LinearGradient as SvgGradient, Path, Stop } from "react-native-svg";
 
 import { Colors } from "../../constants/Colors";
 import { useLayout } from "../../hooks/useLayout";
 import { useTranslation } from "../../i18n/useTranslation";
 
 type IoniconName = keyof typeof Ionicons.glyphMap;
+
+/** Height of the wave above the tab bar. */
+const WAVE_HEIGHT = 6;
 
 const TAB_ICONS: Record<string, { on: IoniconName; off: IoniconName }> = {
   index: { on: "home", off: "home-outline" },
@@ -24,14 +27,6 @@ const TAB_ORDER = ["index", "gallery", "profile"];
 // Hidden for now (not deleted) — kept out of the tab bar via href: null, which
 // leaves the route intact for later without making it tab-navigable.
 const HIDDEN_TABS = ["games", "shop"];
-
-const TAB_GRADIENTS: Record<string, [string, string, string]> = {
-  index: [Colors.sage, Colors.rose, Colors.coral],
-  games: [Colors.coral, Colors.blue, Colors.sage],
-  shop: [Colors.gold, Colors.sage, Colors.rose],
-  gallery: [Colors.blue, Colors.coral, Colors.gold],
-  profile: [Colors.rose, Colors.gold, Colors.blue],
-};
 
 function TabIcon({
   focused,
@@ -64,45 +59,27 @@ function TabIcon({
   );
 }
 
-// The tab bar's top-border gradient crossfades between per-tab color triplets
-// on tab switch — LinearGradient's `colors` prop isn't itself animatable, so
-// this layers two gradients and animates opacity between them instead.
-function TabTopBorder() {
-  const segments = useSegments() as string[];
-  const activeName = segments[1] ?? "index";
-
-  const [fromColors, setFromColors] = useState(TAB_GRADIENTS[activeName] ?? TAB_GRADIENTS.index);
-  const [toColors, setToColors] = useState(TAB_GRADIENTS[activeName] ?? TAB_GRADIENTS.index);
-  const crossfade = useSharedValue(1);
-  const prevName = useRef(activeName);
-
-  useEffect(() => {
-    if (prevName.current === activeName) return;
-    setFromColors(TAB_GRADIENTS[prevName.current] ?? TAB_GRADIENTS.index);
-    setToColors(TAB_GRADIENTS[activeName] ?? TAB_GRADIENTS.index);
-    crossfade.value = 0;
-    crossfade.value = withTiming(1, { duration: 400 });
-    prevName.current = activeName;
-  }, [activeName]);
-
-  const toStyle = useAnimatedStyle(() => ({ opacity: crossfade.value }));
+/**
+ * The soft wave between the screen and the tab bar: sage fading to gold, a
+ * few points tall. Drawn at the real width so the stroke stays even rather
+ * than being stretched by a scaled viewBox.
+ */
+function TabWave() {
+  const { width } = useWindowDimensions();
+  const mid = WAVE_HEIGHT / 2;
+  const d = `M0,${mid} Q${width / 4},0 ${width / 2},${mid} T${width},${mid}`;
 
   return (
-    <View style={styles.topBorder}>
-      <LinearGradient
-        colors={fromColors}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-        style={StyleSheet.absoluteFill}
-      />
-      <Animated.View style={[StyleSheet.absoluteFill, toStyle]}>
-        <LinearGradient
-          colors={toColors}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={StyleSheet.absoluteFill}
-        />
-      </Animated.View>
+    <View style={styles.wave} pointerEvents="none">
+      <Svg width={width} height={WAVE_HEIGHT}>
+        <Defs>
+          <SvgGradient id="tabWave" x1="0" y1="0" x2="1" y2="0">
+            <Stop offset="0" stopColor={Colors.primary} stopOpacity={0.85} />
+            <Stop offset="1" stopColor={Colors.secondary} stopOpacity={0.85} />
+          </SvgGradient>
+        </Defs>
+        <Path d={d} stroke="url(#tabWave)" strokeWidth={2.5} fill="none" strokeLinecap="round" />
+      </Svg>
     </View>
   );
 }
@@ -119,7 +96,8 @@ export default function TabsLayout() {
         tabBarInactiveTintColor: Colors.textLight,
         tabBarStyle: {
           backgroundColor: Colors.card,
-          borderTopColor: Colors.border,
+          // The wave is the divider now; a hairline under it would double it.
+          borderTopWidth: 0,
           // The navigation bar is added on top of the 75pt bar rather than
           // eaten out of it, so the icons keep their designed height on a
           // three-button device.
@@ -135,7 +113,7 @@ export default function TabsLayout() {
         },
         tabBarBackground: () => (
           <View style={{ flex: 1, backgroundColor: Colors.card }}>
-            <TabTopBorder />
+            <TabWave />
           </View>
         ),
         tabBarIcon: ({ focused, color }) => (
@@ -158,12 +136,12 @@ function tabTitleKey(name: string): "home" | "games" | "shop" | "gallery" | "pro
 }
 
 const styles = StyleSheet.create({
-  topBorder: {
+  wave: {
     position: "absolute",
     top: 0,
     left: 0,
     right: 0,
-    height: 2,
+    height: WAVE_HEIGHT,
   },
   iconSlot: {
     width: "100%",

@@ -18,10 +18,14 @@ import { CornerLeafDecoration } from "../ui/CornerLeafDecoration";
 /** One per slide: the highlight, the idea box and the mood check-in. */
 export type SlideVariant = "highlight" | "idea" | "mood";
 
+/**
+ * Two real tints per slide rather than a tint fading into the card colour —
+ * fading into card made the slides look exactly like the plain tiles above.
+ */
 const GRADIENTS: Record<SlideVariant, readonly [string, string]> = {
-  highlight: [Colors.primaryLight, Colors.card],
-  idea: [Colors.bannerBg, Colors.card],
-  mood: [Colors.accent2Light, Colors.card],
+  highlight: [Colors.primaryLight, Colors.secondaryLight],
+  idea: [Colors.secondaryLight, Colors.primaryLight],
+  mood: [Colors.accent2Light, Colors.primaryLight],
 };
 
 export function SlideBackdrop({

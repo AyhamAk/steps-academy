@@ -36,7 +36,6 @@ import { NotificationBell } from "../../components/ui/NotificationBell";
 import { StepsLogo } from "../../components/ui/StepsLogo";
 import { ToastBanner, useToast } from "../../components/ui/Toast";
 import { Colors } from "../../constants/Colors";
-import { CornerLeafDecoration } from "../../components/ui/CornerLeafDecoration";
 import { Fonts } from "../../constants/Fonts";
 import { Type } from "../../constants/Typography";
 
@@ -338,8 +337,6 @@ export default function HomeScreen() {
               pushed the four tiles — the actual way into the app — below the
               fold. The logo still rides in the sticky header on scroll. */}
           <View style={[styles.headerRow, isRTL && styles.rowReverse]}>
-            {/* Home has its own header, so it carries the branch itself. */}
-            <CornerLeafDecoration corner="top-end" size="lg" />
             <Text
               style={[styles.greeting, rtlText]}
               numberOfLines={1}
