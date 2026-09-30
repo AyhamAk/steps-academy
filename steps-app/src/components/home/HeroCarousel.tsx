@@ -31,22 +31,15 @@ const CAROUSEL_SLIDE_COUNT = 3;
 /** A carousel slide: its own layered backdrop, sized to the viewport. */
 function SlideBackground({
   variant,
-  isRTL,
   slideWidth,
   children,
 }: {
   variant: SlideVariant;
-  isRTL: boolean;
   slideWidth: number;
   children: React.ReactNode;
 }) {
-
   return (
-    <SlideBackdrop
-      variant={variant}
-      isRTL={isRTL}
-      style={[styles.carouselSlide, { width: slideWidth }]}
-    >
+    <SlideBackdrop variant={variant} style={[styles.carouselSlide, { width: slideWidth }]}>
       {children}
     </SlideBackdrop>
   );
@@ -123,7 +116,7 @@ export function HeroCarousel({
         decelerationRate="fast"
         style={{ width: slideWidth }}
       >
-        <SlideBackground variant="terracotta" isRTL={isRTL} slideWidth={slideWidth}>
+        <SlideBackground variant="highlight" slideWidth={slideWidth}>
           {/* With thumbnails there is no room for the emoji too — the strip is
               the picture, so the emoji only stands in when there are no photos. */}
           {heroPhotoUrls.length > 0 ? (
@@ -162,7 +155,7 @@ export function HeroCarousel({
           )}
         </SlideBackground>
 
-        <SlideBackground variant="forest" isRTL={isRTL} slideWidth={slideWidth}>
+        <SlideBackground variant="idea" slideWidth={slideWidth}>
           <Text style={[styles.carouselEmoji, { textAlign, alignSelf: startAlign }]}>💬</Text>
           <Text style={[styles.carouselHeadline, { textAlign, alignSelf: startAlign }]}>
             {t.feedback.carouselHeadline}
@@ -175,7 +168,7 @@ export function HeroCarousel({
           </Touchable>
         </SlideBackground>
 
-        <SlideBackground variant="sky" isRTL={isRTL} slideWidth={slideWidth}>
+        <SlideBackground variant="mood" slideWidth={slideWidth}>
           <Text style={[styles.carouselHeadline, { textAlign, alignSelf: startAlign }]}>
             {t.home.moodCheckinQuestion(childOrGeneric)}
           </Text>
@@ -212,9 +205,10 @@ export function HeroCarousel({
 }
 
 const styles = StyleSheet.create({
+  // Same treatment as a primary StepsButton, at slide scale.
   carouselCta: {
     alignSelf: "flex-start",
-    backgroundColor: "rgba(255,255,255,0.25)",
+    backgroundColor: Colors.primary,
     borderRadius: 99,
     paddingHorizontal: 16,
     paddingVertical: 6,
@@ -235,7 +229,7 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.extraBold,
     fontSize: 15,
     lineHeight: 20,
-    color: Colors.cream,
+    color: Colors.text,
     marginBottom: 10,
     maxWidth: "80%",
   },
@@ -266,12 +260,12 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: "rgba(255,255,255,0.25)",
+    backgroundColor: Colors.cream,
     alignItems: "center",
     justifyContent: "center",
   },
   moodButtonSelected: {
-    backgroundColor: "rgba(255,255,255,0.55)",
+    backgroundColor: Colors.primaryLight,
   },
   moodEmoji: {
     fontSize: 22,
@@ -290,16 +284,14 @@ const styles = StyleSheet.create({
   photoStripArrow: {
     fontFamily: Fonts.bold,
     fontSize: 16,
-    color: Colors.cream,
+    color: Colors.primary,
     marginHorizontal: 2,
   },
   photoThumb: {
     width: 44,
     height: 44,
     borderRadius: 12,
-    backgroundColor: "rgba(255,255,255,0.2)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.35)",
+    backgroundColor: Colors.cream,
   },
   carouselDots: {
     flexDirection: "row",

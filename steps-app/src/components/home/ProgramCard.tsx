@@ -30,7 +30,7 @@ export function ProgramCard({
 
   return (
     <View style={styles.card}>
-      <CornerLeafDecoration corner="bottom-end" />
+      <CornerLeafDecoration corner="bottom-end" size="md" />
       <Text style={styles.title} maxFontSizeMultiplier={1.3}>
         {t.home.programLabel(childName)}
         {programName ? ` · ${programName}` : ""}

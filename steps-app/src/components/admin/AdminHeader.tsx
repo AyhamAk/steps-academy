@@ -5,6 +5,7 @@ import { useRouter } from "expo-router";
 import { Colors } from "../../constants/Colors";
 import { Fonts } from "../../constants/Fonts";
 import { useTranslation } from "../../i18n/useTranslation";
+import { CornerLeafDecoration } from "../ui/CornerLeafDecoration";
 
 type Props = {
   title: string;
@@ -33,6 +34,8 @@ export default function AdminHeader({ title, subtitle, showBack = true, backTo }
 
   return (
     <View style={styles.wrap}>
+      {/* Same screen-level branch as StepsHeader, opposite the title. */}
+      <CornerLeafDecoration corner="top-end" size="lg" />
       <View style={[styles.row, isRTL && styles.rowReverse]}>
         {showBack ? (
         <Pressable

@@ -24,7 +24,7 @@ const styles = StyleSheet.create({
     alignSelf: "flex-start",
   },
   label: {
-    color: "#FFFFFF",
+    color: Colors.white,
     fontSize: 12,
     fontFamily: Fonts.bold,
   },

@@ -9,6 +9,10 @@
  */
 export const Colors = {
   // Neutrals
+  /** Text and icons on a filled sage or coloured surface. */
+  white: "#FFFFFF",
+  /** Behind a full-screen photo only. */
+  black: "#000000",
   bark: "#2C2A24",
   cream: "#FFFCF5",
   linen: "#F6EEDF",
@@ -48,6 +52,8 @@ export const Colors = {
   // Semantic aliases
   primary: "#4F8074",
   primaryLight: "#DDEBE3",
+  /** Darker sage: gradient stops and pressed states. */
+  primaryDark: "#3A6355",
   secondary: "#D9A441",
   secondaryLight: "#F0E4C8",
   accent1: "#C97B72",
@@ -62,6 +68,9 @@ export const Colors = {
   textLight: "#8A8270",
   /** Hairline dividers inside a card, and input outlines. Never a card outline. */
   border: "#E5DCC8",
+
+  /** Soft gold-tan behind the Home banners — the style has no bold cards. */
+  bannerBg: "#EFE6D3",
 
   // The corner leaf decoration
   leafStem: "#8FAE9B",

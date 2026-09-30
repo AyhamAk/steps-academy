@@ -247,5 +247,5 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 18,
   },
-  sendText: { fontFamily: Fonts.bold, fontSize: 13, color: "#FFFFFF" },
+  sendText: { fontFamily: Fonts.bold, fontSize: 13, color: Colors.white },
 });

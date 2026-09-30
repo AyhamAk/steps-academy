@@ -255,7 +255,7 @@ export function AdminGalleryScreen() {
               disabled={saveQuote.isPending}
             >
               {saveQuote.isPending ? (
-                <ActivityIndicator color="#FFFFFF" />
+                <ActivityIndicator color={Colors.white} />
               ) : (
                 <Text style={styles.quoteSaveText}>{t.gallery.quoteSave}</Text>
               )}
@@ -515,7 +515,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingVertical: 8,
   },
-  quoteSaveText: { fontFamily: Fonts.bold, fontSize: 13, color: "#FFFFFF" },
+  quoteSaveText: { fontFamily: Fonts.bold, fontSize: 13, color: Colors.white },
   previewRow: {
     flexDirection: "row",
     gap: 6,

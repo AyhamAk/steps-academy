@@ -166,7 +166,7 @@ export function AdminHomeSections() {
           // One plain card, the counts on sage chips — when four things are
           // outlined at once, none of them reads as urgent.
           <View style={styles.card}>
-            <CornerLeafDecoration corner="bottom-end" />
+            <CornerLeafDecoration corner="bottom-end" size="md" />
             {alerts.map((alert, index) => (
               <AlertRow
                 key={alert.key}

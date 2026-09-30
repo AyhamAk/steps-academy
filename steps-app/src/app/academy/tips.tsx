@@ -168,7 +168,7 @@ export default function ParentingTipsScreen() {
 
             {featured ? (
               <View style={styles.featuredCard}>
-                <CornerLeafDecoration corner="bottom-end" />
+                <CornerLeafDecoration corner="bottom-end" size="md" />
                 <View style={[styles.featuredBadgeRow, { flexDirection: rowDirection }]}>
                   <View style={styles.monthPill}>
                     <Text style={styles.monthPillText} maxFontSizeMultiplier={1.2}>

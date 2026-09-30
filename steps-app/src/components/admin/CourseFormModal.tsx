@@ -469,7 +469,7 @@ const styles = StyleSheet.create({
     borderColor: "transparent",
   },
   colorTileActive: { borderColor: Colors.bark },
-  colorCheck: { color: "#FFFFFF", fontFamily: Fonts.bold, fontSize: 18 },
+  colorCheck: { color: Colors.white, fontFamily: Fonts.bold, fontSize: 18 },
   input: {
     backgroundColor: Colors.linen,
     borderRadius: 14,
@@ -497,7 +497,7 @@ const styles = StyleSheet.create({
   },
   dayTileActive: { backgroundColor: Colors.sage, borderColor: Colors.sage },
   dayText: { fontFamily: Fonts.semiBold, fontSize: 12, color: Colors.bark },
-  dayTextActive: { color: "#FFFFFF" },
+  dayTextActive: { color: Colors.white },
   timeRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   timeInput: { width: 64, textAlign: "center", fontFamily: Fonts.bold, fontSize: 18 },
   timeColon: { fontFamily: Fonts.bold, fontSize: 18, color: Colors.textLight },

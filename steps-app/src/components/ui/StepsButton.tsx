@@ -86,7 +86,7 @@ export function StepsButton({
     : variant === "secondary"
       ? Colors.secondary
       : Colors.primary;
-  const textColor = isOutline ? Colors.primary : "#FFFFFF";
+  const textColor = isOutline ? Colors.primary : Colors.white;
 
   const handleLayout = (e: LayoutChangeEvent) => {
     const { width, height } = e.nativeEvent.layout;
@@ -184,7 +184,7 @@ export function StepsButton({
                   width: ripple.size,
                   height: ripple.size,
                   borderRadius: ripple.size / 2,
-                  backgroundColor: isOutline ? Colors.primary : "#FFFFFF",
+                  backgroundColor: isOutline ? Colors.primary : Colors.white,
                   opacity: ripple.anim.interpolate({ inputRange: [0, 1], outputRange: [0.3, 0] }),
                   transform: [
                     { scale: ripple.anim.interpolate({ inputRange: [0, 1], outputRange: [0, 1] }) },

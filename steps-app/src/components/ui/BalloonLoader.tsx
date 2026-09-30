@@ -118,7 +118,7 @@ const styles = StyleSheet.create({
     width: 16,
     height: 22,
     borderRadius: 10,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: Colors.white,
     opacity: 0.45,
     marginTop: 8,
     marginStart: 10,

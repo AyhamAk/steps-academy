@@ -53,7 +53,7 @@ const styles = StyleSheet.create({
     zIndex: 100,
   },
   toastText: {
-    color: "#FFFFFF",
+    color: Colors.white,
     fontFamily: Fonts.semiBold,
     fontSize: 14,
     textAlign: "center",

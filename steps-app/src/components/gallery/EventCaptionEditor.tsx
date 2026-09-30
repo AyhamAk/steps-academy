@@ -126,6 +126,6 @@ const styles = StyleSheet.create({
   saveButtonText: {
     fontFamily: Fonts.bold,
     fontSize: 14,
-    color: "#FFFFFF",
+    color: Colors.white,
   },
 });

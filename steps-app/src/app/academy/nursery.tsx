@@ -175,7 +175,7 @@ export default function NurseryScreen() {
           ) : (
             <>
               <View style={styles.todayCard}>
-                <CornerLeafDecoration corner="bottom-end" />
+                <CornerLeafDecoration corner="bottom-end" size="md" />
                 {/* Separate nodes around the "·": composing one string from words,
                 a separator and digits lets the bidi algorithm move the
                 separator in Arabic. */}

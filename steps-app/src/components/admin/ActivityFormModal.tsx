@@ -272,7 +272,7 @@ const styles = StyleSheet.create({
   },
   durationTileActive: { backgroundColor: Colors.sage, borderColor: Colors.sage },
   durationText: { fontFamily: Fonts.semiBold, fontSize: 14, color: Colors.bark },
-  durationTextActive: { color: "#FFFFFF" },
+  durationTextActive: { color: Colors.white },
   colorTile: {
     width: 44,
     height: 44,
@@ -283,7 +283,7 @@ const styles = StyleSheet.create({
     borderColor: "transparent",
   },
   colorTileActive: { borderColor: Colors.bark },
-  colorCheck: { color: "#FFFFFF", fontFamily: Fonts.bold, fontSize: 18 },
+  colorCheck: { color: Colors.white, fontFamily: Fonts.bold, fontSize: 18 },
   error: {
     fontFamily: Fonts.semiBold,
     fontSize: 13.5,

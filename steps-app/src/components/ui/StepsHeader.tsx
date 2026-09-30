@@ -4,6 +4,7 @@ import { StyleSheet, Text, View } from "react-native";
 import { useTranslation } from "../../i18n/useTranslation";
 import { Colors } from "../../constants/Colors";
 import { Type } from "../../constants/Typography";
+import { CornerLeafDecoration } from "./CornerLeafDecoration";
 import { Touchable } from "./Touchable";
 
 type StepsHeaderProps = {
@@ -26,6 +27,9 @@ export function StepsHeader({
 
   return (
     <View style={[styles.row, isRTL && styles.rowReverse]}>
+      {/* The screen-level branch, in the corner opposite the title so it never
+          sits under the words. Content further down paints over it. */}
+      <CornerLeafDecoration corner="top-end" size="lg" />
       {showBack ? (
         <Touchable onPress={() => router.back()} style={styles.backButton}>
           <Text style={styles.backArrow}>{isRTL ? "→" : "←"}</Text>
