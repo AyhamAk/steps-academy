@@ -18,7 +18,9 @@ type LocaleState = {
 export const useLocaleStore = create<LocaleState>()(
   persist(
     (set) => ({
-      locale: "en",
+      // Arabic first: most of the academy's families read Arabic. Anyone who
+      // has already picked a language keeps it — this is only the starting one.
+      locale: "ar",
       hasHydrated: false,
       setLocale: (locale) => set({ locale }),
       setHasHydrated: (value) => set({ hasHydrated: value }),

@@ -152,7 +152,7 @@ export const en = {
     nurseryThisWeek: "This week",
     nurseryLatestPhotos: "Latest photos",
     nurseryOpenGallery: "Open gallery",
-    tabSchedule: "Schedule",
+    tabSchedule: "Program",
     tabPhotos: "Photos",
     tabCourses: "Courses",
     nurseryDaySummary: (count: number, time: string) =>
@@ -949,7 +949,7 @@ export const ar: Translations = {
     nurseryThisWeek: "هذا الأسبوع",
     nurseryLatestPhotos: "أحدث الصور",
     nurseryOpenGallery: "افتح المعرض",
-    tabSchedule: "الجدول",
+    tabSchedule: "البرنامج",
     tabPhotos: "الصور",
     tabCourses: "الدورات",
     nurseryDaySummary: (count: number, time: string) =>
@@ -1736,7 +1736,7 @@ export const he: Translations = {
     nurseryThisWeek: "השבוע",
     nurseryLatestPhotos: "תמונות אחרונות",
     nurseryOpenGallery: "לגלריה",
-    tabSchedule: "לוח זמנים",
+    tabSchedule: "תוכנית",
     tabPhotos: "תמונות",
     tabCourses: "חוגים",
     nurseryDaySummary: (count: number, time: string) =>
