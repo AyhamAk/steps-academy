@@ -99,6 +99,7 @@ export const StudentModel = {
         name: student.name,
         birthDate: student.birthDate,
         notes: student.notes,
+        addedByParent: student.addedByParent,
         photoCount: student._count.tags,
         guardians: student.guardians.map((link) => link.parent),
       })),
@@ -183,5 +184,29 @@ export const StudentModel = {
       select: { studentId: true },
     });
     return links.map((link) => link.studentId);
+  },
+
+  /** How many children this parent is linked to, however they were linked. */
+  async countForParent(parentId: string): Promise<number> {
+    return prisma.parentStudent.count({ where: { parentId } });
+  },
+
+  /**
+   * A parent adds a child of their own (a course family's second child). The
+   * record and the link are created together, and marked as parent-added so
+   * the admin can tell them apart from the roster.
+   */
+  async createForParent(
+    parentId: string,
+    child: { name: string; birthDate: string }
+  ): Promise<Student> {
+    return prisma.student.create({
+      data: {
+        name: child.name,
+        birthDate: child.birthDate,
+        addedByParent: true,
+        guardians: { create: { parentId } },
+      },
+    });
   },
 };

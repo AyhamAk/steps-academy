@@ -6,30 +6,39 @@ import { env } from "../config/env";
 import { InviteModel } from "../models/invite";
 import { UserModel } from "../models/user";
 import { validateInviteCode } from "./inviteController";
+import { parseChildInput } from "../utils/childInput";
 import { signToken } from "../utils/jwt";
 
 const googleClient = new OAuth2Client(env.googleClientId);
 
 export async function register(req: Request, res: Response) {
-  const { email, name, password, inviteCode } = req.body as {
+  const { email, name, password, inviteCode, child } = req.body as {
     email?: string;
     name?: string;
     password?: string;
     inviteCode?: string;
+    child?: unknown;
   };
 
   if (!email || !name || !password) {
     return res.status(400).json({ message: "email, name and password are required" });
   }
 
-  // Accounts are by invitation only. The code also says which child this
-  // parent belongs to, so sign-up never has to ask — and never has to trust
-  // the answer.
-  const invite = await validateInviteCode(inviteCode);
-  if (!invite) {
+  // Two ways in, one account type:
+  // - With an invite code (nursery families): the code says which roster
+  //   child this parent belongs to, so sign-up never has to ask.
+  // - Without one (course families): the parent types their child in. That
+  //   child grants no photos — those only ever follow the admin's tags.
+  const hasCode = typeof inviteCode === "string" && inviteCode.trim() !== "";
+  const invite = hasCode ? await validateInviteCode(inviteCode) : null;
+  if (hasCode && !invite) {
     return res
       .status(403)
       .json({ message: "That code isn't valid. Please check it with the academy." });
+  }
+  const childInput = hasCode ? null : parseChildInput(child);
+  if (typeof childInput === "string") {
+    return res.status(400).json({ message: childInput });
   }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
     return res.status(400).json({ message: "Please enter a valid email address" });
@@ -43,10 +52,17 @@ export async function register(req: Request, res: Response) {
 
   const passwordHash = await bcrypt.hash(password, 10);
   const role = env.adminEmails.includes(email.toLowerCase()) ? "admin" : "parent";
-  const user = await UserModel.create({ email, name, passwordHash, role });
-  // Spending the code and creating the link happen together; a new account
-  // that isn't linked to its child is the exact state this replaces.
-  await InviteModel.redeem(invite.id, user.id, invite.studentId);
+  let user;
+  if (invite) {
+    user = await UserModel.create({ email, name, passwordHash, role });
+    // Spending the code and creating the link happen together; a new account
+    // that isn't linked to its child is the exact state this replaces.
+    await InviteModel.redeem(invite.id, user.id, invite.studentId);
+  } else {
+    // Account, child and link in one transaction: a course parent without
+    // their child could not join anything.
+    user = await UserModel.createWithOwnChild({ email, name, passwordHash, role }, childInput!);
+  }
 
   const token = signToken({ userId: user.id });
 

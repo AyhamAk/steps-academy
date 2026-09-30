@@ -199,6 +199,11 @@ model Student {
   /// The family's WhatsApp/mobile number, used to send their invite code.
   /// Not an account: parents have no record here until they register.
   guardianPhone String?
+  /// True when a parent typed this child in at sign-up (course families, who
+  /// have no invite code) rather than the academy adding them. Grants nothing
+  /// on its own: photos still only follow the admin's tags. Shown to the admin
+  /// so a duplicate of a roster child is easy to spot.
+  addedByParent Boolean  @default(false)
   createdAt     DateTime @default(now())
 
   guardians   ParentStudent[]

@@ -10,8 +10,10 @@ export async function registerRequest(input: {
   email: string;
   name: string;
   password: string;
-  /** Required. Proves the academy invited them, and says which child they belong to. */
-  inviteCode: string;
+  /** Nursery families: says which roster child they belong to. */
+  inviteCode?: string;
+  /** Course families, who have no code: the child they are signing up. */
+  child?: { name: string; birthDate: string };
 }) {
   const { data } = await api.post<AuthResponse>("/api/auth/register", input);
   return data;

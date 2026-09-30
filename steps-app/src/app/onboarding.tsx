@@ -11,6 +11,12 @@ import {
 
 import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
 import { Screen } from "../components/Screen";
+import {
+  BirthDateInput,
+  BirthDateParts,
+  EMPTY_BIRTH_DATE,
+  toIsoBirthDate,
+} from "../components/ui/BirthDateInput";
 import { StepsButton } from "../components/ui/StepsButton";
 import { StepsLogo } from "../components/ui/StepsLogo";
 import { Touchable } from "../components/ui/Touchable";
@@ -24,24 +30,38 @@ import { checkInviteCode } from "../services/inviteApi";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MIN_PASSWORD_LENGTH = 8;
-const TOTAL_STEPS = 3;
+
+type Step = "code" | "child" | "details" | "finish";
 
 /**
- * Sign-up by invitation. The code establishes which child the parent belongs
- * to, so this never asks for the child's name — it states it and asks for
- * confirmation, which is both friendlier and impossible to fake.
+ * Sign-up, one screen for every family.
+ *
+ * - Nursery families have an invite code. The code establishes which child
+ *   they belong to, so this never asks for the child's name — it states it
+ *   and asks for confirmation, which is friendlier and impossible to fake.
+ * - Course families have no code. They tap "I don't have a code" and type
+ *   their child in. That child gets them into courses and nothing more:
+ *   photos still only ever follow the admin's tags.
  *
  * A parent walks through this exactly once. Afterwards they have an account
- * and use the ordinary login screen, so no code ever appears again.
+ * and use the ordinary login screen.
  */
 export default function OnboardingScreen() {
   const { t, rtlText } = useTranslation();
   const { isLoading, error, register } = useAuth();
 
-  const [step, setStep] = useState(1);
+  const [mode, setMode] = useState<"code" | "courses">("code");
+  const [step, setStep] = useState<Step>("code");
   const [code, setCode] = useState("");
   const [childName, setChildName] = useState<string | null>(null);
   const [isChecking, setIsChecking] = useState(false);
+
+  const [ownChildName, setOwnChildName] = useState("");
+  const [birthDate, setBirthDate] = useState<BirthDateParts>(EMPTY_BIRTH_DATE);
+
+  const steps: Step[] =
+    mode === "code" ? ["code", "details", "finish"] : ["code", "child", "details", "finish"];
+  const stepIndex = steps.indexOf(step);
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -53,8 +73,26 @@ export default function OnboardingScreen() {
 
   const goBack = () => {
     setFormError(null);
-    if (step === 1) return router.back();
-    setStep((current) => current - 1);
+    if (stepIndex <= 0) return router.back();
+    const previous = steps[stepIndex - 1];
+    // Back to the code screen means back to having a choice of path.
+    if (previous === "code") setMode("code");
+    setStep(previous);
+  };
+
+  const startWithoutCode = () => {
+    setFormError(null);
+    setMode("courses");
+    track("onboarding_step_completed", { step: "no_code" });
+    setStep("child");
+  };
+
+  const handleChild = () => {
+    if (!ownChildName.trim()) return setFormError(t.invite.childNameRequired);
+    if (!toIsoBirthDate(birthDate)) return setFormError(t.invite.birthDateInvalid);
+    setFormError(null);
+    track("onboarding_step_completed", { step: "child" });
+    setStep("details");
   };
 
   const handleCheckCode = async () => {
@@ -65,7 +103,7 @@ export default function OnboardingScreen() {
       setChildName(studentName);
       track("invite_code_entered", { success: true });
       track("onboarding_step_completed", { step: "invite_code" });
-      setStep(2);
+      setStep("details");
     } catch {
       // Every failure reads the same on the server, so there's nothing more
       // specific to say here.
@@ -84,18 +122,23 @@ export default function OnboardingScreen() {
     if (password.length < MIN_PASSWORD_LENGTH) return setFormError(t.auth.passwordTooShort);
     setFormError(null);
     track("onboarding_step_completed", { step: "details" });
-    setStep(3);
+    setStep("finish");
   };
 
   const handleCreate = async () => {
     if (!hasConsented) return setFormError(t.invite.consentRequired);
     setFormError(null);
     track("onboarding_step_completed", { step: "consent" });
+    const birthDateIso = toIsoBirthDate(birthDate);
     const ok = await register({
       name: name.trim(),
       email: email.trim(),
       password,
-      inviteCode: code,
+      ...(mode === "code"
+        ? { inviteCode: code }
+        : birthDateIso
+          ? { child: { name: ownChildName.trim(), birthDate: birthDateIso } }
+          : {}),
     });
     if (ok) router.replace("/(tabs)");
   };
@@ -110,9 +153,9 @@ export default function OnboardingScreen() {
         showsVerticalScrollIndicator={false}
       >
         <StepsLogo />
-        <Text style={styles.stepLabel}>{t.invite.stepOf(step, TOTAL_STEPS)}</Text>
+        <Text style={styles.stepLabel}>{t.invite.stepOf(stepIndex + 1, steps.length)}</Text>
 
-        {step === 1 ? (
+        {step === "code" ? (
           <>
             <Text style={[styles.title, rtlText]}>{t.invite.enterCodeTitle}</Text>
             <Text style={[styles.subtitle, rtlText]}>{t.invite.enterCodeSubtitle}</Text>
@@ -138,15 +181,44 @@ export default function OnboardingScreen() {
               loading={isChecking}
               style={styles.primaryButton}
             />
+            <Touchable onPress={startWithoutCode} style={styles.linkButton}>
+              <Text style={[styles.link, styles.linkCentered]}>{t.invite.noCode}</Text>
+            </Touchable>
           </>
         ) : null}
 
-        {step === 2 && childName ? (
+        {step === "child" ? (
           <>
-            <Text style={[styles.title, rtlText]}>
-              {t.invite.confirmChildTitle(childName)}
-            </Text>
-            <Text style={[styles.subtitle, rtlText]}>{t.invite.confirmChildSubtitle}</Text>
+            <Text style={[styles.title, rtlText]}>{t.invite.childTitle}</Text>
+            <Text style={[styles.subtitle, rtlText]}>{t.invite.childSubtitle}</Text>
+            <TextInput
+              style={[styles.input, rtlText]}
+              placeholder={t.invite.childNamePlaceholder}
+              placeholderTextColor={Colors.textLight}
+              value={ownChildName}
+              onChangeText={setOwnChildName}
+              maxLength={60}
+            />
+            <Text style={[styles.fieldLabel, rtlText]}>{t.invite.birthDateLabel}</Text>
+            <BirthDateInput value={birthDate} onChange={setBirthDate} />
+            <StepsButton
+              label={t.invite.checkCode}
+              onPress={handleChild}
+              style={styles.primaryButton}
+            />
+          </>
+        ) : null}
+
+        {step === "details" && (mode === "courses" || childName) ? (
+          <>
+            {mode === "code" && childName ? (
+              <>
+                <Text style={[styles.title, rtlText]}>
+                  {t.invite.confirmChildTitle(childName)}
+                </Text>
+                <Text style={[styles.subtitle, rtlText]}>{t.invite.confirmChildSubtitle}</Text>
+              </>
+            ) : null}
 
             <Text style={[styles.sectionLabel, rtlText]}>{t.invite.yourDetailsTitle}</Text>
             <TextInput
@@ -178,13 +250,15 @@ export default function OnboardingScreen() {
               onPress={handleDetails}
               style={styles.primaryButton}
             />
-            <Touchable onPress={goBack} style={styles.linkButton}>
-              <Text style={styles.link}>{t.invite.notRightChild}</Text>
-            </Touchable>
+            {mode === "code" ? (
+              <Touchable onPress={goBack} style={styles.linkButton}>
+                <Text style={styles.link}>{t.invite.notRightChild}</Text>
+              </Touchable>
+            ) : null}
           </>
         ) : null}
 
-        {step === 3 ? (
+        {step === "finish" ? (
           <>
             <Text style={[styles.title, rtlText]}>{t.invite.finishTitle}</Text>
 
@@ -215,13 +289,14 @@ export default function OnboardingScreen() {
           </>
         ) : null}
 
-        {isLoading && step === 3 ? (
+        {isLoading && step === "finish" ? (
           <ActivityIndicator color={Colors.terracotta} style={styles.spinner} />
         ) : null}
 
         {message ? <Text style={styles.error}>{message}</Text> : null}
 
-        {step !== 2 ? (
+        {/* The code path's details step has its own "not my child" back link. */}
+        {!(step === "details" && mode === "code") ? (
           <Touchable onPress={goBack} style={styles.linkButton}>
             <Text style={styles.link}>{t.common.back}</Text>
           </Touchable>
@@ -287,6 +362,14 @@ const styles = StyleSheet.create({
   primaryButton: { marginTop: 8 },
   linkButton: { marginTop: 18, alignSelf: "center" },
   link: { ...Type.body, color: Colors.terracotta, fontFamily: Fonts.bold },
+  linkCentered: { textAlign: "center" },
+  fieldLabel: {
+    fontFamily: Fonts.semiBold,
+    fontSize: 13,
+    color: Colors.textLight,
+    marginTop: 4,
+    marginBottom: 6,
+  },
   spinner: { marginTop: 16 },
   error: {
     ...Type.caption,

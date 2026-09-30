@@ -7,7 +7,8 @@ export type User = PrismaUser;
 /** `birthDate` drives the age band Home labels the child with. */
 export type PublicChild = { id: string; name: string; birthDate: string | null };
 export type PublicUser = Omit<User, "passwordHash" | "googleId" | "pushToken"> & {
-  /** Children this account is a guardian of. Admin-assigned, never self-declared. */
+  /** Children this account is a guardian of. Linked by the admin, an invite
+   *  code, or — for course families — added by the parent themselves. */
   children: PublicChild[];
 };
 
@@ -31,6 +32,37 @@ export const UserModel = {
         role: input.role ?? "parent",
         claimedChildName: input.claimedChildName ?? null,
       },
+    });
+  },
+
+  /**
+   * A course family's sign-up: the account, the child they typed in and the
+   * link between them, all or nothing. The child is marked as parent-added so
+   * the admin can tell it apart from the academy's own roster.
+   */
+  async createWithOwnChild(
+    input: CreateUserInput,
+    child: { name: string; birthDate: string }
+  ): Promise<User> {
+    return prisma.$transaction(async (tx) => {
+      const user = await tx.user.create({
+        data: {
+          email: input.email.toLowerCase(),
+          name: input.name,
+          passwordHash: input.passwordHash ?? null,
+          googleId: input.googleId ?? null,
+          role: input.role ?? "parent",
+        },
+      });
+      await tx.student.create({
+        data: {
+          name: child.name,
+          birthDate: child.birthDate,
+          addedByParent: true,
+          guardians: { create: { parentId: user.id } },
+        },
+      });
+      return user;
     });
   },
 

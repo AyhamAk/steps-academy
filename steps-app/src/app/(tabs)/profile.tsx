@@ -4,6 +4,7 @@ import { router } from "expo-router";
 import { useMemo, useState } from "react";
 import { Alert, Linking, ScrollView, StyleSheet, Text, View } from "react-native";
 
+import { AddChildModal } from "../../components/profile/AddChildModal";
 import { ChangePasswordModal } from "../../components/profile/ChangePasswordModal";
 import { ContactAcademyModal } from "../../components/profile/ContactAcademyModal";
 import IconTile from "../../components/ui/IconTile";
@@ -38,7 +39,7 @@ export default function ProfileScreen() {
   const children = user?.children ?? [];
   const childIds = children.map((child) => child.id);
   const [selectedChildId, setSelectedChildId] = useState<string | null>(children[0]?.id ?? null);
-  const [activeSheet, setActiveSheet] = useState<"password" | "contact" | null>(null);
+  const [activeSheet, setActiveSheet] = useState<"password" | "contact" | "child" | null>(null);
 
   // Shares its cache key with Home/ParentGalleryScreen — visiting any of the
   // three warms the others, so this rarely triggers its own fetch.
@@ -136,6 +137,19 @@ export default function ProfileScreen() {
             tint: Colors.honey,
             onPress: () => router.push("/admin"),
             badge: pendingRequests,
+          },
+        ]
+      : []),
+    // Course families add their own children; nursery children arrive with
+    // the invite code. Admins manage children from /students instead.
+    ...(user?.role !== "admin"
+      ? [
+          {
+            key: "child",
+            label: t.invite.addOwnChild,
+            icon: "person-add-outline" as keyof typeof Ionicons.glyphMap,
+            tint: Colors.honey,
+            onPress: () => setActiveSheet("child"),
           },
         ]
       : []),
@@ -354,6 +368,11 @@ export default function ProfileScreen() {
         visible={activeSheet === "contact"}
         onClose={() => setActiveSheet(null)}
         onError={showToast}
+      />
+      <AddChildModal
+        visible={activeSheet === "child"}
+        onClose={() => setActiveSheet(null)}
+        onSuccess={showToast}
       />
     </Screen>
   );

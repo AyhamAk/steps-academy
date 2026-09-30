@@ -69,7 +69,7 @@ export function InviteCodesSection({
     ]);
 
   const share = (code: string) =>
-    Share.share({ message: t.invite.adminShareMessage(studentName, code, t.invite.haveCode) });
+    Share.share({ message: t.invite.adminShareMessage(studentName, code, t.invite.signUp) });
 
   const statusLabel = (status: Invite["status"]) =>
     status === "active"

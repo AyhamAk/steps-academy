@@ -7,6 +7,8 @@ export type Student = {
   name: string;
   birthDate: string | null;
   notes: string | null;
+  /** Typed in by a course family at sign-up rather than added by the academy. */
+  addedByParent?: boolean;
   photoCount: number;
   guardians: Guardian[];
 };
@@ -114,6 +116,18 @@ export async function listParents(query: PageQuery = {}) {
     { params: query }
   );
   return data;
+}
+
+/** A child a parent types in themselves: course families have no invite code. */
+export type OwnChildInput = { name: string; birthDate: string };
+
+/** Parent: add a child of your own, to sign them up for courses. */
+export async function addMyChild(child: OwnChildInput) {
+  const { data } = await api.post<{ student: { id: string; name: string } }>(
+    "/api/students/mine",
+    child
+  );
+  return data.student;
 }
 
 /** Paste-import a class. Names already on the roster are skipped, not errored. */

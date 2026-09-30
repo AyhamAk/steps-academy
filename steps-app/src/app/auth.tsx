@@ -225,7 +225,7 @@ export default function AuthScreen() {
 
               <Touchable onPress={() => router.push("/onboarding")} style={styles.linkButton}>
                 <Text style={styles.link}>
-                  {t.auth.noAccount} <Text style={styles.linkAccent}>{t.invite.haveCode}</Text>
+                  {t.auth.noAccount} <Text style={styles.linkAccent}>{t.invite.signUp}</Text>
                 </Text>
               </Touchable>
             </View>

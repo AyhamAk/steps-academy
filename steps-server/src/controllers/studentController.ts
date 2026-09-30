@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 
 import { StudentModel } from "../models/student";
 import { UserModel } from "../models/user";
+import { MAX_SELF_ADDED_CHILDREN, parseChildInput } from "../utils/childInput";
 
 function param(req: Request, key: string): string {
   const value = req.params[key];
@@ -14,6 +15,7 @@ function serializeStudent(student: {
   birthDate: string | null;
   notes: string | null;
   guardianPhone?: string | null;
+  addedByParent?: boolean;
 }) {
   return {
     id: student.id,
@@ -21,7 +23,27 @@ function serializeStudent(student: {
     birthDate: student.birthDate,
     notes: student.notes,
     guardianPhone: student.guardianPhone ?? null,
+    addedByParent: student.addedByParent ?? false,
   };
+}
+
+/**
+ * Parent: add a child of your own. For course families, who signed up without
+ * an invite code — the child they add gets them into courses, and nothing
+ * else: photos still only follow the admin's tags.
+ */
+export async function addMyChild(req: Request, res: Response) {
+  const child = parseChildInput(req.body);
+  if (typeof child === "string") {
+    return res.status(400).json({ message: child });
+  }
+  if ((await StudentModel.countForParent(req.userId!)) >= MAX_SELF_ADDED_CHILDREN) {
+    return res
+      .status(409)
+      .json({ message: "That's the most children you can add. Please contact the academy." });
+  }
+  const student = await StudentModel.createForParent(req.userId!, child);
+  res.status(201).json({ student: serializeStudent(student) });
 }
 
 function paging(req: Request) {

@@ -153,6 +153,17 @@ function StudentCard({ student }: { student: Student }) {
               {" · "}
               {t.students.photoCount(student.photoCount)}
             </Text>
+            {/* Typed in by a course family, not added by the academy — so a
+                duplicate of a roster child is easy to spot. */}
+            {student.addedByParent ? (
+              <View style={[styles.parentTagRow, isRTL && styles.rowReverse]}>
+                <View style={styles.parentTag}>
+                  <Text style={styles.parentTagText} maxFontSizeMultiplier={1.2}>
+                    {t.invite.addedByParentTag}
+                  </Text>
+                </View>
+              </View>
+            ) : null}
           </View>
           <Ionicons
             name={isExpanded ? "chevron-up" : isRTL ? "chevron-back" : "chevron-forward"}
@@ -355,6 +366,14 @@ export default function StudentsScreen() {
 }
 
 const styles = StyleSheet.create({
+  parentTagRow: { flexDirection: "row", marginTop: 4 },
+  parentTag: {
+    backgroundColor: Colors.honeyLight,
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  parentTagText: { fontFamily: Fonts.semiBold, fontSize: 11, color: Colors.honeyDeep },
   flex: { flex: 1 },
   rowReverse: { flexDirection: "row-reverse" },
   addCard: {
