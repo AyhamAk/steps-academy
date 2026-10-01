@@ -12,7 +12,8 @@ import { prisma } from "../lib/prisma";
  *   send is a paid WhatsApp message, so this is also what caps the bill.
  *
  * One fixed number (REVIEW_PHONE / REVIEW_CODE) skips WhatsApp entirely, for
- * App Store and Play reviewers who cannot receive a message here.
+ * App Store and Play reviewers who cannot receive a message here. A second
+ * one (REVIEW_ADMIN_PHONE) does the same for the manager account.
  */
 
 const CODE_TTL_MS = 10 * 60 * 1000;
@@ -25,7 +26,11 @@ export type SendResult =
   | { ok: false; reason: "not_configured" | "rejected" | "too_soon" | "too_many" };
 
 function isReviewNumber(phone: string): boolean {
-  return Boolean(env.reviewPhone && env.reviewCode && phone === env.reviewPhone);
+  if (!env.reviewCode) return false;
+  return (
+    Boolean(env.reviewPhone && phone === env.reviewPhone) ||
+    Boolean(env.reviewAdminPhone && phone === env.reviewAdminPhone)
+  );
 }
 
 function hashCode(phone: string, code: string): string {

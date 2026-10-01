@@ -42,6 +42,12 @@ export const env = {
   /** One number app reviewers sign in with, using a fixed code and no SMS. */
   reviewPhone: process.env.REVIEW_PHONE ?? "",
   reviewCode: process.env.REVIEW_CODE ?? "",
+  /**
+   * A second fixed number, same code, that signs in as an existing admin
+   * account (found by email) — for testing the manager side by phone.
+   */
+  reviewAdminPhone: process.env.REVIEW_ADMIN_PHONE ?? "",
+  reviewAdminEmail: process.env.REVIEW_ADMIN_EMAIL ?? "",
   googleClientId: process.env.GOOGLE_CLIENT_ID ?? "",
   /**
    * Google sign-in is off until the Android OAuth client carries the Play App

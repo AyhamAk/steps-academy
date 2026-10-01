@@ -77,6 +77,16 @@ export async function verifyPhoneSignIn(req: Request, res: Response) {
     return res.status(401).json({ message: "That code isn't right, or it has expired." });
   }
 
+  // The manager's test number signs in as the admin account named by email,
+  // never as a new parent.
+  if (env.reviewAdminPhone && phone === env.reviewAdminPhone) {
+    const admin = env.reviewAdminEmail ? await UserModel.findByEmail(env.reviewAdminEmail) : null;
+    if (!admin || admin.role !== "admin") {
+      return res.status(503).json({ message: "The test manager account isn't set up." });
+    }
+    return res.json({ token: signToken({ userId: admin.id }), user: await UserModel.toPublic(admin) });
+  }
+
   const user = await UserModel.findByPhone(phone);
   if (user) {
     return res.json({ token: signToken({ userId: user.id }), user: await UserModel.toPublic(user) });

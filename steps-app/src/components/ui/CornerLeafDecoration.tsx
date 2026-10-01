@@ -16,10 +16,8 @@ const SIZES = {
   xl: { width: 200, height: 150 },
 } as const;
 
-/** One leaf: a base shape, a lighter highlight on its upper half, and a midrib. */
-
 /** An almond with pointed tips, centred on (cx, cy): reads as a leaf where an ellipse reads as a pebble. */
-function leafPath(cx: number, cy: number, rx: number, ry: number): string {
+export function leafPath(cx: number, cy: number, rx: number, ry: number): string {
   const bulge = ry * 1.35;
   return `M${cx - rx},${cy} Q${cx},${cy - bulge} ${cx + rx},${cy} Q${cx},${cy + bulge} ${cx - rx},${cy} Z`;
 }
@@ -35,22 +33,18 @@ const LEAVES: Leaf[] = [
   { cx: 66, cy: 44, rx: 14, ry: 6.5, rotate: 28, fill: Colors.leafFillA },
 ];
 
-/** Gold dots in three sizes, some trailing well away from the leaves. */
+/** A few small gold flecks, clustered by the upper leaf tips. */
 const DOTS: [number, number, number][] = [
-  [78, 22, 3.2],
-  [90, 32, 2.2],
-  [74, 56, 2.2],
-  [86, 9, 1.5],
-  [101, 21, 1.5],
-  [97, 46, 3],
-  [111, 35, 1.5],
-  [107, 7, 2.2],
-  [84, 70, 1.5],
+  [76, 7, 1.4],
+  [81, 15, 0.9],
+  [70, 2, 0.9],
+  [82, 38, 1],
 ];
 
 /**
  * A leafy branch tucked into a corner: a curved stem with a side twig, six
- * two-tone leaves and a scatter of gold dots.
+ * two-tone leaves and a few gold flecks, all kept pale so the branch sits
+ * quietly behind the content.
  *
  * A flat vector stand-in for the hand-painted watercolour branches in the
  * design reference. The two tones suggest shading; real watercolour depth
@@ -92,33 +86,33 @@ export function CornerLeafDecoration({
         <Path
           d="M2,90 Q40,70 32,36 Q28,12 56,4"
           stroke={Colors.leafStem}
-          strokeWidth={2.5}
+          strokeWidth={1.8}
           fill="none"
-          opacity={0.65}
+          opacity={0.4}
         />
-        <Path d="M31,50 Q50,49 64,42" stroke={Colors.leafStem} strokeWidth={1.6} fill="none" opacity={0.55} />
+        <Path d="M31,50 Q50,49 64,42" stroke={Colors.leafStem} strokeWidth={1.2} fill="none" opacity={0.35} />
 
         {LEAVES.map((leaf, index) => (
           <G key={index} transform={`rotate(${leaf.rotate} ${leaf.cx} ${leaf.cy})`}>
-            <Path d={leafPath(leaf.cx, leaf.cy, leaf.rx, leaf.ry)} fill={leaf.fill} opacity={0.82} />
+            <Path d={leafPath(leaf.cx, leaf.cy, leaf.rx, leaf.ry)} fill={leaf.fill} opacity={0.32} />
             {/* the lit upper half of the leaf */}
             <Path
               d={leafPath(leaf.cx - leaf.rx * 0.08, leaf.cy - leaf.ry * 0.32, leaf.rx * 0.7, leaf.ry * 0.42)}
               fill={Colors.leafFillC}
-              opacity={0.75}
+              opacity={0.3}
             />
             {/* midrib */}
             <Path
               d={`M${leaf.cx - leaf.rx * 0.85},${leaf.cy} L${leaf.cx + leaf.rx * 0.85},${leaf.cy}`}
               stroke={Colors.leafStem}
-              strokeWidth={0.9}
-              opacity={0.45}
+              strokeWidth={0.7}
+              opacity={0.25}
             />
           </G>
         ))}
 
         {DOTS.map(([cx, cy, r], index) => (
-          <Circle key={index} cx={cx} cy={cy} r={r} fill={Colors.leafGold} opacity={r > 2.5 ? 0.7 : 0.55} />
+          <Circle key={index} cx={cx} cy={cy} r={r} fill={Colors.leafGold} opacity={0.35} />
         ))}
       </Svg>
     </View>

@@ -1,83 +1,81 @@
 import { StyleSheet, View } from "react-native";
-import Svg, { Circle, Path } from "react-native-svg";
+import Svg, { Circle, G, Path } from "react-native-svg";
 
 import { Colors } from "../../constants/Colors";
 import { useTranslation } from "../../i18n/useTranslation";
+import { leafPath } from "./CornerLeafDecoration";
 
 /**
- * The quiet decoration inside a card: a pale watercolour-style wash in one
- * corner, a thin gold line sweeping across it, and a few gold dots.
+ * The quiet decoration inside a card: a small leafy sprig tucked into the
+ * bottom-end corner — a short stem, two or three leaves and a few gold flecks.
  *
- * Three variants, so a grid of cards reads as different places rather than
+ * It stays in its corner at every card size: a fixed box, never stretched to
+ * fill the card. Kept pale so it sits behind the content.
+ *
+ * Several variants, so a grid of cards reads as different places rather than
  * one stamp repeated. Callers pass the card's index and each card picks its
  * own variant.
  *
- * Fills the card and sits under its content; the card must clip
- * (overflow: "hidden") and the wash never takes taps.
+ * The card should clip (overflow: "hidden"); the sprig never takes taps.
  */
 
+type Leaf = { cx: number; cy: number; rx: number; ry: number; rotate: number };
+
 type Variant = {
-  /** The wash: a soft organic blob. */
-  blob: string;
-  blobColor: string;
-  /** A second, smaller wash layered on the first for a painted feel. */
-  blob2: string;
-  blob2Color: string;
-  /** The gold line. */
-  line: string;
+  stem: string;
+  leaves: Leaf[];
   dots: [number, number, number][];
 };
 
-// Drawn in a 100×80 box with the wash in the bottom-right; mirrored for RTL
-// so the wash sits at the end side, as in the design reference.
+// Drawn in a 90×70 box growing out of the bottom-right corner; mirrored for
+// RTL so it sits at the end side, as in the design reference.
 const VARIANTS: Variant[] = [
   {
-    blob: "M100,34 C84,36 70,48 66,62 C63,72 70,80 70,80 L100,80 Z",
-    blobColor: Colors.leafFillC,
-    blob2: "M100,52 C90,54 82,62 82,80 L100,80 Z",
-    blob2Color: Colors.leafFillB,
-    line: "M52,80 C60,66 74,56 100,50",
+    stem: "M90,70 Q74,60 70,42 Q67,30 56,24",
+    leaves: [
+      { cx: 60, cy: 30, rx: 10, ry: 4.5, rotate: 30 },
+      { cx: 78, cy: 46, rx: 9, ry: 4, rotate: -35 },
+      { cx: 64, cy: 50, rx: 8, ry: 3.5, rotate: 20 },
+    ],
     dots: [
-      [60, 58, 1.4],
-      [55, 66, 1],
-      [66, 50, 0.9],
+      [50, 20, 0.9],
+      [56, 15, 0.6],
+      [48, 30, 0.6],
     ],
   },
   {
-    blob: "M100,46 C88,44 76,54 74,68 C73,74 76,80 76,80 L100,80 Z",
-    blobColor: Colors.secondaryLight,
-    blob2: "M100,60 C92,62 88,70 90,80 L100,80 Z",
-    blob2Color: Colors.leafFillC,
-    line: "M40,80 C56,74 70,60 86,40",
+    stem: "M90,62 Q72,58 62,44 Q56,36 58,26",
+    leaves: [
+      { cx: 60, cy: 32, rx: 9, ry: 4, rotate: -60 },
+      { cx: 72, cy: 52, rx: 10, ry: 4.5, rotate: 15 },
+    ],
     dots: [
-      [90, 34, 1.4],
-      [82, 30, 1],
-      [94, 42, 0.9],
-      [46, 72, 1],
+      [56, 18, 0.9],
+      [64, 20, 0.6],
     ],
   },
   {
-    blob: "M100,24 C86,30 80,42 84,56 C87,66 96,72 100,74 Z",
-    blobColor: Colors.accent2Light,
-    blob2: "M100,58 C94,62 92,72 96,80 L100,80 Z",
-    blob2Color: Colors.leafFillC,
-    line: "M62,80 C66,68 76,62 90,62 C95,62 98,60 100,58",
+    stem: "M82,70 Q78,54 66,46 Q58,42 50,44",
+    leaves: [
+      { cx: 56, cy: 42, rx: 9, ry: 4, rotate: -10 },
+      { cx: 72, cy: 52, rx: 8, ry: 3.5, rotate: -50 },
+      { cx: 80, cy: 62, rx: 7, ry: 3, rotate: 60 },
+    ],
     dots: [
-      [70, 60, 1.3],
-      [64, 68, 1],
+      [44, 40, 0.9],
+      [46, 48, 0.6],
     ],
   },
   {
-    // A low, wide wash along the bottom edge, with the line rising over it.
-    blob: "M100,58 C80,58 64,66 56,80 L100,80 Z",
-    blobColor: Colors.secondaryLight,
-    blob2: "M100,66 C88,68 80,74 78,80 L100,80 Z",
-    blob2Color: Colors.leafFillB,
-    line: "M70,80 C74,70 82,56 98,46",
+    stem: "M90,70 Q80,52 82,36",
+    leaves: [
+      { cx: 80, cy: 40, rx: 9, ry: 4, rotate: -75 },
+      { cx: 74, cy: 56, rx: 8, ry: 3.5, rotate: -30 },
+    ],
     dots: [
-      [92, 40, 1.2],
-      [86, 48, 0.9],
-      [76, 62, 1.3],
+      [80, 26, 0.9],
+      [86, 30, 0.6],
+      [74, 30, 0.6],
     ],
   },
 ];
@@ -87,13 +85,16 @@ export function CardWash({ index = 0 }: { index?: number }) {
   const variant = VARIANTS[((index % VARIANTS.length) + VARIANTS.length) % VARIANTS.length];
 
   return (
-    <View pointerEvents="none" style={[StyleSheet.absoluteFill, isRTL && styles.mirrored]}>
-      <Svg width="100%" height="100%" viewBox="0 0 100 80" preserveAspectRatio="xMaxYMax slice">
-        <Path d={variant.blob} fill={variant.blobColor} opacity={0.55} />
-        <Path d={variant.blob2} fill={variant.blob2Color} opacity={0.4} />
-        <Path d={variant.line} stroke={Colors.leafGold} strokeWidth={0.7} fill="none" opacity={0.7} />
+    <View pointerEvents="none" style={[styles.wrap, isRTL ? styles.left : styles.right]}>
+      <Svg width="100%" height="100%" viewBox="0 0 90 70">
+        <Path d={variant.stem} stroke={Colors.leafStem} strokeWidth={1.1} fill="none" opacity={0.4} />
+        {variant.leaves.map((leaf, i) => (
+          <G key={i} transform={`rotate(${leaf.rotate} ${leaf.cx} ${leaf.cy})`}>
+            <Path d={leafPath(leaf.cx, leaf.cy, leaf.rx, leaf.ry)} fill={Colors.leafFillA} opacity={0.3} />
+          </G>
+        ))}
         {variant.dots.map(([cx, cy, r], i) => (
-          <Circle key={i} cx={cx} cy={cy} r={r} fill={Colors.leafGold} opacity={0.65} />
+          <Circle key={i} cx={cx} cy={cy} r={r} fill={Colors.leafGold} opacity={0.35} />
         ))}
       </Svg>
     </View>
@@ -101,5 +102,8 @@ export function CardWash({ index = 0 }: { index?: number }) {
 }
 
 const styles = StyleSheet.create({
-  mirrored: { transform: [{ scaleX: -1 }] },
+  // A fixed corner box: the sprig keeps its size whatever the card's width.
+  wrap: { position: "absolute", bottom: 0, width: 90, height: 70 },
+  right: { right: 0 },
+  left: { left: 0, transform: [{ scaleX: -1 }] },
 });
