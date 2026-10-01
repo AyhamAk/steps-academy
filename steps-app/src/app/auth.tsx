@@ -14,6 +14,7 @@ import { Fonts } from "../constants/Fonts";
 import { useAuth } from "../hooks/useAuth";
 import { useReduceMotionSetting } from "../hooks/useReduceMotionSetting";
 import { useTranslation } from "../i18n/useTranslation";
+import { isMobileNumber as isMobile, toLocalDisplay as displayPhone } from "../lib/phone";
 
 /** Seconds before "send the code again" unlocks — each resend is a paid message. */
 const RESEND_SECONDS = 30;
@@ -38,18 +39,6 @@ function AnimatedPanel({ children }: PropsWithChildren) {
   }, []);
 
   return <Animated.View style={{ opacity, transform: [{ translateY }] }}>{children}</Animated.View>;
-}
-
-/** "+972501234567" or "0501234567" → "050-123-4567", for the "we sent a code to" line. */
-function displayPhone(raw: string): string {
-  const digits = raw.replace(/\D/g, "").replace(/^972/, "0");
-  return digits.length === 10 ? `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}` : raw;
-}
-
-/** An Israeli mobile: 05x and seven more digits, however it was typed. */
-function isMobile(raw: string): boolean {
-  const digits = raw.replace(/\D/g, "").replace(/^972/, "0").replace(/^(?=5)/, "0");
-  return /^05\d{8}$/.test(digits);
 }
 
 /**
@@ -98,7 +87,11 @@ export default function AuthScreen() {
       router.replace("/(tabs)");
     } else if (result) {
       // A new number: finish sign-up with proof it was verified.
-      router.push({ pathname: "/onboarding", params: { signupToken: result.signupToken } });
+      router.push({
+        pathname: "/onboarding",
+        // Children the academy already has this number on; "" when none.
+        params: { signupToken: result.signupToken, matched: result.matchedChildren.join("\n") },
+      });
     }
   };
 

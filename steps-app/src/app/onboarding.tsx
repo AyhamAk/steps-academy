@@ -1,13 +1,6 @@
 import { Redirect, router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
-import {
-  ActivityIndicator,
-  StyleSheet,
-  Switch,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
+import { ActivityIndicator, StyleSheet, Switch, Text, View } from "react-native";
 
 import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
 import { Screen } from "../components/Screen";
@@ -16,80 +9,53 @@ import { BirthDateField } from "../components/auth/BirthDateField";
 import { StepProgressHeader } from "../components/auth/StepProgressHeader";
 import { StepsButton } from "../components/ui/StepsButton";
 import { StepsLogo } from "../components/ui/StepsLogo";
-import { Touchable } from "../components/ui/Touchable";
 import { Colors } from "../constants/Colors";
 import { Fonts } from "../constants/Fonts";
 import { Type } from "../constants/Typography";
 import { track } from "../services/analytics";
 import { useTranslation } from "../i18n/useTranslation";
 import { useAuth } from "../hooks/useAuth";
-import { checkInviteCode } from "../services/inviteApi";
 
-
-/**
- * "abcd1234" -> "ABCD-1234" as it is typed, so nobody has to find the dash.
- * The server ignores case and dashes anyway; this is only for the eye.
- */
-function formatInviteCode(raw: string): string {
-  const chars = raw.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8);
-  return chars.length > 4 ? `${chars.slice(0, 4)}-${chars.slice(4)}` : chars;
-}
-
-type Step = "code" | "child" | "details" | "finish";
+type Step = "child" | "details" | "finish";
 
 /**
- * Sign-up, one screen for every family.
+ * Sign-up, one screen for every family, reached only with a verified number.
  *
- * - Nursery families have an invite code. The code establishes which child
- *   they belong to, so this never asks for the child's name — it states it
- *   and asks for confirmation, which is friendlier and impossible to fake.
- * - Course families have no code. They tap "I don't have a code" and type
- *   their child in. That child gets them into courses and nothing more:
- *   photos still only ever follow the admin's tags.
+ * - Nursery families: the academy saved this number on their child, so the
+ *   sign-in screen already knows who they are. This states the child's name
+ *   and asks only for the parent's own — no code, nothing to type wrong.
+ * - Course families: the academy doesn't have their number. They type their
+ *   child in. That child gets them into courses and nothing more: photos
+ *   still only ever follow the admin's tags.
  *
- * A parent walks through this exactly once. Afterwards they have an account
- * and use the ordinary login screen.
+ * A parent walks through this exactly once. Afterwards the same number signs
+ * them straight in.
  */
 export default function OnboardingScreen() {
   const { t, rtlText } = useTranslation();
   const { isLoading, error, registerWithPhone } = useAuth();
-  // Proof, from the sign-in screen, that this phone number was just verified.
-  const { signupToken } = useLocalSearchParams<{ signupToken?: string }>();
+  // Proof, from the sign-in screen, that this phone number was just verified,
+  // and the children the academy has that number on (newline-separated).
+  const { signupToken, matched } = useLocalSearchParams<{ signupToken?: string; matched?: string }>();
+  const matchedChildren = (matched ?? "").split("\n").filter(Boolean);
+  const isNursery = matchedChildren.length > 0;
 
-  const [mode, setMode] = useState<"code" | "courses">("code");
-  const [step, setStep] = useState<Step>("code");
-  const [code, setCode] = useState("");
-  const [childName, setChildName] = useState<string | null>(null);
-  const [isChecking, setIsChecking] = useState(false);
+  const steps: Step[] = isNursery ? ["details", "finish"] : ["child", "details", "finish"];
+  const [step, setStep] = useState<Step>(steps[0]);
+  const stepIndex = steps.indexOf(step);
 
   const [ownChildName, setOwnChildName] = useState("");
   const [birthDate, setBirthDate] = useState<string | null>(null);
-
-  const steps: Step[] =
-    mode === "code" ? ["code", "details", "finish"] : ["code", "child", "details", "finish"];
-  const stepIndex = steps.indexOf(step);
-
   const [firstName, setFirstName] = useState("");
   const [familyName, setFamilyName] = useState("");
   const [hasConsented, setHasConsented] = useState(false);
-  const [wantsNotifications, setWantsNotifications] = useState(true);
 
   const [formError, setFormError] = useState<string | null>(null);
 
   const goBack = () => {
     setFormError(null);
     if (stepIndex <= 0) return router.back();
-    const previous = steps[stepIndex - 1];
-    // Back to the code screen means back to having a choice of path.
-    if (previous === "code") setMode("code");
-    setStep(previous);
-  };
-
-  const startWithoutCode = () => {
-    setFormError(null);
-    setMode("courses");
-    track("onboarding_step_completed", { step: "no_code" });
-    setStep("child");
+    setStep(steps[stepIndex - 1]);
   };
 
   const handleChild = () => {
@@ -98,27 +64,6 @@ export default function OnboardingScreen() {
     setFormError(null);
     track("onboarding_step_completed", { step: "child" });
     setStep("details");
-  };
-
-  const handleCheckCode = async () => {
-    setFormError(null);
-    setIsChecking(true);
-    try {
-      const { studentName } = await checkInviteCode(code);
-      setChildName(studentName);
-      track("invite_code_entered", { success: true });
-      track("onboarding_step_completed", { step: "invite_code" });
-      setStep("details");
-    } catch {
-      // Every failure reads the same on the server, so there's nothing more
-      // specific to say here.
-      // The server answers every bad code identically on purpose, so the
-      // reason recorded here is only ever "rejected", never the code itself.
-      track("invite_code_entered", { success: false, reason: "rejected" });
-      setFormError(t.invite.invalidCode);
-    } finally {
-      setIsChecking(false);
-    }
   };
 
   const handleDetails = () => {
@@ -132,17 +77,15 @@ export default function OnboardingScreen() {
     if (!hasConsented) return setFormError(t.invite.consentRequired);
     setFormError(null);
     track("onboarding_step_completed", { step: "consent" });
-    const birthDateIso = birthDate;
     if (!signupToken) return;
     const ok = await registerWithPhone({
       signupToken,
       firstName: firstName.trim(),
       familyName: familyName.trim(),
-      ...(mode === "code"
-        ? { inviteCode: code }
-        : birthDateIso
-          ? { child: { name: ownChildName.trim(), birthDate: birthDateIso } }
-          : {}),
+      // A nursery family's children are found by their number on the server.
+      ...(!isNursery && birthDate
+        ? { child: { name: ownChildName.trim(), birthDate } }
+        : {}),
     });
     if (ok) router.replace("/(tabs)");
   };
@@ -166,43 +109,11 @@ export default function OnboardingScreen() {
         />
         <StepsLogo maxWidth={100} />
 
-        {step === "code" ? (
-          <>
-            <Text style={[styles.title, rtlText]}>{t.invite.enterCodeTitle}</Text>
-            <Text style={[styles.subtitle, rtlText]}>{t.invite.enterCodeSubtitle}</Text>
-            <TextInput
-              style={styles.codeInput}
-              placeholder={t.invite.codePlaceholder}
-              placeholderTextColor={Colors.textLight}
-              value={code}
-              onChangeText={(text) => setCode(formatInviteCode(text))}
-              autoCapitalize="characters"
-              autoCorrect={false}
-              maxLength={9}
-              // Deliberately not textContentType="oneTimeCode": the SMS that
-              // just arrived is the sign-in code, and iOS would offer it here.
-            />
-            <StepsButton
-              label={isChecking ? t.invite.checking : t.invite.checkCode}
-              onPress={handleCheckCode}
-              loading={isChecking}
-              style={styles.primaryButton}
-              flat
-            />
-            <StepsButton
-              label={t.invite.noCode}
-              onPress={startWithoutCode}
-              variant="outline"
-              style={styles.secondaryButton}
-              flat
-            />
-          </>
-        ) : null}
-
         {step === "child" ? (
           <>
             <Text style={[styles.title, rtlText]}>{t.invite.childTitle}</Text>
             <Text style={[styles.subtitle, rtlText]}>{t.invite.childSubtitle}</Text>
+            <Text style={[styles.nurseryHint, rtlText]}>{t.invite.nurseryHint}</Text>
             <AuthTextField
               label={t.invite.childNamePlaceholder}
               value={ownChildName}
@@ -219,12 +130,12 @@ export default function OnboardingScreen() {
           </>
         ) : null}
 
-        {step === "details" && (mode === "courses" || childName) ? (
+        {step === "details" ? (
           <>
-            {mode === "code" && childName ? (
+            {isNursery ? (
               <>
                 <Text style={[styles.title, rtlText]}>
-                  {t.invite.confirmChildTitle(childName)}
+                  {t.invite.confirmChildTitle(matchedChildren)}
                 </Text>
                 <Text style={[styles.subtitle, rtlText]}>{t.invite.confirmChildSubtitle}</Text>
               </>
@@ -251,11 +162,6 @@ export default function OnboardingScreen() {
               style={styles.primaryButton}
               flat
             />
-            {mode === "code" ? (
-              <Touchable onPress={goBack} style={styles.linkButton}>
-                <Text style={styles.link}>{t.invite.notRightChild}</Text>
-              </Touchable>
-            ) : null}
           </>
         ) : null}
 
@@ -270,15 +176,6 @@ export default function OnboardingScreen() {
                 trackColor={{ true: Colors.coral, false: Colors.border }}
               />
               <Text style={[styles.switchLabel, rtlText]}>{t.invite.consentLabel}</Text>
-            </View>
-
-            <View style={styles.switchRow}>
-              <Switch
-                value={wantsNotifications}
-                onValueChange={setWantsNotifications}
-                trackColor={{ true: Colors.coral, false: Colors.border }}
-              />
-              <Text style={[styles.switchLabel, rtlText]}>{t.invite.notifyLabel}</Text>
             </View>
 
             <StepsButton
@@ -314,38 +211,12 @@ const styles = StyleSheet.create({
   },
   title: { ...Type.heading, color: Colors.text, marginBottom: 6 },
   subtitle: { ...Type.body, color: Colors.textLight, marginBottom: 24 },
+  nurseryHint: { ...Type.caption, color: Colors.textLight, marginTop: -12, marginBottom: 20 },
   sectionLabel: {
     fontFamily: Fonts.bold,
     fontSize: 15,
     color: Colors.bark,
     marginTop: 8,
-    marginBottom: 12,
-  },
-  // Codes are short and read aloud over the phone as often as they're pasted,
-  // so they get big, spaced, monospaced-feeling treatment.
-  codeInput: {
-    backgroundColor: Colors.card,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    paddingVertical: 18,
-    paddingHorizontal: 16,
-    fontFamily: Fonts.bold,
-    fontSize: 26,
-    letterSpacing: 4,
-    textAlign: "center",
-    color: Colors.text,
-    marginBottom: 20,
-  },
-  input: {
-    backgroundColor: Colors.card,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    ...Type.body,
-    color: Colors.text,
     marginBottom: 12,
   },
   switchRow: {
@@ -356,10 +227,6 @@ const styles = StyleSheet.create({
   },
   switchLabel: { ...Type.body, color: Colors.text, flex: 1 },
   primaryButton: { marginTop: 8 },
-  secondaryButton: { marginTop: 12 },
-  linkButton: { marginTop: 18, alignSelf: "center" },
-  link: { ...Type.body, color: Colors.sage, fontFamily: Fonts.bold },
-  linkCentered: { textAlign: "center" },
   fieldLabel: {
     fontFamily: Fonts.semiBold,
     fontSize: 13,

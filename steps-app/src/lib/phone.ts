@@ -43,10 +43,23 @@ export function parseRosterPaste(text: string): { name: string; phone: string | 
     .map((line) => line.trim())
     .filter(Boolean)
     .map((line) => {
-      // Accept comma, tab or semicolon — whichever the spreadsheet produced.
-      const [name, ...rest] = line.split(/[,;\t]/);
+      // Accept comma (Latin or Arabic), tab or semicolon — whichever the
+      // spreadsheet or keyboard produced.
+      const [name, ...rest] = line.split(/[,،;\t]/);
       const phone = rest.join("").trim();
       return { name: name.trim(), phone: phone || null };
     })
     .filter((entry) => entry.name.length > 0);
+}
+
+/** An Israeli mobile: 05x and seven more digits, however it was typed. */
+export function isMobileNumber(raw: string): boolean {
+  const digits = raw.replace(/\D/g, "").replace(/^972/, "0").replace(/^(?=5)/, "0");
+  return /^05\d{8}$/.test(digits);
+}
+
+/** "+972501234567" or "0501234567" → "050-123-4567", the way people read it. */
+export function toLocalDisplay(raw: string): string {
+  const digits = raw.replace(/\D/g, "").replace(/^972/, "0");
+  return digits.length === 10 ? `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}` : raw;
 }

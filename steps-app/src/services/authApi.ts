@@ -68,22 +68,27 @@ export async function startPhoneSignInRequest(phone: string, locale: string) {
 
 /**
  * Phone sign-in, step 2. A known number comes back signed in; a new one gets
- * a short-lived signupToken that proves the number was verified.
+ * a short-lived signupToken that proves the number was verified, plus the
+ * children whose guardian phones include it (empty for course families).
  */
 export async function verifyPhoneSignInRequest(phone: string, code: string) {
-  const { data } = await api.post<AuthResponse | { signupToken: string }>(
+  const { data } = await api.post<
+    AuthResponse | { signupToken: string; matchedChildren?: string[] }
+  >(
     "/api/auth/phone/verify",
     { phone, code }
   );
   return data;
 }
 
-/** Phone sign-up, final step: the name and child for a verified new number. */
+/**
+ * Phone sign-up, final step: the name for a verified new number, and the child
+ * unless the academy already has this number on one.
+ */
 export async function registerWithPhoneRequest(input: {
   signupToken: string;
   firstName: string;
   familyName: string;
-  inviteCode?: string;
   child?: { name: string; birthDate: string };
 }) {
   const { data } = await api.post<AuthResponse>("/api/auth/phone/register", input);

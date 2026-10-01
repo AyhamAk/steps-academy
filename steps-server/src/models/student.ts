@@ -9,6 +9,8 @@ type CreateStudentInput = {
   birthDate?: string | null;
   notes?: string | null;
   guardianPhone?: string | null;
+  /** E.164, already checked — see parsePhoneList. */
+  guardianPhones?: string[];
 };
 
 export const StudentModel = {
@@ -19,6 +21,7 @@ export const StudentModel = {
         birthDate: input.birthDate ?? null,
         notes: input.notes ?? null,
         guardianPhone: input.guardianPhone ?? null,
+        guardianPhones: input.guardianPhones ?? [],
       },
     });
   },
@@ -32,6 +35,7 @@ export const StudentModel = {
           ...(input.birthDate !== undefined ? { birthDate: input.birthDate } : {}),
           ...(input.notes !== undefined ? { notes: input.notes } : {}),
           ...(input.guardianPhone !== undefined ? { guardianPhone: input.guardianPhone } : {}),
+          ...(input.guardianPhones !== undefined ? { guardianPhones: input.guardianPhones } : {}),
         },
       });
     } catch {
@@ -84,7 +88,7 @@ export const StudentModel = {
         skip: offset,
         include: {
           guardians: {
-            include: { parent: { select: { id: true, name: true, email: true } } },
+            include: { parent: { select: { id: true, name: true, email: true, phone: true } } },
           },
           _count: { select: { tags: true } },
         },
@@ -100,8 +104,14 @@ export const StudentModel = {
         birthDate: student.birthDate,
         notes: student.notes,
         addedByParent: student.addedByParent,
+        guardianPhones: student.guardianPhones,
         photoCount: student._count.tags,
-        guardians: student.guardians.map((link) => link.parent),
+        // Phone sign-ups have no email; the number is how the admin knows them.
+        guardians: student.guardians.map(({ parent }) => ({
+          id: parent.id,
+          name: parent.name,
+          email: parent.email ?? parent.phone,
+        })),
       })),
     };
   },
@@ -138,10 +148,57 @@ export const StudentModel = {
     });
   },
 
+  /**
+   * Also takes the parent's number off the child: otherwise their next
+   * sign-in would match it and link them straight back.
+   */
   async unlinkParent(parentId: string, studentId: string): Promise<void> {
     await prisma.parentStudent
       .delete({ where: { parentId_studentId: { parentId, studentId } } })
       .catch(() => undefined);
+
+    const [parent, student] = await Promise.all([
+      prisma.user.findUnique({ where: { id: parentId }, select: { phone: true } }),
+      prisma.student.findUnique({ where: { id: studentId }, select: { guardianPhones: true } }),
+    ]);
+    if (parent?.phone && student?.guardianPhones.includes(parent.phone)) {
+      await prisma.student.update({
+        where: { id: studentId },
+        data: { guardianPhones: student.guardianPhones.filter((phone) => phone !== parent.phone) },
+      });
+    }
+  },
+
+  /** Children who list this number as a guardian's. Read-only. */
+  async findByGuardianPhone(phone: string): Promise<{ id: string; name: string }[]> {
+    return prisma.student.findMany({
+      where: { guardianPhones: { has: phone } },
+      select: { id: true, name: true },
+      orderBy: { name: "asc" },
+    });
+  },
+
+  /**
+   * Links this account to every child that lists its (verified) number.
+   * Safe to repeat: existing links are left alone.
+   */
+  async linkByPhone(parentId: string, phone: string): Promise<{ id: string; name: string }[]> {
+    const children = await StudentModel.findByGuardianPhone(phone);
+    for (const child of children) await StudentModel.linkParent(parentId, child.id);
+    return children;
+  },
+
+  /**
+   * After an admin saves a child's numbers: links any parent who already has
+   * an account under one of them, so they don't have to sign in again first.
+   */
+  async linkAccountsWithPhones(studentId: string, phones: string[]): Promise<void> {
+    if (phones.length === 0) return;
+    const parents = await prisma.user.findMany({
+      where: { phone: { in: phones } },
+      select: { id: true },
+    });
+    for (const parent of parents) await StudentModel.linkParent(parent.id, studentId);
   },
 
   /** Dashboard counters. All COUNT queries — nothing is loaded into memory. */

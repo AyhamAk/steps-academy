@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 
 import { env } from "../config/env";
 import { InviteModel } from "../models/invite";
+import { StudentModel } from "../models/student";
 import { UserModel } from "../models/user";
 import { checkSignInCode, sendSignInCode } from "../services/phoneCodes";
 import { parseChildInput } from "../utils/childInput";
@@ -12,12 +13,18 @@ import { validateInviteCode } from "./inviteController";
 
 /**
  * Phone sign-in: a number, a WhatsApp code, and — the first time only — a name
- * and a child. No email, no password.
+ * and, unless the academy already knows the number, a child. No email, no
+ * password, no invite code.
  *
  *   POST /phone/start     { phone }              → code sent
  *   POST /phone/verify    { phone, code }        → { token, user } for a known number,
- *                                                  or { signupToken } for a new one
- *   POST /phone/register  { signupToken, firstName, familyName, inviteCode | child }
+ *                                                  or { signupToken, matchedChildren } for a new one
+ *   POST /phone/register  { signupToken, firstName, familyName, child? }
+ *
+ * Nursery families are recognised by their number: the admin saves each
+ * guardian's mobile on the child (Student.guardianPhones), and a verified sign-in
+ * with one of them links the parent to that child. Course families, whose
+ * number the academy doesn't have, type their child in instead.
  *
  * The signup token proves "this number was verified in the last 30 minutes".
  * It is signed with its own derived secret and carries no userId, so it can
@@ -89,10 +96,15 @@ export async function verifyPhoneSignIn(req: Request, res: Response) {
 
   const user = await UserModel.findByPhone(phone);
   if (user) {
+    // Picks up any child the academy has added this number to since last time.
+    await StudentModel.linkByPhone(user.id, phone);
     return res.json({ token: signToken({ userId: user.id }), user: await UserModel.toPublic(user) });
   }
   // A number we have never seen: prove it was verified, then collect the rest.
-  res.json({ signupToken: signSignupToken(phone) });
+  // The number is verified, so naming the children it is on reveals nothing
+  // to anyone but their guardian.
+  const matched = await StudentModel.findByGuardianPhone(phone);
+  res.json({ signupToken: signSignupToken(phone), matchedChildren: matched.map((child) => child.name) });
 }
 
 function cleanName(value: unknown): string {
@@ -119,8 +131,19 @@ export async function registerWithPhone(req: Request, res: Response) {
     return res.json({ token: signToken({ userId: existing.id }), user: await UserModel.toPublic(existing) });
   }
 
-  // Same two paths as email sign-up: an invite code (nursery) or a child the
-  // parent types in (courses). The typed-in child grants no photos.
+  const input = { phone, name: `${firstName} ${familyName}`, familyName, role: "parent" as const };
+
+  // Nursery family: the academy already has this number on their child.
+  const matched = await StudentModel.findByGuardianPhone(phone);
+  if (matched.length > 0) {
+    const user = await UserModel.create(input);
+    await StudentModel.linkByPhone(user.id, phone);
+    return res.status(201).json({ token: signToken({ userId: user.id }), user: await UserModel.toPublic(user) });
+  }
+
+  // Otherwise the parent types their child in (courses); that child grants no
+  // photos. Copies of the app from before phone matching still send an invite
+  // code instead, which is honoured until they update.
   const inviteCode = req.body?.inviteCode;
   const hasCode = typeof inviteCode === "string" && inviteCode.trim() !== "";
   const invite = hasCode ? await validateInviteCode(inviteCode) : null;
@@ -134,7 +157,6 @@ export async function registerWithPhone(req: Request, res: Response) {
     return res.status(400).json({ message: childInput });
   }
 
-  const input = { phone, name: `${firstName} ${familyName}`, familyName, role: "parent" as const };
   let user;
   if (invite) {
     user = await UserModel.create(input);

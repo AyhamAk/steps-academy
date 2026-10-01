@@ -244,11 +244,9 @@ export const en = {
     namesRequired: "Please enter your first name and family name",
   },
   invite: {
-    haveCode: "I have an invite code",
-    signUp: "Sign up",
-    noCode: "Register for courses (no code)",
     childTitle: "Your child",
     childSubtitle: "Tell us who you're signing up for courses.",
+    nurseryHint: "Is your child at the Steps nursery? Ask the academy to add this phone number to your child, then sign in again.",
     childNamePlaceholder: "Child's name",
     birthDateLabel: "Date of birth",
     birthDatePlaceholder: "Choose birth date",
@@ -259,72 +257,39 @@ export const en = {
     addOwnChildSave: "Add child",
     addOwnChildFailed: "Couldn't add your child. Please try again.",
     addedByParentTag: "Added by parent",
-    enterCodeTitle: "Your invite code",
-    enterCodeSubtitle: "The academy gave you a code. Enter it to set up your account.",
-    codePlaceholder: "XXXX-XXXX",
     checkCode: "Continue",
-    checking: "Checking…",
-    invalidCode: "That code isn't valid. Please check it with the academy.",
-    confirmChildTitle: (name: string) => `You're connecting to ${name}`,
+    confirmChildTitle: (names: string[]) =>
+      `You're connecting to ${names.length > 1 ? `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}` : names[0]}`,
     confirmChildSubtitle:
-      "You'll see photos, courses and updates for this child. If that's not right, go back and check the code.",
-    notRightChild: "That's not my child",
+      "The academy has your number on this child, so you'll see their photos, courses and updates. If that's not right, please contact the academy.",
     yourDetailsTitle: "Your details",
     yourDetailsSubtitle: "This is the account you'll sign in with.",
     finishTitle: "Almost done",
     consentLabel:
       "I'm this child's parent or guardian, and I agree to the academy sharing their photos with me.",
     consentRequired: "Please confirm you're the parent or guardian",
-    notifyLabel: "Send me notifications about photos, events and announcements",
     createAccount: "Create my account",
     stepOf: (step: number, total: number) => `Step ${step} of ${total}`,
-    addChildTitle: "Add another child",
-    addChildSubtitle: "Enter the invite code the academy gave you for your other child.",
     addChildSuccess: (name: string) => `${name} has been added to your account.`,
-    adminTitle: "Invite codes",
-    adminGenerate: "Generate code",
-    adminNoCodes: "No codes yet for this child.",
-    adminUsesLeft: (n: number) => (n === 1 ? "1 use left" : `${n} uses left`),
-    adminShare: "Share",
-    adminCopy: "Copy",
-    adminCopied: "Code copied",
-    adminRevoke: "Revoke",
-    adminRevokeConfirm: "Revoke this code? Anyone still holding it won't be able to sign up.",
-    // The code sits alone on its own line: buried mid-sentence it takes
-    // fiddly text selection to copy, but on its own a long-press grabs it.
-    // `button` is passed in as `t.invite.signUp` — the very string the
-    // sign-in screen renders. Naming it here by hand is how this message came
-    // to tell parents to tap a button that does not exist.
-    adminShareMessage: (child: string, code: string, button: string) =>
-      `Steps Academy — invite for ${child}
+    welcomeMessage: (child: string) =>
+      `Steps Academy — welcome, ${child}'s family!
 
 Get the app:
 Android: ${STORE_LINKS.android}
 iPhone: ${STORE_LINKS.ios}
 
-Your code:
-${code}
-
-Open the app, tap "${button}", and enter the code.`,
-    statusActive: "Active",
-    statusSpent: "Used up",
-    statusRevoked: "Revoked",
-    statusExpired: "Expired",
-    sendTitle: "Send invite codes",
-    sendSubtitle: "Tap a family to send their code on WhatsApp.",
+Open the app and sign in with this phone number. You'll be connected to ${child} automatically.`,
+    sendTitle: "Welcome families",
+    sendSubtitle: "Tap a number to send the app links on WhatsApp.",
     importTitle: "Add the class",
     importHint: "One child per line: name, phone",
     importPlaceholder: "Layla, 050-123-4567\nOmar, 052-987-6543",
     importButton: "Add these children",
     importResult: (created: number, skipped: number) =>
       `Added ${created}. Skipped ${skipped} already on the roster.`,
-    generateAll: "Generate codes for everyone",
-    generateAllResult: (n: number) =>
-      n === 0 ? "Everyone already has a code." : `Generated ${n} new codes.`,
-    stateNotSent: "Not sent",
-    stateWaiting: "Sent, waiting",
+    stateWaiting: "Not signed up yet",
     stateSignedUp: "Signed up",
-    noPhone: "No phone number",
+    noPhone: "No phone number yet: add one in Students",
     send: "Send",
     resend: "Send again",
     remaining: (n: number) => (n === 1 ? "1 family still to sign up" : `${n} families still to sign up`),
@@ -651,6 +616,12 @@ Open the app, tap "${button}", and enter the code.`,
     noParentsAvailable: "No other parent accounts to link.",
     link: "Link",
     unlink: "Unlink",
+    phonesTitle: "Guardian phones",
+    phonesHint: "A parent who signs in with one of these numbers is connected to this child automatically.",
+    noPhones: "No numbers yet.",
+    addPhone: "Add",
+    removePhone: "Remove",
+    phoneSaveFailed: "Couldn't save the number. Please try again.",
     delete: "Delete",
     deleteTitle: "Delete student?",
     deleteMessage: (name: string) =>
@@ -1077,11 +1048,9 @@ export const ar: Translations = {
     namesRequired: "يرجى إدخال الاسم الشخصي واسم العائلة",
   },
   invite: {
-    haveCode: "لدي رمز دعوة",
-    signUp: "إنشاء حساب",
-    noCode: "التسجيل في الدورات بدون رمز",
     childTitle: "طفلك",
     childSubtitle: "أخبرنا عن الطفل الذي تسجّله في الدورات.",
+    nurseryHint: "هل طفلك في حضانة Steps؟ اطلب من الأكاديمية إضافة رقم هاتفك إلى طفلك، ثم سجّل الدخول مرة أخرى.",
     childNamePlaceholder: "اسم الطفل",
     birthDateLabel: "تاريخ الميلاد",
     birthDatePlaceholder: "اختر تاريخ الميلاد",
@@ -1092,66 +1061,37 @@ export const ar: Translations = {
     addOwnChildSave: "إضافة الطفل",
     addOwnChildFailed: "تعذّرت إضافة الطفل. يرجى المحاولة مرة أخرى.",
     addedByParentTag: "أضافه أحد الوالدين",
-    enterCodeTitle: "رمز الدعوة",
-    enterCodeSubtitle: "أعطتك الأكاديمية رمزًا. أدخله لإعداد حسابك.",
-    codePlaceholder: "XXXX-XXXX",
     checkCode: "متابعة",
-    checking: "جارٍ التحقق…",
-    invalidCode: "هذا الرمز غير صالح. يرجى مراجعته مع الأكاديمية.",
-    confirmChildTitle: (name: string) => `أنت تربط حسابك بـ ${name}`,
+    confirmChildTitle: (names: string[]) => `أنت تربط حسابك بـ ${names.join(" و")}`,
     confirmChildSubtitle:
-      "سترى صور هذا الطفل ودوراته وأخباره. إذا لم يكن هذا صحيحًا، ارجع وتحقق من الرمز.",
-    notRightChild: "هذا ليس طفلي",
+      "رقمك مسجّل لدى الأكاديمية لهذا الطفل، لذا سترى صوره ودوراته وأخباره. إذا لم يكن هذا صحيحًا، يرجى التواصل مع الأكاديمية.",
     yourDetailsTitle: "بياناتك",
     yourDetailsSubtitle: "هذا هو الحساب الذي ستسجّل الدخول به.",
     finishTitle: "اقتربنا من النهاية",
     consentLabel: "أنا والد هذا الطفل أو وليّ أمره، وأوافق على مشاركة الأكاديمية صوره معي.",
     consentRequired: "يرجى تأكيد أنك الوالد أو وليّ الأمر",
-    notifyLabel: "أرسل لي إشعارات عن الصور والفعاليات والإعلانات",
     createAccount: "إنشاء حسابي",
     stepOf: (step: number, total: number) => `الخطوة ${step} من ${total}`,
-    addChildTitle: "إضافة طفل آخر",
-    addChildSubtitle: "أدخل رمز الدعوة الذي أعطتك إياه الأكاديمية لطفلك الآخر.",
     addChildSuccess: (name: string) => `تمت إضافة ${name} إلى حسابك.`,
-    adminTitle: "رموز الدعوة",
-    adminGenerate: "إنشاء رمز",
-    adminNoCodes: "لا توجد رموز لهذا الطفل بعد.",
-    adminUsesLeft: (n: number) => (n === 1 ? "متبقٍ استخدام واحد" : `متبقٍ ${n} استخدامات`),
-    adminShare: "مشاركة",
-    adminCopy: "نسخ",
-    adminCopied: "تم نسخ الرمز",
-    adminRevoke: "إلغاء",
-    adminRevokeConfirm: "إلغاء هذا الرمز؟ لن يتمكن من يحمله من إنشاء حساب.",
-    adminShareMessage: (child: string, code: string, button: string) =>
-      `أكاديمية Steps — دعوة لـ ${child}
+    welcomeMessage: (child: string) =>
+      `أكاديمية Steps — أهلًا بعائلة ${child}!
 
 حمّل التطبيق:
 أندرويد: ${STORE_LINKS.android}
 آيفون: ${STORE_LINKS.ios}
 
-رمزك:
-${code}
-
-افتح التطبيق، اضغط «${button}»، وأدخل الرمز.`,
-    statusActive: "فعّال",
-    statusSpent: "مستخدم بالكامل",
-    statusRevoked: "ملغى",
-    statusExpired: "منتهي الصلاحية",
-    sendTitle: "إرسال رموز الدعوة",
-    sendSubtitle: "اضغط على عائلة لإرسال رمزها عبر واتساب.",
+افتح التطبيق وسجّل الدخول برقم الهاتف هذا. سيتم ربطك بـ ${child} تلقائيًا.`,
+    sendTitle: "الترحيب بالعائلات",
+    sendSubtitle: "اضغط على رقم لإرسال روابط التطبيق عبر واتساب.",
     importTitle: "إضافة الصف",
     importHint: "طفل واحد في كل سطر: الاسم، الهاتف",
     importPlaceholder: "ليلى، 050-123-4567\nعمر، 052-987-6543",
     importButton: "إضافة هؤلاء الأطفال",
     importResult: (created: number, skipped: number) =>
       `تمت إضافة ${created}. تم تخطي ${skipped} موجودين مسبقًا.`,
-    generateAll: "إنشاء رموز للجميع",
-    generateAllResult: (n: number) =>
-      n === 0 ? "جميع الأطفال لديهم رموز بالفعل." : `تم إنشاء ${n} رموز جديدة.`,
-    stateNotSent: "لم يُرسل",
-    stateWaiting: "أُرسل، بانتظار التسجيل",
+    stateWaiting: "لم يسجّل بعد",
     stateSignedUp: "سجّل",
-    noPhone: "لا يوجد رقم هاتف",
+    noPhone: "لا يوجد رقم هاتف بعد: أضفه في صفحة الطلاب",
     send: "إرسال",
     resend: "إعادة الإرسال",
     remaining: (n: number) =>
@@ -1466,6 +1406,12 @@ ${code}
     noParentsAvailable: "لا توجد حسابات أولياء أمور أخرى للربط.",
     link: "ربط",
     unlink: "إلغاء الربط",
+    phonesTitle: "هواتف أولياء الأمور",
+    phonesHint: "وليّ الأمر الذي يسجّل الدخول بأحد هذه الأرقام يُربط بهذا الطفل تلقائيًا.",
+    noPhones: "لا توجد أرقام بعد.",
+    addPhone: "إضافة",
+    removePhone: "إزالة",
+    phoneSaveFailed: "تعذّر حفظ الرقم. يرجى المحاولة مرة أخرى.",
     delete: "حذف",
     deleteTitle: "حذف الطالب؟",
     deleteMessage: (name: string) =>
@@ -1885,11 +1831,9 @@ export const he: Translations = {
     namesRequired: "נא להזין שם פרטי ושם משפחה",
   },
   invite: {
-    haveCode: "יש לי קוד הזמנה",
-    signUp: "הרשמה",
-    noCode: "הרשמה לחוגים בלי קוד",
     childTitle: "הילד/ה שלך",
     childSubtitle: "ספרו לנו את מי אתם רושמים לחוגים.",
+    nurseryHint: "הילד שלכם בגן של Steps? בקשו מהאקדמיה להוסיף את מספר הטלפון הזה לילד, ואז התחברו שוב.",
     childNamePlaceholder: "שם הילד/ה",
     birthDateLabel: "תאריך לידה",
     birthDatePlaceholder: "בחרו תאריך לידה",
@@ -1900,66 +1844,37 @@ export const he: Translations = {
     addOwnChildSave: "הוספה",
     addOwnChildFailed: "לא הצלחנו להוסיף. נסו שוב.",
     addedByParentTag: "נוסף ע״י הורה",
-    enterCodeTitle: "קוד ההזמנה שלך",
-    enterCodeSubtitle: "האקדמיה נתנה לך קוד. הזן אותו כדי להגדיר את החשבון שלך.",
-    codePlaceholder: "XXXX-XXXX",
     checkCode: "המשך",
-    checking: "בודק…",
-    invalidCode: "הקוד אינו תקין. אנא בדוק אותו מול האקדמיה.",
-    confirmChildTitle: (name: string) => `אתה מתחבר אל ${name}`,
+    confirmChildTitle: (names: string[]) => `אתה מתחבר אל ${names.join(" ו")}`,
     confirmChildSubtitle:
-      "תראה תמונות, חוגים ועדכונים של ילד זה. אם זה לא נכון, חזור ובדוק את הקוד.",
-    notRightChild: "זה לא הילד שלי",
+      "המספר שלך רשום באקדמיה אצל הילד הזה, כך שתראו את התמונות, החוגים והעדכונים שלו. אם זה לא נכון, פנו בבקשה לאקדמיה.",
     yourDetailsTitle: "הפרטים שלך",
     yourDetailsSubtitle: "זה החשבון שאיתו תתחבר.",
     finishTitle: "כמעט סיימנו",
     consentLabel: "אני ההורה או האפוטרופוס של ילד זה, ומסכים שהאקדמיה תשתף איתי את תמונותיו.",
     consentRequired: "נא לאשר שאתה ההורה או האפוטרופוס",
-    notifyLabel: "שלחו לי התראות על תמונות, אירועים והודעות",
     createAccount: "צור את החשבון שלי",
     stepOf: (step: number, total: number) => `שלב ${step} מתוך ${total}`,
-    addChildTitle: "הוספת ילד נוסף",
-    addChildSubtitle: "הזן את קוד ההזמנה שהאקדמיה נתנה לך עבור ילדך הנוסף.",
     addChildSuccess: (name: string) => `${name} נוסף לחשבון שלך.`,
-    adminTitle: "קודי הזמנה",
-    adminGenerate: "צור קוד",
-    adminNoCodes: "אין עדיין קודים לילד זה.",
-    adminUsesLeft: (n: number) => (n === 1 ? "נותר שימוש אחד" : `נותרו ${n} שימושים`),
-    adminShare: "שיתוף",
-    adminCopy: "העתק",
-    adminCopied: "הקוד הועתק",
-    adminRevoke: "ביטול",
-    adminRevokeConfirm: "לבטל את הקוד? מי שמחזיק בו לא יוכל להירשם.",
-    adminShareMessage: (child: string, code: string, button: string) =>
-      `Steps Academy — הזמנה עבור ${child}
+    welcomeMessage: (child: string) =>
+      `אקדמיית Steps — ברוכים הבאים, משפחת ${child}!
 
 הורידו את האפליקציה:
 אנדרואיד: ${STORE_LINKS.android}
 אייפון: ${STORE_LINKS.ios}
 
-הקוד שלך:
-${code}
-
-פתחו את האפליקציה, הקישו על «${button}», והזינו את הקוד.`,
-    statusActive: "פעיל",
-    statusSpent: "נוצל במלואו",
-    statusRevoked: "בוטל",
-    statusExpired: "פג תוקף",
-    sendTitle: "שליחת קודי הזמנה",
-    sendSubtitle: "הקש על משפחה כדי לשלוח את הקוד שלה בוואטסאפ.",
+פתחו את האפליקציה והתחברו עם מספר הטלפון הזה. תחוברו אל ${child} אוטומטית.`,
+    sendTitle: "קבלת פנים למשפחות",
+    sendSubtitle: "הקישו על מספר כדי לשלוח את קישורי האפליקציה בוואטסאפ.",
     importTitle: "הוספת הכיתה",
     importHint: "ילד אחד בכל שורה: שם, טלפון",
     importPlaceholder: "ליילה, 050-123-4567\nעומר, 052-987-6543",
     importButton: "הוסף ילדים אלה",
     importResult: (created: number, skipped: number) =>
       `נוספו ${created}. דולגו ${skipped} שכבר ברשימה.`,
-    generateAll: "צור קודים לכולם",
-    generateAllResult: (n: number) =>
-      n === 0 ? "לכל הילדים כבר יש קוד." : `נוצרו ${n} קודים חדשים.`,
-    stateNotSent: "לא נשלח",
-    stateWaiting: "נשלח, ממתין",
+    stateWaiting: "עדיין לא נרשמו",
     stateSignedUp: "נרשם",
-    noPhone: "אין מספר טלפון",
+    noPhone: "אין עדיין מספר טלפון: הוסיפו אותו בדף התלמידים",
     send: "שלח",
     resend: "שלח שוב",
     remaining: (n: number) =>
@@ -2278,6 +2193,12 @@ ${code}
     noParentsAvailable: "אין חשבונות הורים אחרים לקישור.",
     link: "קשר",
     unlink: "בטל קישור",
+    phonesTitle: "טלפונים של ההורים",
+    phonesHint: "הורה שמתחבר עם אחד מהמספרים האלה מחובר לילד הזה אוטומטית.",
+    noPhones: "אין עדיין מספרים.",
+    addPhone: "הוספה",
+    removePhone: "הסרה",
+    phoneSaveFailed: "לא הצלחנו לשמור את המספר. נסו שוב.",
     delete: "מחק",
     deleteTitle: "למחוק תלמיד?",
     deleteMessage: (name: string) =>

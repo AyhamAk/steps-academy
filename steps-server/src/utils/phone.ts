@@ -19,3 +19,30 @@ export function toE164(raw: unknown): string | null {
   if (!/^5\d{8}$/.test(digits)) return null;
   return `+${COUNTRY_CALLING_CODE}${digits}`;
 }
+
+/**
+ * A child's guardian phones as the admin typed them — an array from the app,
+ * or one box with commas or new lines from the web dashboard — cleaned to
+ * unique E.164 numbers.
+ *
+ * Returns the message to show instead when any entry isn't a mobile number:
+ * a mistyped number would quietly link nobody, or the wrong family.
+ */
+export function parsePhoneList(raw: unknown): string[] | { error: string } {
+  const entries = Array.isArray(raw)
+    ? raw
+    : typeof raw === "string"
+      ? raw.split(/[\n,;]/)
+      : raw == null
+        ? []
+        : [raw];
+
+  const phones: string[] = [];
+  for (const entry of entries) {
+    if (typeof entry !== "string" || !entry.trim()) continue;
+    const phone = toE164(entry);
+    if (!phone) return { error: `"${entry.trim()}" isn't a mobile number (05x-xxx-xxxx)` };
+    if (!phones.includes(phone)) phones.push(phone);
+  }
+  return phones;
+}

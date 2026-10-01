@@ -206,6 +206,11 @@ model Student {
   /// The family's WhatsApp/mobile number, used to send their invite code.
   /// Not an account: parents have no record here until they register.
   guardianPhone String?
+  /// Every guardian's mobile, E.164 (+9725…). A parent who signs in with one
+  /// of these numbers is linked to this child automatically: the verified
+  /// phone is the proof, so there is no invite code. Replaces guardianPhone,
+  /// which is kept only until old app copies stop reading it.
+  guardianPhones String[] @default([])
   /// True when a parent typed this child in at sign-up (course families, who
   /// have no invite code) rather than the academy adding them. Grants nothing
   /// on its own: photos still only follow the admin's tags. Shown to the admin
@@ -220,6 +225,7 @@ model Student {
   inviteCodes InviteCode[]
 
   @@index([name])
+  @@index([guardianPhones], type: Gin)
 }
 
 /// Links a parent account to a child. Many-to-many: a child can have two

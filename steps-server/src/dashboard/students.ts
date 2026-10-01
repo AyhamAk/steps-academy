@@ -4,6 +4,7 @@ import { csrfToken } from "../middleware/dashboardAuth";
 import { formatCode, InviteModel, inviteStatus } from "../models/invite";
 import { StudentModel } from "../models/student";
 import { UserModel } from "../models/user";
+import { parsePhoneList } from "../utils/phone";
 import {
   banner,
   button,
@@ -86,7 +87,7 @@ export async function studentsPage(req: Request, res: Response) {
         `${formStart(`${LIST}/new`, csrf)}
           ${textField("name", "Name", "", { required: true })}
           ${textField("birthDate", "Date of birth", "", { type: "date", hint: "Drives the age band on Home." })}
-          ${textField("guardianPhone", "Guardian phone", "", { placeholder: "05x-xxx-xxxx" })}
+          ${textField("guardianPhones", "Guardian phones", "", { placeholder: "050-123-4567, 052-765-4321", hint: "Every guardian’s mobile, separated by commas. Signing in with one links that parent." })}
           ${textArea("notes", "Notes", "", { rows: 2, hint: "Private to admins." })}
           ${button("Add to roster")}
         </form>`,
@@ -165,7 +166,7 @@ export async function studentDetailPage(req: Request, res: Response) {
         ${formStart(`${base}/edit`, csrf)}
           ${textField("name", "Name", student.name, { required: true })}
           ${textField("birthDate", "Date of birth", student.birthDate ?? "", { type: "date" })}
-          ${textField("guardianPhone", "Guardian phone", student.guardianPhone ?? "")}
+          ${textField("guardianPhones", "Guardian phones", student.guardianPhones.join(", "), { hint: "Every guardian’s mobile, separated by commas. Signing in with one links that parent." })}
           ${textArea("notes", "Notes", student.notes ?? "", { rows: 3 })}
           ${button("Save changes")}
         </form>
@@ -278,14 +279,24 @@ export async function createStudent(req: Request, res: Response) {
   const name = String(req.body.name ?? "").trim();
   if (!name) return res.redirect(redirectWith(LIST, { err: "A child needs a name." }));
 
+  const phones = parsePhoneList(req.body.guardianPhones);
+  if (!Array.isArray(phones)) return res.redirect(redirectWith(LIST, { err: phones.error }));
+
   const student = await StudentModel.create({
     name,
     birthDate: orNull(req.body.birthDate),
-    guardianPhone: orNull(req.body.guardianPhone),
+    guardianPhones: phones,
     notes: orNull(req.body.notes),
   });
+  await StudentModel.linkAccountsWithPhones(student.id, phones);
 
-  res.redirect(redirectWith(`${LIST}/${student.id}`, { ok: `${name} added. Link a guardian to give them access.` }));
+  res.redirect(
+    redirectWith(`${LIST}/${student.id}`, {
+      ok: phones.length
+        ? `${name} added. Parents signing in with those numbers are linked automatically.`
+        : `${name} added. Add a guardian phone, or link a guardian, to give them access.`,
+    }),
+  );
 }
 
 export async function bulkCreateStudents(req: Request, res: Response) {
@@ -316,12 +327,16 @@ export async function updateStudent(req: Request, res: Response) {
   const name = String(req.body.name ?? "").trim();
   if (!name) return res.redirect(redirectWith(`${LIST}/${studentId}`, { err: "A child needs a name." }));
 
+  const phones = parsePhoneList(req.body.guardianPhones);
+  if (!Array.isArray(phones)) return res.redirect(redirectWith(`${LIST}/${studentId}`, { err: phones.error }));
+
   await StudentModel.update(studentId, {
     name,
     birthDate: orNull(req.body.birthDate),
-    guardianPhone: orNull(req.body.guardianPhone),
+    guardianPhones: phones,
     notes: orNull(req.body.notes),
   });
+  await StudentModel.linkAccountsWithPhones(studentId, phones);
 
   res.redirect(redirectWith(`${LIST}/${studentId}`, { ok: "Saved." }));
 }

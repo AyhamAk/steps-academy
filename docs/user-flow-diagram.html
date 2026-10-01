@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Steps — sign-up and user management, as built</title>
+<style>
+  :root {
+    --bg: #fbf6ec; --card: #ffffff; --ink: #2d2a26; --muted: #6f695f; --line: #e6dfd1;
+    --sage: #5b8a72; --sage-soft: #e8f0ea; --gold: #d9a441; --flag: #d9822b; --flag-soft: #fff4e5;
+    --ghost: #f1ede5;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body { font-family: "Segoe UI", -apple-system, Roboto, sans-serif; color: var(--ink); background: var(--bg); display: flex; flex-direction: column; overflow: hidden; }
+
+  header { display: flex; align-items: center; gap: 16px; padding: 12px 20px; background: var(--card); border-bottom: 1px solid var(--line); }
+  header h1 { font-size: 16px; margin: 0; white-space: nowrap; }
+  header .date { color: var(--muted); font-size: 12px; white-space: nowrap; }
+  .search { margin-left: auto; position: relative; }
+  .search input { width: 260px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 8px; font: inherit; font-size: 13px; background: var(--bg); }
+  .search input:focus { outline: 2px solid var(--sage); border-color: transparent; }
+  .results { position: absolute; right: 0; top: 40px; width: 340px; max-height: 360px; overflow: auto; background: var(--card); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,.12); z-index: 20; display: none; }
+  .results button { display: block; width: 100%; text-align: left; border: 0; background: none; padding: 9px 12px; font: inherit; font-size: 13px; cursor: pointer; border-bottom: 1px solid var(--line); }
+  .results button:hover { background: var(--sage-soft); }
+  .results small { color: var(--muted); display: block; }
+
+  nav { display: flex; gap: 4px; padding: 8px 20px 0; background: var(--card); border-bottom: 1px solid var(--line); overflow-x: auto; }
+  nav button { border: 0; background: none; font: inherit; font-size: 13.5px; padding: 9px 14px; border-radius: 8px 8px 0 0; cursor: pointer; color: var(--muted); border-bottom: 3px solid transparent; white-space: nowrap; }
+  nav button:hover { color: var(--ink); background: var(--bg); }
+  nav button.active { color: var(--ink); font-weight: 600; border-bottom-color: var(--sage); }
+  nav .count { display: inline-block; min-width: 18px; padding: 0 5px; margin-left: 6px; border-radius: 9px; background: var(--flag-soft); color: var(--flag); font-size: 11px; font-weight: 700; }
+
+  main { flex: 1; display: flex; min-height: 0; }
+  .stage { flex: 1; position: relative; overflow: hidden; cursor: grab;
+    background-color: var(--bg);
+    background-image: radial-gradient(circle, #e2d9c6 1px, transparent 1px); background-size: 22px 22px; }
+  .stage.dragging { cursor: grabbing; }
+  .inner { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+  .inner svg { display: block; }
+  .list { position: absolute; inset: 0; overflow: auto; padding: 24px 28px; cursor: default; display: none; background: var(--bg); }
+
+  .controls { position: absolute; right: 16px; bottom: 16px; display: flex; flex-direction: column; gap: 6px; z-index: 5; }
+  .controls button { width: 40px; height: 40px; border-radius: 10px; border: 1px solid var(--line); background: var(--card); font-size: 18px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,.08); color: var(--ink); }
+  .controls button:hover { background: var(--sage-soft); }
+  .zoomlabel { position: absolute; right: 64px; bottom: 22px; font-size: 12px; color: var(--muted); background: var(--card); padding: 4px 8px; border-radius: 6px; border: 1px solid var(--line); z-index: 5; }
+  .hint { position: absolute; left: 16px; bottom: 16px; font-size: 12px; color: var(--muted); background: var(--card); padding: 6px 10px; border-radius: 8px; border: 1px solid var(--line); z-index: 5; }
+
+  aside { width: 360px; background: var(--card); border-left: 1px solid var(--line); overflow: auto; padding: 18px 20px; }
+  aside h2 { font-size: 16px; margin: 6px 0 10px; line-height: 1.35; }
+  aside h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 18px 0 6px; }
+  aside ul { margin: 0; padding-left: 18px; font-size: 13.5px; line-height: 1.55; }
+  aside code, .file { font-family: Consolas, Menlo, monospace; font-size: 12px; }
+  .file { display: block; padding: 5px 8px; margin: 4px 0; background: var(--bg); border-radius: 6px; color: #4a463f; word-break: break-all; }
+  .badge { display: inline-block; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px; }
+  .badge.ok { background: var(--sage-soft); color: var(--sage); }
+  .badge.flag { background: var(--flag-soft); color: var(--flag); }
+  .badge.lane { background: var(--bg); color: var(--muted); margin-left: 4px; }
+  .link { display: block; width: 100%; text-align: left; border: 1px solid var(--line); background: var(--card); border-radius: 8px; padding: 7px 10px; margin: 5px 0; font: inherit; font-size: 13px; cursor: pointer; }
+  .link:hover { border-color: var(--sage); background: var(--sage-soft); }
+  .link small { color: var(--muted); }
+  .legend { display: grid; gap: 8px; font-size: 13px; margin-top: 10px; }
+  .legend div { display: flex; align-items: center; gap: 10px; }
+  .sw { width: 30px; height: 18px; border-radius: 5px; flex: none; }
+  .sw.ok { background: #fff; border: 2px solid var(--sage); }
+  .sw.flag { background: var(--flag-soft); border: 2px dashed var(--flag); }
+  .sw.ghost { background: var(--ghost); border: 2px dotted #b5ad9e; border-radius: 9px; }
+  .sw.touch { height: 0; border-top: 4px solid var(--gold); border-radius: 0; }
+
+  .qgroup { max-width: 900px; margin: 0 auto 22px; }
+  .qgroup h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 8px; }
+  .qcard { background: var(--card); border: 1.5px dashed var(--flag); border-radius: 12px; padding: 14px 16px; margin-bottom: 10px; }
+  .qcard b { display: block; margin-bottom: 4px; }
+  .qcard p { margin: 0 0 8px; font-size: 13.5px; line-height: 1.5; color: #4a463f; }
+  .qcard button { border: 0; background: var(--flag-soft); color: var(--flag); font: inherit; font-size: 12.5px; font-weight: 600; padding: 5px 10px; border-radius: 6px; cursor: pointer; }
+
+  /* node content */
+  .n { text-align: center; line-height: 1.3; }
+  .n .t { font-weight: 700; font-size: 13.5px; }
+  .n .s { font-size: 11.5px; color: #6f695f; margin-top: 2px; }
+  .n .lane-tag { font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em; color: #8b8477; }
+  .n.big .t { font-size: 17px; }
+  .n.big .s { font-size: 12.5px; }
+  .n .fl { color: #d9822b; }
+  g.node { cursor: pointer; }
+  g.node:hover rect, g.node:hover polygon, g.node:hover path { filter: drop-shadow(0 3px 6px rgba(0,0,0,.12)); }
+  g.node.hl rect, g.node.hl polygon, g.node.hl path { stroke: var(--gold) !important; stroke-width: 4px !important; }
+  .edgeLabel { font-size: 12px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Steps · sign-up and user management, as built in the code</h1>
+  <span class="date">read from the code on 2026-10-02</span>
+  <div class="search">
+    <input id="q" type="search" placeholder="Search steps, endpoints, files…" autocomplete="off" />
+    <div class="results" id="results"></div>
+  </div>
+</header>
+<nav id="tabs"></nav>
+<main>
+  <div class="stage" id="stage">
+    <div class="inner" id="inner"></div>
+    <div class="list" id="list"></div>
+    <div class="hint" id="hint">Scroll to zoom · drag to move · click a box for details</div>
+    <div class="zoomlabel" id="zoomlabel">100%</div>
+    <div class="controls" id="controls">
+      <button title="Zoom in (+)" data-z="in">+</button>
+      <button title="Zoom out (−)" data-z="out">−</button>
+      <button title="Fit to screen (0)" data-z="fit">⤢</button>
+    </div>
+  </div>
+  <aside id="panel"></aside>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+// ===================================================================== data
+// Everything below was read from steps-app/src and steps-server/src.
+// kind: ok = confirmed in code · flag = unclear, unwired or inconsistent · decision = branch
+
+const LANES = {
+  signin:   { name: "Sign-in (everyone)",   blurb: "One phone sign-in for families and admins" },
+  nursery:  { name: "Nursery parent",       blurb: "Recognised by the phone saved on their child" },
+  courses:  { name: "Courses parent",       blurb: "Number unknown, types their own child in" },
+  adminapp: { name: "Admin · app",          blurb: "Same sign-in, role read from the account" },
+  dash:     { name: "Admin · web dashboard", blurb: "Separate email + password path" },
+};
+
+const NODES = {
+  // ------------------------------------------------------------ sign-in
+  E1: { lane: "signin", kind: "ok", title: "Sign-in screen", sub: "enter mobile number",
+    detail: ["Phone number is the only way in; no email or password field in the app.", "Accepts Israeli mobiles only (05x + 7 digits).", "Language picker on the same screen."],
+    files: ["steps-app/src/app/auth.tsx"] },
+  E2: { lane: "signin", kind: "ok", title: "Send code", sub: "POST /api/auth/phone/start",
+    detail: ["6-digit code sent as a WhatsApp template (steps_login_code), in ar / he / en, falling back to Arabic.", "Only an HMAC of the code is stored.", "Code lives 10 minutes, 5 wrong guesses max.", "One send per 30 s per number, 5 per hour; also behind the auth rate limiter."],
+    files: ["steps-server/src/controllers/phoneAuthController.ts", "steps-server/src/services/phoneCodes.ts", "steps-server/src/routes/authRoutes.ts"] },
+  E2R: { lane: "signin", kind: "ok", title: "Test numbers", sub: "REVIEW_PHONE · REVIEW_ADMIN_PHONE",
+    detail: ["These numbers skip WhatsApp entirely.", "They accept the fixed REVIEW_CODE.", "REVIEW_PHONE is for store reviewers; REVIEW_ADMIN_PHONE is the manager test number."],
+    files: ["steps-server/src/services/phoneCodes.ts", "steps-server/src/config/env.ts"] },
+  E3: { lane: "signin", kind: "ok", title: "Verify code", sub: "POST /api/auth/phone/verify",
+    detail: ["Checks the latest live code for the number; single use.", "Wrong, expired and used codes all get the same 401 message."],
+    files: ["steps-app/src/app/auth.tsx", "steps-server/src/controllers/phoneAuthController.ts"] },
+  E4: { lane: "signin", kind: "decision", title: "Manager test number?", sub: "",
+    detail: ["Is the verified number REVIEW_ADMIN_PHONE?"],
+    files: ["steps-server/src/controllers/phoneAuthController.ts"] },
+  E4A: { lane: "signin", kind: "ok", title: "Sign in as the manager", sub: "admin found by REVIEW_ADMIN_EMAIL",
+    detail: ["Looks up the account by REVIEW_ADMIN_EMAIL and requires role = admin.", "Otherwise answers 503 “The test manager account isn't set up.”"],
+    files: ["steps-server/src/controllers/phoneAuthController.ts"] },
+  E5: { lane: "signin", kind: "decision", title: "Number has an account?", sub: "UserModel.findByPhone",
+    detail: ["Looks the verified number up on User.phone (unique, E.164)."],
+    files: ["steps-server/src/models/user.ts"] },
+  E6: { lane: "signin", kind: "ok", title: "Signed in", sub: "token + user → Home",
+    detail: ["Server returns a JWT and the public user (with linked children).", "App stores the session and replaces to /(tabs)."],
+    files: ["steps-app/src/app/auth.tsx", "steps-app/src/hooks/useAuth.ts", "steps-server/src/utils/jwt.ts"] },
+  E7: { lane: "signin", kind: "ok", title: "Sign-up token", sub: "new number → onboarding",
+    detail: ["A 30-minute JWT signed with its own derived secret.", "Carries only the phone, no userId, so it can't be used as a session.", "App pushes /onboarding with it."],
+    files: ["steps-server/src/controllers/phoneAuthController.ts"] },
+  E8: { lane: "signin", kind: "ok", title: "Route gate", sub: "useAuthGate: token only",
+    detail: ["No token → /auth. Token while on /auth or /onboarding → /(tabs).", "Never checks the role."],
+    files: ["steps-app/src/app/_layout.tsx"] },
+  O1: { lane: "signin", kind: "ok", title: "Onboarding", sub: "path picked by the number",
+    detail: ["Verify returns matchedChildren: the children whose guardian phones include this number.", "Some found → nursery path (confirm the child). None → courses path (type the child in).", "No invite code anywhere. Without a signupToken it redirects back to /auth."],
+    files: ["steps-app/src/app/onboarding.tsx", "steps-app/src/app/auth.tsx", "steps-server/src/controllers/phoneAuthController.ts"] },
+
+  // ------------------------------------------------------------ nursery
+  N1: { lane: "nursery", kind: "ok", title: "Number found on a child", sub: "StudentModel.findByGuardianPhone",
+    detail: ["At verify, the verified number is looked up in Student.guardianPhones (E.164, GIN index).", "The children's names go to onboarding; the number is verified, so only their guardian sees them."],
+    files: ["steps-server/src/controllers/phoneAuthController.ts", "steps-server/src/models/student.ts"] },
+  N2: { lane: "nursery", kind: "ok", title: "Confirm child + your name", sub: "step ‘details’",
+    detail: ["Shows “You're connecting to <child>” — nothing to type for the child.", "Asks first name and family name.", "If it's the wrong child, the parent is told to contact the academy."],
+    files: ["steps-app/src/app/onboarding.tsx"] },
+  N3: { lane: "nursery", kind: "ok", title: "Finish", sub: "consent (required)",
+    detail: ["Consent switch must be on to create the account."],
+    files: ["steps-app/src/app/onboarding.tsx"] },
+  N4: { lane: "nursery", kind: "ok", title: "Create account + link children", sub: "POST /api/auth/phone/register",
+    detail: ["Number still matches a child → UserModel.create (role parent) + StudentModel.linkByPhone.", "Links every child that lists the number (siblings too)."],
+    files: ["steps-server/src/controllers/phoneAuthController.ts", "steps-server/src/models/student.ts"] },
+  N5: { lane: "nursery", kind: "ok", title: "Linked to the roster child", sub: "sees photos tagged with that child",
+    detail: ["Photo visibility = photos with a PhotoTag for one of the parent's linked students.", "Every later sign-in runs linkByPhone again, so a child the academy adds this number to appears automatically."],
+    files: ["steps-server/src/models/photo.ts", "steps-server/src/models/student.ts"] },
+  NF1: { lane: "nursery", kind: "flag", title: "A wrong number links the wrong family", sub: "the phone is the only check",
+    detail: ["Whoever verifies a number saved on a child is linked to that child.", "A typo in a guardian phone would give a stranger access if they sign up with that number."],
+    files: ["steps-server/src/models/student.ts", "steps-server/src/utils/phone.ts"] },
+  NF2: { lane: "nursery", kind: "ok", title: "Second child, second parent", sub: "add the number to the child",
+    detail: ["Each child holds several guardian phones (mum, dad…).", "Saving a number links an existing account straight away (linkAccountsWithPhones).", "Unlinking a parent also removes their number, so they aren't re-linked at next sign-in."],
+    files: ["steps-server/src/models/student.ts", "steps-server/src/controllers/studentController.ts"] },
+  NF3: { lane: "nursery", kind: "flag", title: "Old app copies still use codes", sub: "server keeps the code path",
+    detail: ["Apps from before this change still show the invite-code step.", "registerWithPhone still honours inviteCode when the number matches no child; invite routes and tables remain until a cleanup."],
+    files: ["steps-server/src/controllers/phoneAuthController.ts", "steps-server/src/routes/inviteRoutes.ts"] },
+
+  // ------------------------------------------------------------ courses
+  C1: { lane: "courses", kind: "ok", title: "Your child", sub: "name + birth date",
+    detail: ["Shown after “I don't have a code”."],
+    files: ["steps-app/src/app/onboarding.tsx", "steps-app/src/components/auth/BirthDateField.tsx"] },
+  C2: { lane: "courses", kind: "ok", title: "Your name + consent", sub: "steps ‘details’ and ‘finish’",
+    detail: ["First name, family name, consent switch."],
+    files: ["steps-app/src/app/onboarding.tsx"] },
+  C3: { lane: "courses", kind: "ok", title: "Create account + own child", sub: "POST /api/auth/phone/register",
+    detail: ["parseChildInput: name ≤ 60 chars, a real date, not in the future, not before 1990.", "UserModel.createWithOwnChild in one transaction: User (role parent) + Student (addedByParent = true) + link."],
+    files: ["steps-server/src/controllers/phoneAuthController.ts", "steps-server/src/utils/childInput.ts", "steps-server/src/models/user.ts"] },
+  C4: { lane: "courses", kind: "ok", title: "Child gives courses only", sub: "no photos unless tagged",
+    detail: ["A parent-added child has no photo tags, so it reveals nothing.", "It's what lets the parent request course places."],
+    files: ["steps-server/src/models/user.ts", "steps-server/src/models/photo.ts"] },
+  C5: { lane: "courses", kind: "ok", title: "Add another child", sub: "Profile · POST /api/students/mine",
+    detail: ["Profile row shown to every non-admin (nursery parents too).", "Max 6 linked children per parent."],
+    files: ["steps-app/src/app/(tabs)/profile.tsx", "steps-app/src/components/profile/AddChildModal.tsx", "steps-server/src/controllers/studentController.ts"] },
+  C6: { lane: "courses", kind: "ok", title: "Request a course place", sub: "POST /api/courses/:id/enroll",
+    detail: ["From the course sheet, for one of the parent's children.", "403 if not a guardian of that child.", "409 if already pending or approved."],
+    files: ["steps-app/src/components/home/CourseSheet.tsx", "steps-server/src/controllers/courseController.ts"] },
+  C7: { lane: "courses", kind: "decision", title: "Room in the course?", sub: "EnrollmentModel.join",
+    detail: ["Serializable transaction: capacity 0 (unlimited) or approved count < capacity.", "Retried once on conflict."],
+    files: ["steps-server/src/models/course.ts"] },
+  C8: { lane: "courses", kind: "ok", title: "Joined at once", sub: "approved, no admin asked",
+    detail: ["status = approved, decidedBy = null (shown as “joined automatically”).", "No push to admins."],
+    files: ["steps-server/src/models/course.ts", "steps-server/src/controllers/courseController.ts"] },
+  C9: { lane: "courses", kind: "ok", title: "Waiting list", sub: "pending · admins pushed",
+    detail: ["status = pending.", "Push “waitlistRequest” to every admin."],
+    files: ["steps-server/src/controllers/courseController.ts", "steps-server/src/lib/pushCopy.ts"] },
+  C10: { lane: "courses", kind: "ok", title: "Parent cancels", sub: "DELETE /api/courses/enrollments/:id",
+    detail: ["Pending or approved → cancelled.", "Admins are pushed only if it had been approved."],
+    files: ["steps-app/src/components/home/CourseSheet.tsx", "steps-server/src/controllers/courseController.ts"] },
+  C11: { lane: "courses", kind: "ok", title: "Family told the decision", sub: "notification + push",
+    detail: ["In-app notification and push to every guardian of the child.", "“Place confirmed” or “place declined”.", "Same notifier for app and web dashboard decisions."],
+    files: ["steps-server/src/lib/enrollmentNotify.ts"] },
+
+  // ------------------------------------------------------------ admin app
+  A0: { lane: "adminapp", kind: "ok", title: "Where admins come from", sub: "never from phone sign-up",
+    detail: ["ADMIN_EMAILS on the legacy email / Google register.", "Role change in the web dashboard.", "Dev seed account.", "Phone sign-up always creates role ‘parent’."],
+    files: ["steps-server/src/controllers/authController.ts", "steps-server/src/dashboard/users.ts", "steps-server/src/controllers/phoneAuthController.ts"] },
+  AF0: { lane: "adminapp", kind: "flag", title: "Admins can't sign into the app", sub: "email accounts vs phone-only app",
+    detail: ["Admin accounts are email accounts; the app's only sign-in is by phone.", "No code path adds a phone to an existing account.", "So an admin reaches the app only via a phone already on its row, or REVIEW_ADMIN_PHONE."],
+    files: ["steps-app/src/app/auth.tsx", "steps-server/src/models/user.ts"] },
+  A1: { lane: "adminapp", kind: "ok", title: "Admin hub", sub: "Profile → /admin",
+    detail: ["Profile shows the Admin row when role = admin (also from the admin Home).", "Hub links to Students, Courses, Requests, Schedule, Gallery…"],
+    files: ["steps-app/src/app/(tabs)/profile.tsx", "steps-app/src/app/admin.tsx", "steps-app/src/components/home/AdminHomeSections.tsx"] },
+  A2: { lane: "adminapp", kind: "ok", title: "Server admin guard", sub: "requireAuth + adminOnly",
+    detail: ["requireAuth reloads the user and role from the DB on every request.", "adminOnly answers 403 for non-admins."],
+    files: ["steps-server/src/middleware/auth.ts"] },
+  AF1: { lane: "adminapp", kind: "flag", title: "No role check in the app", sub: "only the server's 403",
+    detail: ["/admin, /students, /invite-send, /courses, /course-requests render for anyone who navigates there.", "The data is still protected by the server's adminOnly."],
+    files: ["steps-app/src/app/admin.tsx", "steps-app/src/app/students.tsx", "steps-app/src/app/_layout.tsx"] },
+  A3: { lane: "adminapp", kind: "ok", title: "Students", sub: "roster · guardians · phones",
+    detail: ["Add a student (name only), delete.", "Guardian phones: add / remove numbers on each child.", "Link / unlink a guardian by hand via parent search."],
+    files: ["steps-app/src/app/students.tsx", "steps-app/src/components/students/GuardianPhonesSection.tsx", "steps-server/src/controllers/studentController.ts"] },
+  A4: { lane: "adminapp", kind: "ok", title: "Welcome families", sub: "/invite-send",
+    detail: ["Paste a roster (name + phone) → POST /api/students/bulk; each phone becomes a guardian phone.", "Tap a number → WhatsApp message with the app links: “sign in with this number”. No code."],
+    files: ["steps-app/src/app/invite-send.tsx", "steps-app/src/lib/phone.ts"] },
+  A5: { lane: "adminapp", kind: "ok", title: "Course requests", sub: "approve or reject",
+    detail: ["PATCH /api/courses/enrollments/:id.", "A full course answers 409 course_full; the admin can confirm and resend with allowOverCapacity."],
+    files: ["steps-app/src/app/course-requests.tsx", "steps-server/src/controllers/courseController.ts"] },
+  AF2: { lane: "adminapp", kind: "flag", title: "“Awaiting link” goes nowhere", sub: "alert with no list behind it",
+    detail: ["Home alert “parents awaiting link” opens /students, which has no such list.", "GET /api/students/awaiting-link is never called by the app.", "Every current sign-up links a child, so only older accounts can be counted."],
+    files: ["steps-app/src/components/home/AdminHomeSections.tsx", "steps-server/src/models/user.ts"] },
+  AF3: { lane: "adminapp", kind: "flag", title: "claimedChildName never written", sub: "hint field, always empty now",
+    detail: ["Shown to admins as a hint for who to link.", "No current sign-up path writes it."],
+    files: ["steps-server/src/models/user.ts", "steps-server/prisma/schema.prisma"] },
+  AF4: { lane: "adminapp", kind: "flag", title: "Can't search parents by phone", sub: "name and email only",
+    detail: ["listParentsWithChildren searches name and email only.", "Phone sign-ups have no email, so their number can't be searched in the guardian picker."],
+    files: ["steps-server/src/models/user.ts", "steps-app/src/app/students.tsx"] },
+
+  // ------------------------------------------------------------ dashboard
+  W1: { lane: "dash", kind: "ok", title: "Dashboard login", sub: "HTTP Basic · email + password",
+    detail: ["/dashboard on the API server.", "Only accounts with a password and role = admin get in.", "CSRF token + Sec-Fetch-Site check on every write."],
+    files: ["steps-server/src/middleware/dashboardAuth.ts", "steps-server/src/routes/dashboardRoutes.ts"] },
+  WF1: { lane: "dash", kind: "flag", title: "Phone accounts can't open it", sub: "they have no password",
+    detail: ["Phone sign-ups never get a passwordHash, so they can never pass the dashboard login."],
+    files: ["steps-server/src/middleware/dashboardAuth.ts"] },
+  W2: { lane: "dash", kind: "ok", title: "Users", sub: "role · link child · delete",
+    detail: ["Set role admin / parent; refuses to demote the last admin.", "Link / unlink a child, reassign content, delete."],
+    files: ["steps-server/src/dashboard/users.ts"] },
+  W3: { lane: "dash", kind: "ok", title: "Students", sub: "roster · guardian phones",
+    detail: ["Create, bulk-create, edit, including guardian phones (comma-separated).", "Link guardian by hand; old invite codes can still be issued or revoked."],
+    files: ["steps-server/src/dashboard/students.ts"] },
+  W4: { lane: "dash", kind: "ok", title: "Courses", sub: "decide enrollments",
+    detail: ["Approve / reject with the same notifier as the app."],
+    files: ["steps-server/src/dashboard/courses.ts"] },
+
+  // ------------------------------------------------------------ leftovers (open-questions view only)
+  L1: { lane: "signin", kind: "flag", title: "Old email + Google sign-in", sub: "server only, no screen", hidden: true,
+    detail: ["POST /api/auth/register, /login and /google (Google off by flag) still exist.", "useAuth still exports register, login and google; no screen calls them."],
+    files: ["steps-server/src/controllers/authController.ts", "steps-app/src/hooks/useAuth.ts", "steps-app/src/constants/flags.ts"] },
+  L2: { lane: "signin", kind: "flag", title: "Kid mode", sub: "not in the code", hidden: true,
+    detail: ["Searched steps-app/src and steps-server/src: no kid mode exists."],
+    files: [] },
+};
+
+// type: flow = solid · note = dotted, no arrow (attached remark) · maybe = dotted arrow · touch = thick gold, between lanes
+const EDGES = [
+  ["E1","E2","flow"], ["E2","E2R","note"], ["E2","E3","flow"], ["E3","E4","flow"],
+  ["E4","E4A","flow","yes"], ["E4","E5","flow","no"], ["E5","E6","flow","yes"], ["E5","E7","flow","no"],
+  ["E4A","E6","flow"], ["E6","E8","flow"], ["E7","O1","flow"],
+  ["O1","N1","touch","number on a child"], ["O1","C1","touch","number not on any child"],
+
+  ["N1","N2","flow"], ["N2","N3","flow"], ["N3","N4","flow"], ["N4","N5","flow"],
+  ["N1","NF1","note"], ["N4","NF3","note"], ["N5","NF2","note"],
+
+  ["C1","C2","flow"], ["C2","C3","flow"], ["C3","C4","flow"], ["C4","C6","flow"], ["C5","C6","flow"],
+  ["C6","C7","flow"], ["C7","C8","flow","room"], ["C7","C9","flow","full"],
+  ["C8","C10","maybe"], ["C9","C10","maybe"],
+
+  ["E8","A1","touch","role is admin"],
+  ["A0","AF0","note"], ["A1","A3","flow"], ["A1","A4","flow"], ["A1","A5","flow"],
+  ["A3","A2","flow"], ["A4","A2","flow"], ["A5","A2","flow"], ["A2","AF1","note"],
+  ["A1","AF2","note"], ["AF2","AF3","note"], ["A3","AF4","note"],
+
+  ["W1","W2","flow"], ["W1","W3","flow"], ["W1","W4","flow"], ["W1","WF1","note"],
+
+  ["A4","N1","touch","welcome by WhatsApp"], ["A3","N1","touch","saves guardian phones"], ["W3","N1","touch","saves guardian phones"],
+  ["A3","N5","touch","manual link"], ["W2","N5","touch","manual link"],
+  ["C9","A5","touch","waiting list"], ["A5","C11","touch","approve / reject"], ["W4","C11","touch","approve / reject"],
+  ["W2","A0","touch","promotes to admin"],
+];
+
+const OVERVIEW_EDGES = [
+  ["signin","nursery","number saved on a child"], ["signin","courses","number not on any child"],
+  ["signin","adminapp","account is admin"],
+  ["adminapp","nursery","guardian phones · manual links"], ["dash","nursery","guardian phones · manual links"],
+  ["courses","adminapp","waiting-list requests"], ["adminapp","courses","decisions"], ["dash","courses","decisions"],
+  ["dash","adminapp","promotes to admin"],
+];
+
+// ===================================================================== mermaid source
+const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
+function label(n, ghost) {
+  const tag = ghost ? `<div class='lane-tag'>${esc(LANES[n.lane].name)} ›</div>` : "";
+  const t = (n.kind === "flag" ? "? " : "") + n.title;
+  return `<div class='n'>${tag}<div class='t'>${esc(t)}</div>${n.sub ? `<div class='s'>${esc(n.sub)}</div>` : ""}</div>`;
+}
+
+function laneSource(lane) {
+  const inLane = (id) => NODES[id] && NODES[id].lane === lane && !NODES[id].hidden;
+  const edges = EDGES.filter(([a, b]) => inLane(a) || inLane(b));
+  const ids = new Set(Object.keys(NODES).filter(inLane));
+  const ghosts = new Set();
+  edges.forEach(([a, b]) => { [a, b].forEach((id) => { if (!ids.has(id)) ghosts.add(id); }); });
+
+  const out = ["flowchart TB"];
+  const classes = { ok: [], flag: [], decision: [], ghost: [] };
+  for (const id of ids) {
+    const n = NODES[id];
+    out.push(n.kind === "decision" ? `${id}{"${label(n)}"}` : `${id}["${label(n)}"]`);
+    classes[n.kind].push(id);
+  }
+  for (const id of ghosts) { out.push(`${id}(["${label(NODES[id], true)}"])`); classes.ghost.push(id); }
+
+  const touchIdx = [];
+  edges.forEach(([a, b, type, text], i) => {
+    const l = text ? `|"${esc(text)}"|` : "";
+    const arrow = type === "note" ? "-.-" : type === "maybe" ? "-.->" : type === "touch" ? "==>" : "-->";
+    out.push(`${a} ${arrow}${l} ${b}`);
+    if (type === "touch") touchIdx.push(i);
+  });
+  if (touchIdx.length) out.push(`linkStyle ${touchIdx.join(",")} stroke:#d9a441,stroke-width:3px;`);
+  out.push(...STYLE_DEFS);
+  for (const [k, list] of Object.entries(classes)) if (list.length) out.push(`class ${list.join(",")} ${k};`);
+  return out.join("\n");
+}
+
+function overviewSource() {
+  const out = ["flowchart LR"];
+  for (const [key, lane] of Object.entries(LANES)) {
+    const nodes = Object.values(NODES).filter((n) => n.lane === key && !n.hidden);
+    const flags = nodes.filter((n) => n.kind === "flag").length;
+    const steps = nodes.length - flags;
+    const sub = `${esc(lane.blurb)}<br/>${steps} steps${flags ? ` · <b class='fl'>${flags} open question${flags > 1 ? "s" : ""}</b>` : ""}`;
+    out.push(`ln_${key}["<div class='n big'><div class='t'>${esc(lane.name)}</div><div class='s'>${sub}</div></div>"]`);
+  }
+  OVERVIEW_EDGES.forEach(([a, b, t]) => out.push(`ln_${a} ==>|"${esc(t)}"| ln_${b}`));
+  out.push(`linkStyle ${OVERVIEW_EDGES.map((_, i) => i).join(",")} stroke:#d9a441,stroke-width:3px;`);
+  out.push(...STYLE_DEFS);
+  out.push(`class ${Object.keys(LANES).map((k) => "ln_" + k).join(",")} lane;`);
+  return out.join("\n");
+}
+
+const STYLE_DEFS = [
+  "classDef ok fill:#ffffff,stroke:#5b8a72,stroke-width:2px,color:#2d2a26,rx:10,ry:10;",
+  "classDef flag fill:#fff4e5,stroke:#d9822b,stroke-width:2px,stroke-dasharray:7 4,color:#2d2a26,rx:10,ry:10;",
+  "classDef decision fill:#f6f1e4,stroke:#b08a3a,stroke-width:2px,color:#2d2a26;",
+  "classDef ghost fill:#f1ede5,stroke:#b5ad9e,stroke-width:1.5px,stroke-dasharray:2 3,color:#6f695f;",
+  "classDef lane fill:#ffffff,stroke:#5b8a72,stroke-width:2.5px,color:#2d2a26,rx:14,ry:14;",
+];
+
+// ===================================================================== views
+const VIEWS = [
+  { key: "overview", name: "Overview" },
+  ...Object.entries(LANES).map(([key, l]) => ({ key, name: l.name })),
+  { key: "questions", name: "Open questions" },
+];
+
+mermaid.initialize({
+  startOnLoad: false,
+  securityLevel: "loose",
+  theme: "base",
+  themeVariables: {
+    fontFamily: "Segoe UI, -apple-system, Roboto, sans-serif",
+    fontSize: "14px",
+    lineColor: "#9a9384",
+    edgeLabelBackground: "#fbf6ec",
+    primaryTextColor: "#2d2a26",
+  },
+  flowchart: { htmlLabels: true, useMaxWidth: false, curve: "basis", nodeSpacing: 40, rankSpacing: 60, padding: 14 },
+});
+
+const $ = (id) => document.getElementById(id);
+const stage = $("stage"), inner = $("inner"), list = $("list"), panel = $("panel");
+let current = null, renderCount = 0;
+const cache = {};
+
+function flagCount(key) {
+  if (key === "questions") return Object.values(NODES).filter((n) => n.kind === "flag").length;
+  if (key === "overview") return 0;
+  return Object.values(NODES).filter((n) => n.lane === key && n.kind === "flag" && !n.hidden).length;
+}
+
+$("tabs").innerHTML = VIEWS.map((v) => {
+  const c = flagCount(v.key);
+  return `<button data-view="${v.key}">${esc(v.name)}${c ? `<span class="count">${c}</span>` : ""}</button>`;
+}).join("");
+$("tabs").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) show(b.dataset.view); });
+
+async function show(key, focusId) {
+  current = key;
+  document.querySelectorAll("nav button").forEach((b) => b.classList.toggle("active", b.dataset.view === key));
+  history.replaceState(null, "", "#" + key);
+  const isList = key === "questions";
+  list.style.display = isList ? "block" : "none";
+  inner.style.display = isList ? "none" : "block";
+  ["controls", "zoomlabel", "hint"].forEach((id) => ($(id).style.display = isList ? "none" : ""));
+  if (isList) { renderQuestions(); return; }
+
+  if (!cache[key]) {
+    const src = key === "overview" ? overviewSource() : laneSource(key);
+    const { svg } = await mermaid.render("view" + ++renderCount, src);
+    cache[key] = svg;
+  }
+  inner.innerHTML = cache[key];
+  const svg = inner.querySelector("svg");
+  const vb = svg.viewBox.baseVal;
+  svg.setAttribute("width", vb.width); svg.setAttribute("height", vb.height);
+  svg.style.maxWidth = "none";
+  bindNodes(key);
+  fit();
+  if (focusId) focusNode(focusId);
+  else if (key === "overview") overviewPanel(); else lanePanel(key);
+}
+
+function nodeIdOf(g) { const m = g.id.match(/flowchart-([A-Za-z0-9_]+)-\d+$/); return m ? m[1] : null; }
+
+function bindNodes(view) {
+  inner.querySelectorAll("g.node").forEach((g) => {
+    const id = nodeIdOf(g);
+    g.addEventListener("click", (e) => {
+      if (moved) return;
+      e.stopPropagation();
+      if (id.startsWith("ln_")) return show(id.slice(3));
+      const n = NODES[id];
+      if (n.lane !== view) return show(n.lane, id);
+      highlight(id); nodePanel(id);
+    });
+  });
+}
+
+function highlight(id) {
+  inner.querySelectorAll("g.node.hl").forEach((g) => g.classList.remove("hl"));
+  const g = [...inner.querySelectorAll("g.node")].find((el) => nodeIdOf(el) === id);
+  if (g) g.classList.add("hl");
+  return g;
+}
+
+function focusNode(id) {
+  const g = highlight(id);
+  nodePanel(id);
+  if (!g) return;
+  const r = g.getBoundingClientRect(), ir = inner.getBoundingClientRect(), sr = stage.getBoundingClientRect();
+  const cx = (r.left + r.width / 2 - ir.left) / view.s, cy = (r.top + r.height / 2 - ir.top) / view.s;
+  view.s = Math.max(view.s, 1);
+  view.x = sr.width / 2 - cx * view.s; view.y = sr.height / 2 - cy * view.s;
+  apply(true);
+}
+
+// ===================================================================== panel
+function edgesOf(id) {
+  return EDGES.filter(([a, b]) => a === id || b === id).map(([a, b, type, text]) => ({ other: a === id ? b : a, dir: a === id ? "to" : "from", type, text }));
+}
+
+function nodePanel(id) {
+  const n = NODES[id];
+  const links = edgesOf(id).filter((e) => !NODES[e.other].hidden).map((e) => {
+    const o = NODES[e.other];
+    const verb = e.type === "note" ? "Remark on" : e.dir === "to" ? "Leads to" : "Comes from";
+    return `<button class="link" data-go="${e.other}">${verb}: <b>${esc((o.kind === "flag" ? "? " : "") + o.title)}</b>${e.text ? ` <small>· ${esc(e.text)}</small>` : ""}${o.lane !== n.lane ? `<br/><small>in ${esc(LANES[o.lane].name)}</small>` : ""}</button>`;
+  }).join("");
+  panel.innerHTML = `
+    <span class="badge ${n.kind === "flag" ? "flag" : "ok"}">${n.kind === "flag" ? "? Unclear / unwired / inconsistent" : n.kind === "decision" ? "Branch in the code" : "Confirmed in code"}</span>
+    <span class="badge lane">${esc(LANES[n.lane].name)}</span>
+    <h2>${esc(n.title)}</h2>
+    ${n.sub ? `<div style="color:var(--muted);font-size:13px;margin-top:-4px">${esc(n.sub)}</div>` : ""}
+    <h3>What the code does</h3>
+    <ul>${n.detail.map((d) => `<li>${esc(d)}</li>`).join("")}</ul>
+    ${n.files.length ? `<h3>Source</h3>${n.files.map((f) => `<span class="file">${esc(f)}</span>`).join("")}` : ""}
+    ${links ? `<h3>Connections</h3>${links}` : ""}`;
+}
+
+function legend() {
+  return `<h3>Key</h3><div class="legend">
+    <div><span class="sw ok"></span>Confirmed in code</div>
+    <div><span class="sw flag"></span>? Unclear, unwired or inconsistent</div>
+    <div><span class="sw ghost"></span>Step in another lane (click to jump)</div>
+    <div><span class="sw touch"></span>Hand-off between lanes</div></div>`;
+}
+
+function overviewPanel() {
+  panel.innerHTML = `<h2>How the pieces connect</h2>
+    <ul><li>Everyone signs in the same way: phone number + WhatsApp code.</li>
+    <li>A new number goes to onboarding: if the academy saved it on a child it’s a <b>nursery</b> parent, otherwise a <b>courses</b> parent.</li>
+    <li>Admins use the same app sign-in, or the separate web dashboard with email + password.</li></ul>
+    <p style="font-size:13px;color:var(--muted)">Click a box to open that lane.</p>${legend()}`;
+}
+
+function lanePanel(key) {
+  const flags = Object.entries(NODES).filter(([, n]) => n.lane === key && n.kind === "flag" && !n.hidden);
+  panel.innerHTML = `<span class="badge lane">${esc(LANES[key].name)}</span><h2>${esc(LANES[key].blurb)}</h2>
+    <p style="font-size:13px;color:var(--muted)">Click any box for what the code does and where it lives.</p>
+    ${flags.length ? `<h3>Open questions here</h3>${flags.map(([id, n]) => `<button class="link" data-go="${id}"><b>? ${esc(n.title)}</b><br/><small>${esc(n.sub)}</small></button>`).join("")}` : ""}
+    ${legend()}`;
+}
+
+panel.addEventListener("click", (e) => {
+  const b = e.target.closest("[data-go]"); if (!b) return;
+  const id = b.dataset.go, n = NODES[id];
+  if (n.lane === current) focusNode(id); else show(n.lane, id);
+});
+
+function renderQuestions() {
+  const groups = {};
+  Object.entries(NODES).filter(([, n]) => n.kind === "flag").forEach(([id, n]) => {
+    const g = n.hidden ? "Not reachable from today's app" : LANES[n.lane].name;
+    (groups[g] = groups[g] || []).push([id, n]);
+  });
+  list.innerHTML = Object.entries(groups).map(([g, items]) => `<div class="qgroup"><h3>${esc(g)}</h3>${items.map(([id, n]) => `
+    <div class="qcard"><b>? ${esc(n.title)}</b><p>${n.detail.map(esc).join(" ")}</p>
+    ${n.files.length ? n.files.map((f) => `<span class="file">${esc(f)}</span>`).join("") : ""}
+    ${n.hidden ? "" : `<div style="margin-top:8px"><button data-go="${id}">Show in diagram</button></div>`}</div>`).join("")}</div>`).join("");
+  panel.innerHTML = `<h2>Open questions</h2><p style="font-size:13.5px;line-height:1.5">Places where the code is unwired, half-built, or doesn't match the rest of the flow.</p>${legend()}`;
+}
+list.addEventListener("click", (e) => { const b = e.target.closest("[data-go]"); if (b) show(NODES[b.dataset.go].lane, b.dataset.go); });
+
+// ===================================================================== pan + zoom
+const view = { s: 1, x: 0, y: 0 };
+let moved = false;
+
+function apply(animate) {
+  inner.style.transition = animate ? "transform .35s ease" : "none";
+  inner.style.transform = `translate(${view.x}px, ${view.y}px) scale(${view.s})`;
+  $("zoomlabel").textContent = Math.round(view.s * 100) + "%";
+}
+
+function fit() {
+  const svg = inner.querySelector("svg"); if (!svg) return;
+  const w = svg.viewBox.baseVal.width, h = svg.viewBox.baseVal.height;
+  const sr = stage.getBoundingClientRect();
+  view.s = Math.min((sr.width - 60) / w, (sr.height - 60) / h, 1.4);
+  view.x = (sr.width - w * view.s) / 2; view.y = Math.max(30, (sr.height - h * view.s) / 2);
+  apply(false);
+}
+
+function zoomAt(factor, px, py) {
+  const ns = Math.min(4, Math.max(0.1, view.s * factor));
+  view.x = px - (px - view.x) * (ns / view.s);
+  view.y = py - (py - view.y) * (ns / view.s);
+  view.s = ns; apply(false);
+}
+
+stage.addEventListener("wheel", (e) => {
+  if (current === "questions") return;
+  e.preventDefault();
+  const r = stage.getBoundingClientRect();
+  zoomAt(Math.exp(-e.deltaY * 0.0015), e.clientX - r.left, e.clientY - r.top);
+}, { passive: false });
+
+let drag = null;
+stage.addEventListener("pointerdown", (e) => {
+  if (current === "questions" || e.target.closest(".controls")) return;
+  drag = { x: e.clientX, y: e.clientY, vx: view.x, vy: view.y }; moved = false;
+});
+window.addEventListener("pointermove", (e) => {
+  if (!drag) return;
+  const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+  if (!moved && Math.hypot(dx, dy) > 4) { moved = true; stage.classList.add("dragging"); }
+  if (moved) { view.x = drag.vx + dx; view.y = drag.vy + dy; apply(false); }
+});
+window.addEventListener("pointerup", () => { drag = null; stage.classList.remove("dragging"); setTimeout(() => (moved = false), 0); });
+
+$("controls").addEventListener("click", (e) => {
+  const z = e.target.dataset.z; if (!z) return;
+  const r = stage.getBoundingClientRect();
+  if (z === "fit") { fit(); return; }
+  zoomAt(z === "in" ? 1.25 : 0.8, r.width / 2, r.height / 2);
+});
+window.addEventListener("keydown", (e) => {
+  if (e.target.tagName === "INPUT") return;
+  const r = stage.getBoundingClientRect();
+  if (e.key === "+" || e.key === "=") zoomAt(1.25, r.width / 2, r.height / 2);
+  if (e.key === "-") zoomAt(0.8, r.width / 2, r.height / 2);
+  if (e.key === "0") fit();
+});
+window.addEventListener("resize", () => { if (current !== "questions") fit(); });
+
+// ===================================================================== search
+const q = $("q"), results = $("results");
+q.addEventListener("input", () => {
+  const term = q.value.trim().toLowerCase();
+  if (!term) { results.style.display = "none"; return; }
+  const hits = Object.entries(NODES).filter(([, n]) => !n.hidden &&
+    [n.title, n.sub, ...n.detail, ...n.files].join(" ").toLowerCase().includes(term)).slice(0, 20);
+  results.innerHTML = hits.length ? hits.map(([id, n]) => `<button data-go="${id}"><b>${esc((n.kind === "flag" ? "? " : "") + n.title)}</b><small>${esc(LANES[n.lane].name)} · ${esc(n.sub)}</small></button>`).join("")
+    : `<button disabled><small>No matches</small></button>`;
+  results.style.display = "block";
+});
+results.addEventListener("click", (e) => {
+  const b = e.target.closest("[data-go]"); if (!b) return;
+  results.style.display = "none"; q.value = "";
+  const n = NODES[b.dataset.go];
+  if (n.lane === current) focusNode(b.dataset.go); else show(n.lane, b.dataset.go);
+});
+document.addEventListener("click", (e) => { if (!e.target.closest(".search")) results.style.display = "none"; });
+
+// ===================================================================== start
+const start = location.hash.slice(1);
+show(VIEWS.some((v) => v.key === start) ? start : "overview");
+</script>
+</body>
+</html>

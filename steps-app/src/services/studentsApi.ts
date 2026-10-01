@@ -9,6 +9,8 @@ export type Student = {
   notes: string | null;
   /** Typed in by a course family at sign-up rather than added by the academy. */
   addedByParent?: boolean;
+  /** E.164. Signing in with one of these links that parent to the child. */
+  guardianPhones: string[];
   photoCount: number;
   guardians: Guardian[];
 };
@@ -64,6 +66,7 @@ export async function createStudent(input: {
   name: string;
   birthDate?: string | null;
   notes?: string | null;
+  guardianPhones?: string[];
 }) {
   const { data } = await api.post<{ student: Student }>("/api/students", input);
   return data.student;
@@ -75,8 +78,8 @@ export async function updateStudent(
     name?: string;
     birthDate?: string | null;
     notes?: string | null;
-    /** Where the invite code is sent. Editable, not create-only. */
-    guardianPhone?: string | null;
+    /** The full list; the server checks and normalises each number. */
+    guardianPhones?: string[];
   }
 ) {
   const { data } = await api.patch<{ student: Omit<Student, "guardians"> }>(

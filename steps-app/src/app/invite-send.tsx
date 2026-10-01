@@ -14,44 +14,39 @@ import { Colors } from "../constants/Colors";
 import { Fonts } from "../constants/Fonts";
 import { Type } from "../constants/Typography";
 import { useTranslation } from "../i18n/useTranslation";
-import { parseRosterPaste, toWhatsAppNumber } from "../lib/phone";
-import { bulkCreateInvites, Invite, listInvites, markInviteSent } from "../services/inviteApi";
-import { bulkCreateStudents } from "../services/studentsApi";
+import { parseRosterPaste, toLocalDisplay, toWhatsAppNumber } from "../lib/phone";
+import { bulkCreateStudents, listStudents, Student } from "../services/studentsApi";
 
-type SendState = "notSent" | "waiting" | "signedUp";
+type FamilyState = "waiting" | "noPhone" | "signedUp";
 
-function sendState(invite: Invite): SendState {
-  if (invite.redeemedCount > 0) return "signedUp";
-  return invite.sentAt ? "waiting" : "notSent";
+function familyState(student: Student): FamilyState {
+  if (student.guardians.length > 0) return "signedUp";
+  return student.guardianPhones.length > 0 ? "waiting" : "noPhone";
 }
 
-// Unsent first, then sent-but-waiting, then done — so the screen always opens
-// on the work that's left, and turns into the chase list by itself.
-const ORDER: Record<SendState, number> = { notSent: 0, waiting: 1, signedUp: 2 };
+// Families still to sign up first, then children missing a number, then done —
+// so the screen always opens on the work that's left.
+const ORDER: Record<FamilyState, number> = { waiting: 0, noPhone: 1, signedUp: 2 };
 
 /**
- * The admin's distribution screen: paste the class in, generate every code at
- * once, then tap down the list sending each family their own code on WhatsApp.
+ * The admin's welcome screen: paste the class in (name and phone), then tap
+ * down the list sending each family a WhatsApp message with the app links.
  *
- * Codes are per-child, so they can never be posted to the parents' group —
- * one code in a shared place would let any parent claim another child.
+ * There is no code to send. The number on the child is what links the parent:
+ * signing in with it connects them to their child automatically, so the
+ * message only has to say "get the app and sign in with this number".
  */
 export default function InviteSendScreen() {
   const { t, isRTL, rtlText } = useTranslation();
   const queryClient = useQueryClient();
   const [paste, setPaste] = useState("");
+  // Which numbers were messaged this visit — "Send again" rather than "Send".
+  const [sent, setSent] = useState<Set<string>>(new Set());
 
-  const {
-    data: invites,
-    isPending,
-    isError,
-    refetch,
-  } = useQuery({ queryKey: ["invites"], queryFn: () => listInvites() });
-
-  const refresh = () => {
-    queryClient.invalidateQueries({ queryKey: ["invites"] });
-    queryClient.invalidateQueries({ queryKey: ["students"] });
-  };
+  const { data, isPending, isError, refetch } = useQuery({
+    queryKey: ["students", "welcome"],
+    queryFn: () => listStudents({ limit: 100 }),
+  });
 
   const parsed = useMemo(() => parseRosterPaste(paste), [paste]);
 
@@ -59,64 +54,49 @@ export default function InviteSendScreen() {
     mutationFn: () => bulkCreateStudents(parsed),
     onSuccess: ({ createdCount, skippedCount }) => {
       setPaste("");
-      refresh();
+      queryClient.invalidateQueries({ queryKey: ["students"] });
       Alert.alert(t.invite.importTitle, t.invite.importResult(createdCount, skippedCount));
     },
     onError: () => Alert.alert(t.common.somethingWentWrong, t.common.tryAgain),
   });
 
-  const generateAll = useMutation({
-    mutationFn: bulkCreateInvites,
-    onSuccess: (createdCount) => {
-      refresh();
-      Alert.alert(t.invite.adminTitle, t.invite.generateAllResult(createdCount));
-    },
-    onError: () => Alert.alert(t.common.somethingWentWrong, t.common.tryAgain),
-  });
-
-  const markSent = useMutation({
-    mutationFn: (inviteId: string) => markInviteSent(inviteId),
-    onSuccess: refresh,
-  });
-
-  const active = useMemo(
-    () => (invites ?? []).filter((invite) => invite.status === "active"),
-    [invites]
+  // The academy's own roster only: a course family's typed-in child already
+  // has its parent.
+  const roster = useMemo(
+    () => (data?.students ?? []).filter((student) => !student.addedByParent),
+    [data]
   );
 
   const sorted = useMemo(
     () =>
-      [...active].sort((a, b) => {
-        const byState = ORDER[sendState(a)] - ORDER[sendState(b)];
-        return byState !== 0 ? byState : a.studentName.localeCompare(b.studentName);
+      [...roster].sort((a, b) => {
+        const byState = ORDER[familyState(a)] - ORDER[familyState(b)];
+        return byState !== 0 ? byState : a.name.localeCompare(b.name);
       }),
-    [active]
+    [roster]
   );
 
-  const outstanding = active.filter((invite) => invite.redeemedCount === 0).length;
+  const outstanding = roster.filter((student) => familyState(student) !== "signedUp").length;
 
-  const send = async (invite: Invite) => {
-    const message = t.invite.adminShareMessage(invite.studentName, invite.code, t.invite.signUp);
-    const number = toWhatsAppNumber(invite.guardianPhone);
-
+  const send = async (student: Student, phone: string) => {
+    const message = t.invite.welcomeMessage(student.name);
+    const number = toWhatsAppNumber(phone);
     if (number) {
       await Linking.openURL(`https://wa.me/${number}?text=${encodeURIComponent(message)}`);
     } else {
-      // No usable number — fall back to the share sheet rather than dropping
-      // the family silently.
       await Share.share({ message });
     }
-    markSent.mutate(invite.id);
+    setSent((previous) => new Set(previous).add(phone));
   };
 
-  const stateLabel = (state: SendState) =>
+  const stateLabel = (state: FamilyState) =>
     state === "signedUp"
       ? t.invite.stateSignedUp
       : state === "waiting"
         ? t.invite.stateWaiting
-        : t.invite.stateNotSent;
+        : t.invite.noPhone;
 
-  const stateTint = (state: SendState) =>
+  const stateTint = (state: FamilyState) =>
     state === "signedUp" ? Colors.coral : state === "waiting" ? Colors.gold : Colors.textLight;
 
   return (
@@ -145,16 +125,8 @@ export default function InviteSendScreen() {
           ) : null}
         </View>
 
-        <StepsButton
-          label={t.invite.generateAll}
-          onPress={() => generateAll.mutate()}
-          loading={generateAll.isPending}
-          variant="outline"
-          style={styles.generateButton}
-        />
-
         <Text style={[styles.remaining, rtlText]}>
-          {outstanding === 0 && active.length > 0
+          {outstanding === 0 && roster.length > 0
             ? t.invite.allSignedUp
             : t.invite.remaining(outstanding)}
         </Text>
@@ -165,35 +137,36 @@ export default function InviteSendScreen() {
             <SkeletonBlock width="100%" height={64} borderRadius={14} style={styles.rowGap} />
             <SkeletonBlock width="100%" height={64} borderRadius={14} />
           </>
-        ) : isError || !invites ? (
+        ) : isError || !data ? (
           <DataErrorState onRetry={() => void refetch()} />
         ) : (
-          sorted.map((invite) => {
-            const state = sendState(invite);
+          sorted.map((student) => {
+            const state = familyState(student);
             return (
-              <View key={invite.id} style={[styles.row, isRTL && styles.rowReverse]}>
-                <View style={styles.flex}>
-                  <Text style={[styles.childName, rtlText]}>{invite.studentName}</Text>
-                  {/* Selectable so a long-press copies it — for reading out,
-                      pasting into SMS, or any family not on WhatsApp. Native
-                      selection rather than a clipboard dependency, which would
-                      change the native fingerprint and force a rebuild. */}
-                  <Text style={[styles.code, rtlText]} selectable>
-                    {invite.code}
-                  </Text>
-                  <Text style={[styles.state, { color: stateTint(state) }, rtlText]}>
-                    {stateLabel(state)}
-                    {invite.guardianPhone ? "" : ` · ${t.invite.noPhone}`}
-                  </Text>
-                </View>
-
-                {state === "signedUp" ? null : (
-                  <Touchable onPress={() => send(invite)} style={styles.sendButton} hitSlop={8}>
-                    <Text style={styles.sendText}>
-                      {state === "waiting" ? t.invite.resend : t.invite.send}
-                    </Text>
-                  </Touchable>
-                )}
+              <View key={student.id} style={styles.row}>
+                <Text style={[styles.childName, rtlText]}>{student.name}</Text>
+                <Text style={[styles.state, { color: stateTint(state) }, rtlText]}>
+                  {stateLabel(state)}
+                </Text>
+                {state === "signedUp"
+                  ? null
+                  : student.guardianPhones.map((phone) => (
+                      <View key={phone} style={[styles.phoneRow, isRTL && styles.rowReverse]}>
+                        {/* Selectable so a long-press copies it. */}
+                        <Text style={styles.phone} selectable>
+                          {toLocalDisplay(phone)}
+                        </Text>
+                        <Touchable
+                          onPress={() => send(student, phone)}
+                          style={styles.sendButton}
+                          hitSlop={8}
+                        >
+                          <Text style={styles.sendText}>
+                            {sent.has(phone) ? t.invite.resend : t.invite.send}
+                          </Text>
+                        </Touchable>
+                      </View>
+                    ))}
               </View>
             );
           })
@@ -205,7 +178,6 @@ export default function InviteSendScreen() {
 
 const styles = StyleSheet.create({
   content: { padding: 16, paddingBottom: 48 },
-  flex: { flex: 1 },
   importCard: {
     backgroundColor: Colors.card,
     borderRadius: 16,
@@ -226,12 +198,9 @@ const styles = StyleSheet.create({
     color: Colors.text,
     marginBottom: 12,
   },
-  generateButton: { marginBottom: 16 },
   remaining: { ...Type.caption, color: Colors.textLight, marginBottom: 12 },
   rowGap: { marginBottom: 10 },
   row: {
-    flexDirection: "row",
-    alignItems: "center",
     backgroundColor: Colors.card,
     borderRadius: 14,
     padding: 14,
@@ -239,7 +208,14 @@ const styles = StyleSheet.create({
   },
   rowReverse: { flexDirection: "row-reverse" },
   childName: { fontFamily: Fonts.bold, fontSize: 15, color: Colors.text },
-  code: { fontFamily: Fonts.bold, fontSize: 14, letterSpacing: 2, color: Colors.sage, marginTop: 2 },
+  phoneRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 10,
+  },
+  // Digits read left to right in every language.
+  phone: { fontFamily: Fonts.bold, fontSize: 15, color: Colors.text, writingDirection: "ltr" },
   state: { ...Type.caption, marginTop: 4 },
   sendButton: {
     backgroundColor: Colors.coral,

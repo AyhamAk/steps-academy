@@ -3,6 +3,7 @@ import { Request, Response } from "express";
 import { StudentModel } from "../models/student";
 import { UserModel } from "../models/user";
 import { MAX_SELF_ADDED_CHILDREN, parseChildInput } from "../utils/childInput";
+import { parsePhoneList, toE164 } from "../utils/phone";
 
 function param(req: Request, key: string): string {
   const value = req.params[key];
@@ -15,6 +16,7 @@ function serializeStudent(student: {
   birthDate: string | null;
   notes: string | null;
   guardianPhone?: string | null;
+  guardianPhones?: string[];
   addedByParent?: boolean;
 }) {
   return {
@@ -23,6 +25,7 @@ function serializeStudent(student: {
     birthDate: student.birthDate,
     notes: student.notes,
     guardianPhone: student.guardianPhone ?? null,
+    guardianPhones: student.guardianPhones ?? [],
     addedByParent: student.addedByParent ?? false,
   };
 }
@@ -60,51 +63,54 @@ export async function listStudents(req: Request, res: Response) {
 }
 
 export async function createStudent(req: Request, res: Response) {
-  const { name, birthDate, notes, guardianPhone } = req.body as {
+  const { name, birthDate, notes, guardianPhones } = req.body as {
     name?: string;
     birthDate?: string | null;
     notes?: string | null;
-    guardianPhone?: string | null;
+    guardianPhones?: unknown;
   };
 
   if (!name || !name.trim()) {
     return res.status(400).json({ message: "name is required" });
   }
+  const phones = parsePhoneList(guardianPhones);
+  if (!Array.isArray(phones)) return res.status(400).json({ message: phones.error });
 
   const student = await StudentModel.create({
     name,
     birthDate: birthDate?.trim() || null,
     notes: notes?.trim() || null,
-    guardianPhone: guardianPhone?.trim() || null,
+    guardianPhones: phones,
   });
+  await StudentModel.linkAccountsWithPhones(student.id, phones);
   res.status(201).json({ student: { ...serializeStudent(student), guardians: [] } });
 }
 
 export async function updateStudent(req: Request, res: Response) {
-  const { name, birthDate, notes, guardianPhone } = req.body as {
+  const { name, birthDate, notes, guardianPhones } = req.body as {
     name?: string;
     birthDate?: string | null;
     notes?: string | null;
-    guardianPhone?: string | null;
+    guardianPhones?: unknown;
   };
 
   if (name !== undefined && !name.trim()) {
     return res.status(400).json({ message: "name cannot be empty" });
   }
+  const phones = guardianPhones !== undefined ? parsePhoneList(guardianPhones) : undefined;
+  if (phones && !Array.isArray(phones)) return res.status(400).json({ message: phones.error });
 
   const student = await StudentModel.update(param(req, "studentId"), {
     ...(name !== undefined ? { name } : {}),
     ...(birthDate !== undefined ? { birthDate: birthDate?.trim() || null } : {}),
     ...(notes !== undefined ? { notes: notes?.trim() || null } : {}),
-    // Editable after creation: the number is what the invite is sent to, and
-    // without this a wrong one could only be fixed by deleting the student.
-    ...(guardianPhone !== undefined
-      ? { guardianPhone: guardianPhone?.trim() || null }
-      : {}),
+    // The numbers decide who is linked to this child, so they stay editable.
+    ...(phones ? { guardianPhones: phones } : {}),
   });
   if (!student) {
     return res.status(404).json({ message: "Student not found" });
   }
+  if (phones) await StudentModel.linkAccountsWithPhones(student.id, phones);
   res.json({ student: serializeStudent(student) });
 }
 
@@ -118,8 +124,8 @@ export async function deleteStudent(req: Request, res: Response) {
 }
 
 /**
- * Links a parent account to a child. This is the only way a parent gains
- * access to a child's photos, and only an admin can call it.
+ * Links a parent account to a child by hand. The other way in is a guardian
+ * phone the admin saved on the child; both are admin decisions.
  */
 export async function linkGuardian(req: Request, res: Response) {
   const { parentId } = req.body as { parentId?: string };
@@ -201,10 +207,15 @@ export async function bulkCreateStudents(req: Request, res: Response) {
       continue;
     }
     existing.add(name.toLowerCase());
+    // A number that doesn't parse is dropped rather than failing the whole
+    // paste; the admin sees the child without a phone and can add it.
+    const phone = entry.phone ? toE164(entry.phone) : null;
     const student = await StudentModel.create({
       name,
       guardianPhone: entry.phone?.trim() || null,
+      guardianPhones: phone ? [phone] : [],
     });
+    if (phone) await StudentModel.linkAccountsWithPhones(student.id, [phone]);
     created.push({ ...serializeStudent(student), guardians: [] });
   }
 

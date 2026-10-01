@@ -16,7 +16,7 @@ import AdminHeader from "../components/admin/AdminHeader";
 import SectionLabel from "../components/ui/SectionLabel";
 import { EmptyState } from "../components/gallery/EmptyState";
 import { Screen } from "../components/Screen";
-import { InviteCodesSection } from "../components/students/InviteCodesSection";
+import { GuardianPhonesSection } from "../components/students/GuardianPhonesSection";
 import { SkeletonCardList } from "../components/ui/Skeleton";
 import { ScreenFadeIn } from "../components/ui/ScreenFadeIn";
 import { StepsButton } from "../components/ui/StepsButton";
@@ -207,9 +207,9 @@ function StudentCard({ student }: { student: Student }) {
             </Touchable>
           )}
 
-          {/* Linking by hand still exists for parents who registered before invite
-              codes; for everyone new, handing over a code does the linking. */}
-          <InviteCodesSection studentId={student.id} studentName={student.name} />
+          {/* The usual way in: a parent signing in with one of these numbers is
+              linked automatically. Linking by hand above is for everyone else. */}
+          <GuardianPhonesSection studentId={student.id} phones={student.guardianPhones} />
 
           <View style={[styles.cardFooter, isRTL && styles.rowReverse]}>
             <Touchable

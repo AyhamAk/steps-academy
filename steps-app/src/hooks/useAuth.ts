@@ -85,15 +85,21 @@ export function useAuth() {
 
   /**
    * Checks the SMS code. A known number is signed in on the spot ("signedIn");
-   * a new one returns the signupToken the sign-up screens finish with.
+   * a new one returns the signupToken the sign-up screens finish with, and the
+   * names of any children the academy already has this number on.
    */
   const verifyPhoneSignIn = useCallback(
-    async (phone: string, code: string): Promise<"signedIn" | { signupToken: string } | null> => {
+    async (
+      phone: string,
+      code: string
+    ): Promise<"signedIn" | { signupToken: string; matchedChildren: string[] } | null> => {
       setIsLoading(true);
       setError(null);
       try {
         const result = await verifyPhoneSignInRequest(phone, code);
-        if ("signupToken" in result) return { signupToken: result.signupToken };
+        if ("signupToken" in result) {
+          return { signupToken: result.signupToken, matchedChildren: result.matchedChildren ?? [] };
+        }
         resetQueryCache();
         setSession(result.token, result.user);
         return "signedIn";
