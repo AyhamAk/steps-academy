@@ -16,7 +16,8 @@ import AdminHeader from "../components/admin/AdminHeader";
 import SectionLabel from "../components/ui/SectionLabel";
 import { EmptyState } from "../components/gallery/EmptyState";
 import { Screen } from "../components/Screen";
-import { GuardianPhonesSection } from "../components/students/GuardianPhonesSection";
+import { StudentFormModal } from "../components/students/StudentFormModal";
+import { toLocalDisplay } from "../lib/phone";
 import { SkeletonCardList } from "../components/ui/Skeleton";
 import { ScreenFadeIn } from "../components/ui/ScreenFadeIn";
 import { StepsButton } from "../components/ui/StepsButton";
@@ -26,7 +27,6 @@ import { Fonts } from "../constants/Fonts";
 import { useKeyboardInset, useKeyboardReveal } from "../hooks/useKeyboardInset";
 import { useTranslation } from "../i18n/useTranslation";
 import {
-  createStudent,
   deleteStudent,
   linkGuardian,
   listParents,
@@ -117,7 +117,7 @@ function GuardianPicker({ student, onDone }: { student: Student; onDone: () => v
  * full screen, so a class of five was five screens of scrolling before you
  * could see the fifth name. Local state only — nothing is persisted.
  */
-function StudentCard({ student }: { student: Student }) {
+function StudentCard({ student, onEdit }: { student: Student; onEdit: () => void }) {
   const { t, isRTL, rtlText } = useTranslation();
   const queryClient = useQueryClient();
   const [isExpanded, setIsExpanded] = useState(false);
@@ -146,6 +146,13 @@ function StudentCard({ student }: { student: Student }) {
           </View>
           <View style={styles.flex}>
             <Text style={[styles.name, rtlText]}>{student.name}</Text>
+            {student.groupName || student.nationalId ? (
+              <Text style={[styles.meta, rtlText]}>
+                {[student.groupName, student.nationalId ? t.students.idShort(student.nationalId) : null]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </Text>
+            ) : null}
             <Text style={[styles.meta, rtlText]}>
               {student.guardians.length === 0
                 ? t.students.noGuardians
@@ -175,6 +182,20 @@ function StudentCard({ student }: { student: Student }) {
 
       {isExpanded ? (
         <>
+          {/* The roster details; either phone signing in links that parent. */}
+          <View style={styles.details}>
+            {[
+              [t.students.motherName, student.motherName],
+              [t.students.motherPhone, student.motherPhone ? toLocalDisplay(student.motherPhone) : null],
+              [t.students.fatherPhone, student.fatherPhone ? toLocalDisplay(student.fatherPhone) : null],
+            ].map(([label, value]) => (
+              <View key={label} style={[styles.detailRow, isRTL && styles.rowReverse]}>
+                <Text style={styles.detailLabel}>{label}</Text>
+                <Text style={[styles.detailValue, !value && styles.detailEmpty]}>{value ?? "—"}</Text>
+              </View>
+            ))}
+          </View>
+
           {student.guardians.length > 0 ? (
             <View style={styles.guardianList}>
               {student.guardians.map((guardian) => (
@@ -207,11 +228,10 @@ function StudentCard({ student }: { student: Student }) {
             </Touchable>
           )}
 
-          {/* The usual way in: a parent signing in with one of these numbers is
-              linked automatically. Linking by hand above is for everyone else. */}
-          <GuardianPhonesSection studentId={student.id} phones={student.guardianPhones} />
-
           <View style={[styles.cardFooter, isRTL && styles.rowReverse]}>
+            <Touchable onPress={onEdit} style={styles.iconButton} accessibilityLabel={t.students.editStudent}>
+              <Ionicons name="create-outline" size={20} color={Colors.textLight} />
+            </Touchable>
             <Touchable
               onPress={confirmRemove}
               disabled={remove.isPending}
@@ -233,8 +253,8 @@ function StudentCard({ student }: { student: Student }) {
 
 export default function StudentsScreen() {
   const { t, isRTL, rtlText } = useTranslation();
-  const queryClient = useQueryClient();
-  const [newName, setNewName] = useState("");
+  // undefined: closed · null: adding · a student: editing that one.
+  const [editing, setEditing] = useState<Student | null | undefined>(undefined);
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounced(search, 300);
 
@@ -262,46 +282,18 @@ export default function StudentsScreen() {
   });
   const students = data?.students;
 
-  const create = useMutation({
-    mutationFn: () => createStudent({ name: newName.trim() }),
-    onSuccess: () => {
-      setNewName("");
-      queryClient.invalidateQueries({ queryKey: ["students"] });
-    },
-  });
 
   return (
     <Screen safeBottom>
       <ScreenFadeIn style={styles.flex}>
         <AdminHeader title={t.students.title} subtitle={t.students.subtitle} />
 
-        {/* Boxed and labelled, so it doesn't read as a second search field. */}
-        <View style={styles.addCard}>
-          <Text style={[styles.addCardLabel, rtlText]}>{t.students.addSectionLabel}</Text>
-          <View style={[styles.addRow, isRTL && styles.rowReverse]}>
-            <TextInput
-              value={newName}
-              onChangeText={setNewName}
-              placeholder={t.students.namePlaceholder}
-              placeholderTextColor={Colors.textLight}
-              style={[styles.input, rtlText]}
-              returnKeyType="done"
-              onSubmitEditing={() => newName.trim() && create.mutate()}
-            />
-            <Touchable
-              style={[styles.addButton, !newName.trim() && styles.addButtonDisabled]}
-              disabled={!newName.trim() || create.isPending}
-              onPress={() => create.mutate()}
-              accessibilityLabel={t.students.addStudent}
-            >
-              {create.isPending ? (
-                <ActivityIndicator color={Colors.cream} />
-              ) : (
-                <Ionicons name="add" size={24} color={Colors.cream} />
-              )}
-            </Touchable>
-          </View>
-        </View>
+        <StepsButton label={t.students.addStudent} onPress={() => setEditing(null)} flat />
+        <StudentFormModal
+          visible={editing !== undefined}
+          student={editing}
+          onClose={() => setEditing(undefined)}
+        />
 
         <View style={[styles.searchRow, isRTL && styles.rowReverse]}>
           <Ionicons name="search" size={18} color={Colors.textLight} />
@@ -347,7 +339,7 @@ export default function StudentsScreen() {
             ref={listRef}
             data={students}
             keyExtractor={(student) => student.id}
-            renderItem={({ item }) => <StudentCard student={item} />}
+            renderItem={({ item }) => <StudentCard student={item} onEdit={() => setEditing(item)} />}
             contentContainerStyle={[styles.list, { paddingBottom: 32 + keyboardHeight }]}
             keyboardShouldPersistTaps="handled"
             scrollEventThrottle={16}
@@ -460,6 +452,12 @@ const styles = StyleSheet.create({
   },
   avatarEmoji: { fontSize: 22 },
   name: { fontFamily: Fonts.bold, fontSize: 17, lineHeight: 22, color: Colors.bark },
+  details: { marginTop: 12, gap: 6 },
+  detailRow: { flexDirection: "row", justifyContent: "space-between", gap: 12 },
+  detailLabel: { fontFamily: Fonts.regular, fontSize: 13, color: Colors.textLight },
+  // Digits read left to right in every language.
+  detailValue: { fontFamily: Fonts.semiBold, fontSize: 14, color: Colors.bark, writingDirection: "ltr" },
+  detailEmpty: { color: Colors.textLight },
   meta: {
     fontFamily: Fonts.regular,
     fontSize: 13,

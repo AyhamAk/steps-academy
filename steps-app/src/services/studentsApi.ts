@@ -9,8 +9,13 @@ export type Student = {
   notes: string | null;
   /** Typed in by a course family at sign-up rather than added by the academy. */
   addedByParent?: boolean;
-  /** E.164. Signing in with one of these links that parent to the child. */
+  /** E.164: the mother's and father's numbers, which sign-in matches on. */
   guardianPhones: string[];
+  nationalId: string | null;
+  groupName: string | null;
+  motherName: string | null;
+  motherPhone: string | null;
+  fatherPhone: string | null;
   photoCount: number;
   guardians: Guardian[];
 };
@@ -62,25 +67,26 @@ export async function adminOverview() {
   return data;
 }
 
-export async function createStudent(input: {
+/** The academy's roster columns. Phones in any format; the server normalises them. */
+export type StudentInput = {
   name: string;
+  nationalId?: string | null;
+  groupName?: string | null;
+  motherName?: string | null;
+  motherPhone?: string | null;
+  fatherPhone?: string | null;
   birthDate?: string | null;
   notes?: string | null;
-  guardianPhones?: string[];
-}) {
+};
+
+export async function createStudent(input: StudentInput) {
   const { data } = await api.post<{ student: Student }>("/api/students", input);
   return data.student;
 }
 
 export async function updateStudent(
   studentId: string,
-  input: {
-    name?: string;
-    birthDate?: string | null;
-    notes?: string | null;
-    /** The full list; the server checks and normalises each number. */
-    guardianPhones?: string[];
-  }
+  input: Partial<StudentInput>
 ) {
   const { data } = await api.patch<{ student: Omit<Student, "guardians"> }>(
     `/api/students/${studentId}`,

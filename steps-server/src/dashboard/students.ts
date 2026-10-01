@@ -2,9 +2,9 @@ import { Request, Response } from "express";
 
 import { csrfToken } from "../middleware/dashboardAuth";
 import { formatCode, InviteModel, inviteStatus } from "../models/invite";
-import { StudentModel } from "../models/student";
+import { DuplicateNationalIdError, StudentModel } from "../models/student";
 import { UserModel } from "../models/user";
-import { parsePhoneList } from "../utils/phone";
+import { parseFamilyInput } from "../utils/studentInput";
 import {
   banner,
   button,
@@ -87,7 +87,7 @@ export async function studentsPage(req: Request, res: Response) {
         `${formStart(`${LIST}/new`, csrf)}
           ${textField("name", "Name", "", { required: true })}
           ${textField("birthDate", "Date of birth", "", { type: "date", hint: "Drives the age band on Home." })}
-          ${textField("guardianPhones", "Guardian phones", "", { placeholder: "050-123-4567, 052-765-4321", hint: "Every guardian’s mobile, separated by commas. Signing in with one links that parent." })}
+          ${familyFields({})}
           ${textArea("notes", "Notes", "", { rows: 2, hint: "Private to admins." })}
           ${button("Add to roster")}
         </form>`,
@@ -166,7 +166,7 @@ export async function studentDetailPage(req: Request, res: Response) {
         ${formStart(`${base}/edit`, csrf)}
           ${textField("name", "Name", student.name, { required: true })}
           ${textField("birthDate", "Date of birth", student.birthDate ?? "", { type: "date" })}
-          ${textField("guardianPhones", "Guardian phones", student.guardianPhones.join(", "), { hint: "Every guardian’s mobile, separated by commas. Signing in with one links that parent." })}
+          ${familyFields(student)}
           ${textArea("notes", "Notes", student.notes ?? "", { rows: 3 })}
           ${button("Save changes")}
         </form>
@@ -269,6 +269,35 @@ export async function studentDeletePage(req: Request, res: Response) {
 
 // ------------------------------------------------------------------- actions
 
+/** "+972501234567" → "050-123-4567" for the form box. */
+function localPhone(phone: string | null | undefined): string {
+  if (!phone) return "";
+  const digits = phone.replace(/\D/g, "").replace(/^972/, "0");
+  return digits.length === 10 ? `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}` : phone;
+}
+
+/** The roster sheet's columns. Signing in with either phone links that parent. */
+function familyFields(student: {
+  nationalId?: string | null;
+  groupName?: string | null;
+  motherName?: string | null;
+  motherPhone?: string | null;
+  fatherPhone?: string | null;
+}): string {
+  return `
+    ${textField("nationalId", "ID number", student.nationalId ?? "", { placeholder: "9 digits" })}
+    ${textField("groupName", "Group", student.groupName ?? "", { placeholder: "קבוצה 1" })}
+    ${textField("motherName", "Mother's name", student.motherName ?? "")}
+    ${textField("motherPhone", "Mother's phone", localPhone(student.motherPhone), {
+      placeholder: "05x-xxx-xxxx",
+      hint: "Signing in with this number links her to the child.",
+    })}
+    ${textField("fatherPhone", "Father's phone", localPhone(student.fatherPhone), {
+      placeholder: "05x-xxx-xxxx",
+      hint: "Signing in with this number links him to the child.",
+    })}`;
+}
+
 /** Trims, and turns an empty box into null rather than an empty string. */
 function orNull(value: unknown): string | null {
   const text = String(value ?? "").trim();
@@ -279,20 +308,28 @@ export async function createStudent(req: Request, res: Response) {
   const name = String(req.body.name ?? "").trim();
   if (!name) return res.redirect(redirectWith(LIST, { err: "A child needs a name." }));
 
-  const phones = parsePhoneList(req.body.guardianPhones);
-  if (!Array.isArray(phones)) return res.redirect(redirectWith(LIST, { err: phones.error }));
+  const family = parseFamilyInput(req.body);
+  if ("error" in family) return res.redirect(redirectWith(LIST, { err: family.error }));
 
-  const student = await StudentModel.create({
-    name,
-    birthDate: orNull(req.body.birthDate),
-    guardianPhones: phones,
-    notes: orNull(req.body.notes),
-  });
-  await StudentModel.linkAccountsWithPhones(student.id, phones);
+  let student;
+  try {
+    student = await StudentModel.create({
+      name,
+      birthDate: orNull(req.body.birthDate),
+      notes: orNull(req.body.notes),
+      ...family,
+    });
+  } catch (error) {
+    if (error instanceof DuplicateNationalIdError) {
+      return res.redirect(redirectWith(LIST, { err: "Another child already has this ID number." }));
+    }
+    throw error;
+  }
+  await StudentModel.linkAccountsWithPhones(student.id, student.guardianPhones);
 
   res.redirect(
     redirectWith(`${LIST}/${student.id}`, {
-      ok: phones.length
+      ok: student.guardianPhones.length
         ? `${name} added. Parents signing in with those numbers are linked automatically.`
         : `${name} added. Add a guardian phone, or link a guardian, to give them access.`,
     }),
@@ -327,16 +364,24 @@ export async function updateStudent(req: Request, res: Response) {
   const name = String(req.body.name ?? "").trim();
   if (!name) return res.redirect(redirectWith(`${LIST}/${studentId}`, { err: "A child needs a name." }));
 
-  const phones = parsePhoneList(req.body.guardianPhones);
-  if (!Array.isArray(phones)) return res.redirect(redirectWith(`${LIST}/${studentId}`, { err: phones.error }));
+  const family = parseFamilyInput(req.body);
+  if ("error" in family) return res.redirect(redirectWith(`${LIST}/${studentId}`, { err: family.error }));
 
-  await StudentModel.update(studentId, {
-    name,
-    birthDate: orNull(req.body.birthDate),
-    guardianPhones: phones,
-    notes: orNull(req.body.notes),
-  });
-  await StudentModel.linkAccountsWithPhones(studentId, phones);
+  let student;
+  try {
+    student = await StudentModel.update(studentId, {
+      name,
+      birthDate: orNull(req.body.birthDate),
+      notes: orNull(req.body.notes),
+      ...family,
+    });
+  } catch (error) {
+    if (error instanceof DuplicateNationalIdError) {
+      return res.redirect(redirectWith(`${LIST}/${studentId}`, { err: "Another child already has this ID number." }));
+    }
+    throw error;
+  }
+  if (student) await StudentModel.linkAccountsWithPhones(studentId, student.guardianPhones);
 
   res.redirect(redirectWith(`${LIST}/${studentId}`, { ok: "Saved." }));
 }

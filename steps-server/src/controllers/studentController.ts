@@ -1,33 +1,52 @@
 import { Request, Response } from "express";
 
-import { StudentModel } from "../models/student";
+import { DuplicateNationalIdError, Student, StudentModel } from "../models/student";
 import { UserModel } from "../models/user";
 import { MAX_SELF_ADDED_CHILDREN, parseChildInput } from "../utils/childInput";
 import { parsePhoneList, toE164 } from "../utils/phone";
+import { FamilyInput, parseFamilyInput } from "../utils/studentInput";
 
 function param(req: Request, key: string): string {
   const value = req.params[key];
   return Array.isArray(value) ? value[0] : value;
 }
 
-function serializeStudent(student: {
-  id: string;
-  name: string;
-  birthDate: string | null;
-  notes: string | null;
-  guardianPhone?: string | null;
-  guardianPhones?: string[];
-  addedByParent?: boolean;
-}) {
+function serializeStudent(student: Student) {
   return {
     id: student.id,
     name: student.name,
     birthDate: student.birthDate,
     notes: student.notes,
-    guardianPhone: student.guardianPhone ?? null,
-    guardianPhones: student.guardianPhones ?? [],
-    addedByParent: student.addedByParent ?? false,
+    guardianPhone: student.guardianPhone,
+    guardianPhones: student.guardianPhones,
+    nationalId: student.nationalId,
+    groupName: student.groupName,
+    motherName: student.motherName,
+    motherPhone: student.motherPhone,
+    fatherPhone: student.fatherPhone,
+    addedByParent: student.addedByParent,
   };
+}
+
+const DUPLICATE_ID = "Another child already has this ID number";
+
+/**
+ * The family fields of a request. Copies of the app from before the mother and
+ * father fields send one `guardianPhones` list instead: read as [mother, father].
+ */
+function familyFrom(body: Record<string, unknown>): FamilyInput | { error: string } {
+  if (body.guardianPhones !== undefined && body.motherPhone === undefined && body.fatherPhone === undefined) {
+    const list = parsePhoneList(body.guardianPhones);
+    if (!Array.isArray(list)) return list;
+    const { guardianPhones: _legacy, ...rest } = body;
+    return parseFamilyInput({ ...rest, motherPhone: list[0] ?? null, fatherPhone: list[1] ?? null });
+  }
+  return parseFamilyInput(body);
+}
+
+/** After saving: link any parent who already has an account under one of the numbers. */
+async function linkExisting(student: Student) {
+  await StudentModel.linkAccountsWithPhones(student.id, student.guardianPhones);
 }
 
 /**
@@ -63,54 +82,64 @@ export async function listStudents(req: Request, res: Response) {
 }
 
 export async function createStudent(req: Request, res: Response) {
-  const { name, birthDate, notes, guardianPhones } = req.body as {
+  const { name, birthDate, notes } = req.body as {
     name?: string;
     birthDate?: string | null;
     notes?: string | null;
-    guardianPhones?: unknown;
   };
 
   if (!name || !name.trim()) {
     return res.status(400).json({ message: "name is required" });
   }
-  const phones = parsePhoneList(guardianPhones);
-  if (!Array.isArray(phones)) return res.status(400).json({ message: phones.error });
+  const family = familyFrom(req.body ?? {});
+  if ("error" in family) return res.status(400).json({ message: family.error });
 
-  const student = await StudentModel.create({
-    name,
-    birthDate: birthDate?.trim() || null,
-    notes: notes?.trim() || null,
-    guardianPhones: phones,
-  });
-  await StudentModel.linkAccountsWithPhones(student.id, phones);
+  let student;
+  try {
+    student = await StudentModel.create({
+      name,
+      birthDate: birthDate?.trim() || null,
+      notes: notes?.trim() || null,
+      ...family,
+    });
+  } catch (error) {
+    if (error instanceof DuplicateNationalIdError) return res.status(409).json({ message: DUPLICATE_ID });
+    throw error;
+  }
+  await linkExisting(student);
   res.status(201).json({ student: { ...serializeStudent(student), guardians: [] } });
 }
 
 export async function updateStudent(req: Request, res: Response) {
-  const { name, birthDate, notes, guardianPhones } = req.body as {
+  const { name, birthDate, notes } = req.body as {
     name?: string;
     birthDate?: string | null;
     notes?: string | null;
-    guardianPhones?: unknown;
   };
 
   if (name !== undefined && !name.trim()) {
     return res.status(400).json({ message: "name cannot be empty" });
   }
-  const phones = guardianPhones !== undefined ? parsePhoneList(guardianPhones) : undefined;
-  if (phones && !Array.isArray(phones)) return res.status(400).json({ message: phones.error });
+  const family = familyFrom(req.body ?? {});
+  if ("error" in family) return res.status(400).json({ message: family.error });
 
-  const student = await StudentModel.update(param(req, "studentId"), {
-    ...(name !== undefined ? { name } : {}),
-    ...(birthDate !== undefined ? { birthDate: birthDate?.trim() || null } : {}),
-    ...(notes !== undefined ? { notes: notes?.trim() || null } : {}),
-    // The numbers decide who is linked to this child, so they stay editable.
-    ...(phones ? { guardianPhones: phones } : {}),
-  });
+  let student;
+  try {
+    student = await StudentModel.update(param(req, "studentId"), {
+      ...(name !== undefined ? { name } : {}),
+      ...(birthDate !== undefined ? { birthDate: birthDate?.trim() || null } : {}),
+      ...(notes !== undefined ? { notes: notes?.trim() || null } : {}),
+      // The numbers decide who is linked to this child, so they stay editable.
+      ...family,
+    });
+  } catch (error) {
+    if (error instanceof DuplicateNationalIdError) return res.status(409).json({ message: DUPLICATE_ID });
+    throw error;
+  }
   if (!student) {
     return res.status(404).json({ message: "Student not found" });
   }
-  if (phones) await StudentModel.linkAccountsWithPhones(student.id, phones);
+  await linkExisting(student);
   res.json({ student: serializeStudent(student) });
 }
 
@@ -213,9 +242,9 @@ export async function bulkCreateStudents(req: Request, res: Response) {
     const student = await StudentModel.create({
       name,
       guardianPhone: entry.phone?.trim() || null,
-      guardianPhones: phone ? [phone] : [],
+      motherPhone: phone,
     });
-    if (phone) await StudentModel.linkAccountsWithPhones(student.id, [phone]);
+    await linkExisting(student);
     created.push({ ...serializeStudent(student), guardians: [] });
   }
 

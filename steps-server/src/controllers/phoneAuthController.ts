@@ -18,13 +18,15 @@ import { validateInviteCode } from "./inviteController";
  *
  *   POST /phone/start     { phone }              → code sent
  *   POST /phone/verify    { phone, code }        → { token, user } for a known number,
- *                                                  or { signupToken, matchedChildren } for a new one
- *   POST /phone/register  { signupToken, firstName, familyName, child? }
+ *                                                  or a number on a child;
+ *                                                  { signupToken } for any other
+ *   POST /phone/register  { signupToken, firstName, familyName, child }
  *
- * Nursery families are recognised by their number: the admin saves each
- * guardian's mobile on the child (Student.guardianPhones), and a verified sign-in
- * with one of them links the parent to that child. Course families, whose
- * number the academy doesn't have, type their child in instead.
+ * Nursery families are recognised by their number: the admin enters each
+ * child with the mother's and father's mobiles, and the first verified sign-in
+ * with either one creates that parent's account on the spot, already linked —
+ * no sign-up screens. Course families, whose number the academy doesn't have,
+ * type their child in instead.
  *
  * The signup token proves "this number was verified in the last 30 minutes".
  * It is signed with its own derived secret and carries no userId, so it can
@@ -100,11 +102,46 @@ export async function verifyPhoneSignIn(req: Request, res: Response) {
     await StudentModel.linkByPhone(user.id, phone);
     return res.json({ token: signToken({ userId: user.id }), user: await UserModel.toPublic(user) });
   }
-  // A number we have never seen: prove it was verified, then collect the rest.
-  // The number is verified, so naming the children it is on reveals nothing
-  // to anyone but their guardian.
+  // A number the academy entered on a child: the account is ready.
   const matched = await StudentModel.findByGuardianPhone(phone);
-  res.json({ signupToken: signSignupToken(phone), matchedChildren: matched.map((child) => child.name) });
+  if (matched.length > 0) {
+    const created = await createLinkedAccount(phone, matched);
+    return res.json({ token: signToken({ userId: created.id }), user: await UserModel.toPublic(created) });
+  }
+
+  // A number we have never seen: prove it was verified, then collect the rest.
+  res.json({ signupToken: signSignupToken(phone), matchedChildren: [] });
+}
+
+type MatchedChild = Awaited<ReturnType<typeof StudentModel.findByGuardianPhone>>[number];
+
+/**
+ * The account for a parent the academy already entered, named from the roster:
+ * the mother by her name and the family's, the father as "والد <child>"
+ * (the sheet has no father's name). The parent never typed either.
+ */
+function rosterName(phone: string, child: MatchedChild): { name: string; familyName: string | null } {
+  const [first, ...rest] = child.name.trim().split(/\s+/);
+  const familyName = rest.join(" ") || null;
+  if (phone === child.motherPhone && child.motherName) {
+    return { name: [child.motherName, familyName].filter(Boolean).join(" "), familyName };
+  }
+  return { name: phone === child.fatherPhone ? `والد ${first}` : `ولي أمر ${first}`, familyName };
+}
+
+async function createLinkedAccount(phone: string, matched: MatchedChild[]) {
+  const { name, familyName } = rosterName(phone, matched[0]);
+  let user;
+  try {
+    user = await UserModel.create({ phone, name, familyName, role: "parent" });
+  } catch (error) {
+    // Two sign-ins racing: the other one made the account first.
+    const existing = await UserModel.findByPhone(phone);
+    if (!existing) throw error;
+    user = existing;
+  }
+  await StudentModel.linkByPhone(user.id, phone);
+  return user;
 }
 
 function cleanName(value: unknown): string {

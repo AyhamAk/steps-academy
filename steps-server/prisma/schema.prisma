@@ -211,6 +211,16 @@ model Student {
   /// phone is the proof, so there is no invite code. Replaces guardianPhone,
   /// which is kept only until old app copies stop reading it.
   guardianPhones String[] @default([])
+  /// Teudat zehut, 9 digits. Optional, but unique when given: it's how two
+  /// children with the same name are told apart for good.
+  nationalId    String?  @unique
+  /// The roster group the academy files the child under, e.g. "קבוצה 1".
+  groupName     String?
+  motherName    String?
+  /// E.164. Mother's and father's numbers; guardianPhones is always the two
+  /// of them, kept in step by StudentModel, and is what sign-in matches on.
+  motherPhone   String?
+  fatherPhone   String?
   /// True when a parent typed this child in at sign-up (course families, who
   /// have no invite code) rather than the academy adding them. Grants nothing
   /// on its own: photos still only follow the admin's tags. Shown to the admin

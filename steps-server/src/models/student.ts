@@ -9,37 +9,78 @@ type CreateStudentInput = {
   birthDate?: string | null;
   notes?: string | null;
   guardianPhone?: string | null;
-  /** E.164, already checked — see parsePhoneList. */
-  guardianPhones?: string[];
+  nationalId?: string | null;
+  groupName?: string | null;
+  motherName?: string | null;
+  /** E.164, already checked — see parseFamilyInput. */
+  motherPhone?: string | null;
+  fatherPhone?: string | null;
 };
+
+/** The numbers sign-in matches on: always exactly the mother's and father's. */
+function guardianPhonesOf(motherPhone?: string | null, fatherPhone?: string | null): string[] {
+  return [...new Set([motherPhone, fatherPhone].filter((phone): phone is string => !!phone))];
+}
+
+/** Thrown when another child already has this ID number. */
+export class DuplicateNationalIdError extends Error {}
+
+function isUniqueViolation(error: unknown): boolean {
+  return typeof error === "object" && error !== null && (error as { code?: string }).code === "P2002";
+}
 
 export const StudentModel = {
   async create(input: CreateStudentInput): Promise<Student> {
-    return prisma.student.create({
-      data: {
-        name: input.name.trim(),
-        birthDate: input.birthDate ?? null,
-        notes: input.notes ?? null,
-        guardianPhone: input.guardianPhone ?? null,
-        guardianPhones: input.guardianPhones ?? [],
-      },
-    });
+    try {
+      return await prisma.student.create({
+        data: {
+          name: input.name.trim(),
+          birthDate: input.birthDate ?? null,
+          notes: input.notes ?? null,
+          guardianPhone: input.guardianPhone ?? null,
+          nationalId: input.nationalId ?? null,
+          groupName: input.groupName ?? null,
+          motherName: input.motherName ?? null,
+          motherPhone: input.motherPhone ?? null,
+          fatherPhone: input.fatherPhone ?? null,
+          guardianPhones: guardianPhonesOf(input.motherPhone, input.fatherPhone),
+        },
+      });
+    } catch (error) {
+      if (isUniqueViolation(error)) throw new DuplicateNationalIdError();
+      throw error;
+    }
   },
 
+  /** Null when the child doesn't exist. Throws DuplicateNationalIdError. */
   async update(id: string, input: Partial<CreateStudentInput>): Promise<Student | null> {
+    const current = await prisma.student.findUnique({ where: { id } });
+    if (!current) return null;
+
+    const motherPhone = input.motherPhone !== undefined ? input.motherPhone : current.motherPhone;
+    const fatherPhone = input.fatherPhone !== undefined ? input.fatherPhone : current.fatherPhone;
+    const pick = <K extends keyof CreateStudentInput>(key: K) =>
+      input[key] !== undefined ? { [key]: key === "name" ? String(input[key]).trim() : input[key] } : {};
+
     try {
       return await prisma.student.update({
         where: { id },
         data: {
-          ...(input.name !== undefined ? { name: input.name.trim() } : {}),
-          ...(input.birthDate !== undefined ? { birthDate: input.birthDate } : {}),
-          ...(input.notes !== undefined ? { notes: input.notes } : {}),
-          ...(input.guardianPhone !== undefined ? { guardianPhone: input.guardianPhone } : {}),
-          ...(input.guardianPhones !== undefined ? { guardianPhones: input.guardianPhones } : {}),
+          ...pick("name"),
+          ...pick("birthDate"),
+          ...pick("notes"),
+          ...pick("guardianPhone"),
+          ...pick("nationalId"),
+          ...pick("groupName"),
+          ...pick("motherName"),
+          motherPhone,
+          fatherPhone,
+          guardianPhones: guardianPhonesOf(motherPhone, fatherPhone),
         },
       });
-    } catch {
-      return null;
+    } catch (error) {
+      if (isUniqueViolation(error)) throw new DuplicateNationalIdError();
+      throw error;
     }
   },
 
@@ -76,8 +117,16 @@ export const StudentModel = {
     limit = 50,
     offset = 0,
   }: { search?: string; limit?: number; offset?: number } = {}) {
-    const where = search?.trim()
-      ? { name: { contains: search.trim(), mode: "insensitive" as const } }
+    // By child's name, mother's name or ID number.
+    const term = search?.trim();
+    const where = term
+      ? {
+          OR: [
+            { name: { contains: term, mode: "insensitive" as const } },
+            { motherName: { contains: term, mode: "insensitive" as const } },
+            { nationalId: { contains: term } },
+          ],
+        }
       : {};
 
     const [students, total] = await Promise.all([
@@ -105,6 +154,11 @@ export const StudentModel = {
         notes: student.notes,
         addedByParent: student.addedByParent,
         guardianPhones: student.guardianPhones,
+        nationalId: student.nationalId,
+        groupName: student.groupName,
+        motherName: student.motherName,
+        motherPhone: student.motherPhone,
+        fatherPhone: student.fatherPhone,
         photoCount: student._count.tags,
         // Phone sign-ups have no email; the number is how the admin knows them.
         guardians: student.guardians.map(({ parent }) => ({
@@ -159,21 +213,27 @@ export const StudentModel = {
 
     const [parent, student] = await Promise.all([
       prisma.user.findUnique({ where: { id: parentId }, select: { phone: true } }),
-      prisma.student.findUnique({ where: { id: studentId }, select: { guardianPhones: true } }),
+      prisma.student.findUnique({
+        where: { id: studentId },
+        select: { motherPhone: true, fatherPhone: true },
+      }),
     ]);
-    if (parent?.phone && student?.guardianPhones.includes(parent.phone)) {
+    if (!parent?.phone || !student) return;
+    const motherPhone = student.motherPhone === parent.phone ? null : student.motherPhone;
+    const fatherPhone = student.fatherPhone === parent.phone ? null : student.fatherPhone;
+    if (motherPhone !== student.motherPhone || fatherPhone !== student.fatherPhone) {
       await prisma.student.update({
         where: { id: studentId },
-        data: { guardianPhones: student.guardianPhones.filter((phone) => phone !== parent.phone) },
+        data: { motherPhone, fatherPhone, guardianPhones: guardianPhonesOf(motherPhone, fatherPhone) },
       });
     }
   },
 
   /** Children who list this number as a guardian's. Read-only. */
-  async findByGuardianPhone(phone: string): Promise<{ id: string; name: string }[]> {
+  async findByGuardianPhone(phone: string) {
     return prisma.student.findMany({
       where: { guardianPhones: { has: phone } },
-      select: { id: true, name: true },
+      select: { id: true, name: true, motherName: true, motherPhone: true, fatherPhone: true },
       orderBy: { name: "asc" },
     });
   },
