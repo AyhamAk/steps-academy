@@ -42,7 +42,7 @@ function AnimatedPanel({ children }: PropsWithChildren) {
 }
 
 /**
- * The way into the app, for everyone: a mobile number and a WhatsApp code.
+ * The way into the app, for everyone: a mobile number and a code by SMS.
  *
  * - A number that already has an account is signed straight into it.
  * - A number we have never seen carries on to the sign-up screens, with a
@@ -131,7 +131,8 @@ export default function AuthScreen() {
             ) : (
               <>
                 <Text style={[styles.sentTo, { textAlign: isRTL ? "right" : "left" }]}>
-                  {t.auth.codeSentTo(displayPhone(phone))}
+                  {/* Held left-to-right, or Arabic and Hebrew flip the digit groups. */}
+                  {t.auth.codeSentTo(`‪${displayPhone(phone)}‬`)}
                 </Text>
                 <AuthTextField
                   label={t.auth.codeLabel}
