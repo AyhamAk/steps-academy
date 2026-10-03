@@ -1,25 +1,25 @@
-import { createHmac, randomInt, timingSafeEqual } from "crypto";
-
 import { env } from "../config/env";
 import { prisma } from "../lib/prisma";
 
 /**
- * Sign-in codes, delivered by WhatsApp through Meta's Cloud API.
+ * Sign-in codes, delivered through Twilio Verify: by WhatsApp, or by SMS when
+ * WhatsApp can't take it. Twilio makes the code, keeps it, and checks it —
+ * single use, ten minutes, five guesses.
  *
- * We make the code, keep only an HMAC of it, and check it ourselves:
- * - single use, ten minutes, five guesses;
- * - one send per number every 30 seconds, and at most five an hour — every
- *   send is a paid WhatsApp message, so this is also what caps the bill.
+ * We still log each send, to allow one per number every 30 seconds and at most
+ * five an hour — every send is paid, so this is also what caps the bill.
  *
- * One fixed number (REVIEW_PHONE / REVIEW_CODE) skips WhatsApp entirely, for
+ * One fixed number (REVIEW_PHONE / REVIEW_CODE) skips Twilio entirely, for
  * App Store and Play reviewers who cannot receive a message here. A second
  * one (REVIEW_ADMIN_PHONE) does the same for the manager account.
  */
 
 const CODE_TTL_MS = 10 * 60 * 1000;
-const MAX_GUESSES = 5;
 const RESEND_GAP_MS = 30 * 1000;
 const MAX_SENDS_PER_HOUR = 5;
+
+/** Twilio's "max send attempts reached" for a number. */
+const TWILIO_TOO_MANY_SENDS = 60203;
 
 export type SendResult =
   | { ok: true }
@@ -33,48 +33,37 @@ function isReviewNumber(phone: string): boolean {
   );
 }
 
-function hashCode(phone: string, code: string): string {
-  return createHmac("sha256", `${env.jwtSecret}:phone-code`).update(`${phone}:${code}`).digest("hex");
-}
-
 export function isSmsConfigured(): boolean {
-  return Boolean(env.whatsapp.token && env.whatsapp.phoneNumberId);
+  const { accountSid, authToken, verifyServiceSid } = env.twilio;
+  return Boolean(accountSid && authToken && verifyServiceSid);
 }
 
-/** Template languages the academy created; anything else falls back to Arabic. */
-const TEMPLATE_LANGUAGES: Record<string, string> = { ar: "ar", he: "he", en: "en" };
+/** Message languages we ask Twilio for; anything else falls back to Arabic. */
+const VERIFY_LOCALES: Record<string, string> = { ar: "ar", he: "he", en: "en" };
 
-async function sendWhatsAppCode(phone: string, code: string, language: string): Promise<boolean> {
-  const { token, phoneNumberId, template, apiVersion } = env.whatsapp;
-  const response = await fetch(`https://graph.facebook.com/${apiVersion}/${phoneNumberId}/messages`, {
+type TwilioReply = { ok: boolean; status: number; body: { status?: string; code?: number; message?: string } };
+
+async function callVerify(path: string, params: Record<string, string>): Promise<TwilioReply> {
+  const { accountSid, authToken, verifyServiceSid } = env.twilio;
+  const response = await fetch(`https://verify.twilio.com/v2/Services/${verifyServiceSid}/${path}`, {
     method: "POST",
-    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      messaging_product: "whatsapp",
-      // Meta wants digits only: +972501234567 -> 972501234567
-      to: phone.replace(/^\+/, ""),
-      type: "template",
-      template: {
-        name: template,
-        language: { code: language },
-        // An authentication template carries the code twice: in the body, and
-        // behind its "copy code" button.
-        components: [
-          { type: "body", parameters: [{ type: "text", text: code }] },
-          { type: "button", sub_type: "url", index: "0", parameters: [{ type: "text", text: code }] },
-        ],
-      },
-    }),
+    headers: {
+      Authorization: `Basic ${Buffer.from(`${accountSid}:${authToken}`).toString("base64")}`,
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: new URLSearchParams(params).toString(),
   });
-  if (!response.ok) {
-    // Logged without the number or the code: Meta's error code explains it.
-    const detail = (await response.json().catch(() => ({}))) as {
-      error?: { code?: number; message?: string };
-    };
-    console.warn("[whatsapp] send failed", response.status, detail.error?.code, detail.error?.message);
-    return false;
+  const body = (await response.json().catch(() => ({}))) as TwilioReply["body"];
+  return { ok: response.ok, status: response.status, body };
+}
+
+async function sendVerification(phone: string, channel: "whatsapp" | "sms", locale: string) {
+  const reply = await callVerify("Verifications", { To: phone, Channel: channel, Locale: locale });
+  if (!reply.ok) {
+    // Logged without the number: Twilio's error code explains it.
+    console.warn(`[twilio] ${channel} send failed`, reply.status, reply.body.code, reply.body.message);
   }
-  return true;
+  return reply;
 }
 
 export async function sendSignInCode(phone: string, locale?: string): Promise<SendResult> {
@@ -92,43 +81,29 @@ export async function sendSignInCode(phone: string, locale?: string): Promise<Se
   }
   if (recent.length >= MAX_SENDS_PER_HOUR) return { ok: false, reason: "too_many" };
 
-  const code = String(randomInt(0, 1_000_000)).padStart(6, "0");
-  const language = TEMPLATE_LANGUAGES[locale ?? ""] ?? "ar";
-  // A template missing in this language fails; Arabic always exists.
-  const sent =
-    (await sendWhatsAppCode(phone, code, language)) ||
-    (language !== "ar" && (await sendWhatsAppCode(phone, code, "ar")));
-  if (!sent) return { ok: false, reason: "rejected" };
+  const language = VERIFY_LOCALES[locale ?? ""] ?? "ar";
+  let reply = await sendVerification(phone, "whatsapp", language);
+  if (!reply.ok && reply.body.code === TWILIO_TOO_MANY_SENDS) return { ok: false, reason: "too_many" };
+  // A number without WhatsApp, or WhatsApp refused it: try a plain SMS.
+  if (!reply.ok) reply = await sendVerification(phone, "sms", language);
+  if (!reply.ok) {
+    return { ok: false, reason: reply.body.code === TWILIO_TOO_MANY_SENDS ? "too_many" : "rejected" };
+  }
 
-  // Only a sent code counts: a failed send must not burn the parent's hourly allowance.
+  // Only a sent code counts: a failed send must not burn the parent's hourly
+  // allowance. Twilio holds the code itself, so there is no hash to keep.
   await prisma.phoneCode.create({
-    data: { phone, codeHash: hashCode(phone, code), expiresAt: new Date(now + CODE_TTL_MS) },
+    data: { phone, codeHash: "", expiresAt: new Date(now + CODE_TTL_MS) },
   });
   return { ok: true };
 }
 
-/** True only for the latest live code sent to this number. Uses it up on success. */
+/** True only for the live code Twilio sent this number. Twilio uses it up on success. */
 export async function checkSignInCode(phone: string, code: string): Promise<boolean> {
   if (isReviewNumber(phone)) return code === env.reviewCode;
+  if (!isSmsConfigured()) return false;
 
-  const latest = await prisma.phoneCode.findFirst({
-    where: { phone, consumedAt: null, expiresAt: { gt: new Date() } },
-    orderBy: { createdAt: "desc" },
-  });
-  if (!latest || latest.attempts >= MAX_GUESSES) return false;
-
-  const expected = Buffer.from(latest.codeHash, "hex");
-  const actual = Buffer.from(hashCode(phone, code), "hex");
-  const matches = expected.length === actual.length && timingSafeEqual(expected, actual);
-
-  if (!matches) {
-    await prisma.phoneCode.update({ where: { id: latest.id }, data: { attempts: { increment: 1 } } });
-    return false;
-  }
-  // Conditional on still being unused, so two simultaneous checks can't both win.
-  const { count } = await prisma.phoneCode.updateMany({
-    where: { id: latest.id, consumedAt: null },
-    data: { consumedAt: new Date() },
-  });
-  return count === 1;
+  // Expired, used, or out of guesses all come back as an error, not "approved".
+  const reply = await callVerify("VerificationCheck", { To: phone, Code: code });
+  return reply.ok && reply.body.status === "approved";
 }
