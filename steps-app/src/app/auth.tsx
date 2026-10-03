@@ -5,6 +5,7 @@ import { Animated, StyleSheet, Text, View } from "react-native";
 import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
 import { Screen } from "../components/Screen";
 import { AuthTextField } from "../components/auth/AuthTextField";
+import { OtpInput } from "../components/auth/OtpInput";
 import { StepsButton } from "../components/ui/StepsButton";
 import { LanguagePicker } from "../components/ui/LanguagePicker";
 import { StepsLogo } from "../components/ui/StepsLogo";
@@ -131,25 +132,28 @@ export default function AuthScreen() {
             ) : (
               <>
                 <Text style={[styles.sentTo, { textAlign: isRTL ? "right" : "left" }]}>
-                  {/* Held left-to-right, or Arabic and Hebrew flip the digit groups. */}
-                  {t.auth.codeSentTo(`‪${displayPhone(phone)}‬`)}
+                  {t.auth.codeSentLabel}
                 </Text>
-                <AuthTextField
-                  label={t.auth.codeLabel}
+                {/* Its own line, held left to right: inside Arabic or Hebrew text the digit groups flip. */}
+                <Text style={[styles.phoneDisplay, { textAlign: isRTL ? "right" : "left" }]}>
+                  {displayPhone(phone)}
+                </Text>
+                <OtpInput
                   value={code}
-                  onChangeText={(v) => {
-                    setCode(v.replace(/\D/g, "").slice(0, 6));
+                  onChange={(v) => {
+                    setCode(v);
                     setFormError(null);
                   }}
-                  keyboardType="number-pad"
-                  textContentType="oneTimeCode"
-                  autoComplete="sms-otp"
-                  maxLength={6}
-                  style={styles.codeField}
-                  autoFocus
+                  accessibilityLabel={t.auth.codeLabel}
                 />
                 {message ? <Text style={styles.error}>{message}</Text> : null}
-                <StepsButton label={t.auth.verifyCode} onPress={checkCode} loading={isLoading} flat />
+                <StepsButton
+                  label={t.auth.verifyCode}
+                  onPress={checkCode}
+                  loading={isLoading}
+                  disabled={code.length < 6}
+                  flat
+                />
                 <View style={[styles.codeLinks, isRTL && styles.rowReverse]}>
                   <Touchable
                     onPress={() => {
@@ -203,8 +207,14 @@ const styles = StyleSheet.create({
   linkAccent: { color: Colors.sage, fontFamily: Fonts.bold, fontSize: 14 },
   rowReverse: { flexDirection: "row-reverse" },
   ltrField: { writingDirection: "ltr" },
-  codeField: { fontFamily: Fonts.bold, fontSize: 22, letterSpacing: 6, textAlign: "center" },
-  sentTo: { fontFamily: Fonts.regular, fontSize: 14, color: Colors.textLight, marginBottom: 12 },
+  sentTo: { fontFamily: Fonts.regular, fontSize: 13, color: Colors.textLight, marginBottom: 4 },
+  phoneDisplay: {
+    fontFamily: Fonts.semiBold,
+    fontSize: 15,
+    color: Colors.text,
+    writingDirection: "ltr",
+    marginBottom: 18,
+  },
   codeLinks: { flexDirection: "row", justifyContent: "space-between", marginTop: 4 },
   smallLink: { minHeight: 44, justifyContent: "center" },
   error: {
