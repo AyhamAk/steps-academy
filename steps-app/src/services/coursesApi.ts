@@ -1,5 +1,6 @@
 import { api } from "./api";
 import { WeekDay } from "./scheduleApi";
+import { useAuthStore } from "../store/authStore";
 
 export type EnrollmentStatus = "pending" | "approved" | "rejected" | "cancelled";
 
@@ -66,7 +67,10 @@ export type EnrollmentRequest = {
 };
 
 export async function listCourses() {
-  const { data } = await api.get<{ courses: Course[] }>("/api/courses");
+  // An admin viewing as a parent gets the parent's list: active courses only,
+  // with their linked children's enrolments.
+  const params = useAuthStore.getState().viewAsParent ? { view: "parent" } : undefined;
+  const { data } = await api.get<{ courses: Course[] }>("/api/courses", { params });
   return data.courses;
 }
 

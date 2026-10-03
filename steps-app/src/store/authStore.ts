@@ -30,6 +30,9 @@ type AuthState = {
   token: string | null;
   user: AuthUser | null;
   hasHydrated: boolean;
+  /** An admin looking at the app as a parent would. Changes the UI only, never access. */
+  viewAsParent: boolean;
+  setViewAsParent: (value: boolean) => void;
   setSession: (token: string, user: AuthUser) => void;
   clearSession: () => void;
   setHasHydrated: (value: boolean) => void;
@@ -51,14 +54,18 @@ export const useAuthStore = create<AuthState>()(
       token: null,
       user: null,
       hasHydrated: false,
-      setSession: (token, user) => set({ token, user }),
-      clearSession: () => set({ token: null, user: null }),
+      viewAsParent: false,
+      setViewAsParent: (value) => set({ viewAsParent: value }),
+      // A different account never inherits the last one's view.
+      setSession: (token, user) =>
+        set((state) => ({ token, user, viewAsParent: state.user?.id === user.id && state.viewAsParent })),
+      clearSession: () => set({ token: null, user: null, viewAsParent: false }),
       setHasHydrated: (value) => set({ hasHydrated: value }),
     }),
     {
       name: "steps-auth-storage",
       storage: createJSONStorage(() => AsyncStorage),
-      partialize: (state) => ({ token: state.token, user: state.user }),
+      partialize: (state) => ({ token: state.token, user: state.user, viewAsParent: state.viewAsParent }),
       onRehydrateStorage: () => (state) => {
         state?.setHasHydrated(true);
       },

@@ -20,3 +20,7 @@ export const STORE_LINKS = {
   // Matches `ascAppId` in eas.json.
   ios: "https://apps.apple.com/app/id6806549602",
 };
+
+// Admin accounts that get the "switch to parent view" row on Profile — for
+// testing what families see. The academy's own manager account isn't here.
+export const VIEW_SWITCH_EMAILS = ["aklaani508@gmail.com"];

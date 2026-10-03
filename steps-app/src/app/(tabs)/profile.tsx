@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { useMemo, useState } from "react";
 import { Alert, Linking, ScrollView, StyleSheet, Text, View } from "react-native";
@@ -23,11 +23,14 @@ import { CardWash } from "../../components/ui/CardWash";
 import { Fonts } from "../../constants/Fonts";
 import { Type } from "../../constants/Typography";
 import { useAuth } from "../../hooks/useAuth";
+import { useCanSwitchView, useIsAdmin } from "../../hooks/useRole";
 import { applyLocaleDirection } from "../../i18n/applyLocaleDirection";
 import { useTranslation } from "../../i18n/useTranslation";
 import { matchedTagNames, myGallery } from "../../services/galleryApi";
 import { enrollmentSummary } from "../../services/coursesApi";
 import { getNotifications } from "../../services/notificationsApi";
+import { meRequest } from "../../services/authApi";
+import { useAuthStore } from "../../store/authStore";
 import { Locale, useLocaleStore } from "../../store/localeStore";
 import { Touchable } from "../../components/ui/Touchable";
 
@@ -41,6 +44,10 @@ function formatPhone(phone: string | null | undefined): string {
 export default function ProfileScreen() {
   const { user, logout, deleteAccount, isLoading } = useAuth();
   const { t, isRTL, rtlText } = useTranslation();
+  const isAdmin = useIsAdmin();
+  const canSwitchView = useCanSwitchView();
+  const viewAsParent = useAuthStore((state) => state.viewAsParent);
+  const queryClient = useQueryClient();
   const locale = useLocaleStore((state) => state.locale);
   const setLocale = useLocaleStore((state) => state.setLocale);
   const { message: toastMessage, opacity: toastOpacity, showToast } = useToast();
@@ -111,7 +118,26 @@ export default function ProfileScreen() {
     ]);
   };
 
-  const roleLabel = user?.role === "admin" ? t.profile.roleAdmin : t.profile.roleParent;
+  const roleLabel = viewAsParent
+    ? t.profile.parentViewBadge
+    : isAdmin
+      ? t.profile.roleAdmin
+      : t.profile.roleParent;
+
+  // Flips the UI only; the server still treats the account as an admin.
+  const switchView = async () => {
+    const store = useAuthStore.getState();
+    store.setViewAsParent(!viewAsParent);
+    // Children linked since sign-in only arrive with a fresh /me.
+    try {
+      const fresh = await meRequest();
+      if (store.token) store.setSession(store.token, fresh);
+    } catch {
+      // The cached account is good enough to switch views.
+    }
+    queryClient.invalidateQueries();
+    router.replace("/(tabs)");
+  };
 
   const { data: notifications } = useQuery({
     queryKey: ["notifications"],
@@ -123,7 +149,7 @@ export default function ProfileScreen() {
   const { data: pendingRequests } = useQuery({
     queryKey: ["enrollments", "summary"],
     queryFn: enrollmentSummary,
-    enabled: user?.role === "admin",
+    enabled: isAdmin,
   });
 
   const settingsRows: {
@@ -136,7 +162,18 @@ export default function ProfileScreen() {
   }[] = [
     // One door into the admin app rather than scattering management entries
     // through the parent-facing settings list.
-    ...(user?.role === "admin"
+    ...(canSwitchView
+      ? [
+          {
+            key: "view",
+            label: viewAsParent ? t.profile.switchToAdmin : t.profile.switchToParent,
+            icon: "swap-horizontal-outline" as keyof typeof Ionicons.glyphMap,
+            tint: Colors.blue,
+            onPress: switchView,
+          },
+        ]
+      : []),
+    ...(isAdmin
       ? [
           {
             key: "admin",
@@ -150,7 +187,7 @@ export default function ProfileScreen() {
       : []),
     // Course families add their own children; nursery children arrive with
     // the invite code. Admins manage children from /students instead.
-    ...(user?.role !== "admin"
+    ...(!isAdmin
       ? [
           {
             key: "child",
@@ -210,7 +247,7 @@ export default function ProfileScreen() {
             {user?.role ? (
               <RoleBadge
                 label={roleLabel}
-                color={user.role === "admin" ? Colors.sage : Colors.coral}
+                color={isAdmin ? Colors.sage : Colors.coral}
               />
             ) : null}
           </View>

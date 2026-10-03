@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useIsAdmin } from "../../hooks/useRole";
 import { router } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -138,7 +139,7 @@ const HEADER_COLLAPSE_RANGE = 90;
 export default function HomeScreen() {
   const { width, gutter, insets } = useLayout();
   const user = useAuthStore((state) => state.user);
-  const isAdmin = user?.role === "admin";
+  const isAdmin = useIsAdmin();
   const reducedMotion = useReducedMotion();
   const { t, isRTL, rtlText } = useTranslation();
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);

@@ -299,6 +299,9 @@ Open the app and sign in with this phone number. You'll be connected to ${child}
     title: "Profile",
     roleAdmin: "Admin",
     roleParent: "Parent",
+    switchToParent: "Switch to parent view",
+    switchToAdmin: "Back to manager view",
+    parentViewBadge: "Parent view",
     myKidsTitle: "My Kids",
     photosThisMonth: (count: number) =>
       count === 0 ? "No photos yet this month" : `${count} photo${count === 1 ? "" : "s"} this month`,
@@ -1107,6 +1110,9 @@ export const ar: Translations = {
     title: "الملف الشخصي",
     roleAdmin: "مسؤول",
     roleParent: "ولي أمر",
+    switchToParent: "التبديل إلى عرض ولي الأمر",
+    switchToAdmin: "العودة إلى عرض الإدارة",
+    parentViewBadge: "عرض ولي الأمر",
     myKidsTitle: "أطفالي",
     photosThisMonth: (count: number) => (count === 0 ? "لا توجد صور هذا الشهر بعد" : `${count} صورة هذا الشهر`),
     viewInGallery: "شاهد الصور في تبويب المعرض",
@@ -1895,6 +1901,9 @@ export const he: Translations = {
     title: "פרופיל",
     roleAdmin: "מנהל",
     roleParent: "הורה",
+    switchToParent: "מעבר לתצוגת הורה",
+    switchToAdmin: "חזרה לתצוגת ניהול",
+    parentViewBadge: "תצוגת הורה",
     myKidsTitle: "הילדים שלי",
     photosThisMonth: (count: number) =>
       count === 0

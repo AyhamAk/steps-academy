@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { useIsAdmin } from "../../hooks/useRole";
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { Screen } from "../../components/Screen";
@@ -24,7 +25,6 @@ import {
   TipInput,
   updateTip,
 } from "../../services/tipsApi";
-import { useAuthStore } from "../../store/authStore";
 import { tipExcerpt, tipTitle } from "../../utils/tipText";
 
 /**
@@ -37,7 +37,7 @@ import { tipExcerpt, tipTitle } from "../../utils/tipText";
  */
 export default function ParentingTipsScreen() {
   const { t, isRTL, locale } = useTranslation();
-  const isAdmin = useAuthStore((state) => state.user?.role) === "admin";
+  const isAdmin = useIsAdmin();
   const queryClient = useQueryClient();
 
   const [reading, setReading] = useState<Tip | null>(null);

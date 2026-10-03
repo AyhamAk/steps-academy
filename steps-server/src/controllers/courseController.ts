@@ -45,7 +45,9 @@ function serializeEnrollment(enrollment: EnrollmentWithContext) {
  * enrolment status — never anyone else's.
  */
 export async function listCourses(req: Request, res: Response) {
-  const isAdmin = req.userRole === "admin";
+  // ?view=parent: an admin looking at the app as a parent sees what a parent
+  // would. It only narrows the list, never widens it.
+  const isAdmin = req.userRole === "admin" && req.query.view !== "parent";
   const all = await CourseModel.listWithCounts(isAdmin);
 
   // A course can finish between nightly sweeps — never show a parent a course
