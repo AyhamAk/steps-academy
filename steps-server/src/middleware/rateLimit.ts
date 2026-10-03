@@ -1,4 +1,6 @@
-import rateLimit from "express-rate-limit";
+import rateLimit, { ipKeyGenerator } from "express-rate-limit";
+
+import { toE164 } from "../utils/phone";
 
 // Brute-force / credential-stuffing protection on login & registration.
 // Keyed by IP; 20 attempts per 15 minutes is generous for a real user,
@@ -6,6 +8,28 @@ import rateLimit from "express-rate-limit";
 export const authRateLimit = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: "Too many attempts. Please try again later." },
+});
+
+// Phone sign-in can't share authRateLimit's 20 per IP: parents signing in
+// together on the academy's Wi-Fi, or behind a mobile carrier's shared address,
+// all count as one IP, and one sign-in takes two or three requests. So each
+// number gets its own budget, and the IP cap only stops a script sweeping
+// through numbers (every /phone/start is a paid SMS).
+export const phoneNumberRateLimit = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 15,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => toE164(req.body?.phone) ?? ipKeyGenerator(req.ip ?? ""),
+  message: { message: "Too many attempts. Please try again later." },
+});
+
+export const phoneIpRateLimit = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 150,
   standardHeaders: true,
   legacyHeaders: false,
   message: { message: "Too many attempts. Please try again later." },

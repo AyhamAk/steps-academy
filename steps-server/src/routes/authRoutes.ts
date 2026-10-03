@@ -19,7 +19,7 @@ import {
   verifyPhoneSignIn,
 } from "../controllers/phoneAuthController";
 import { requireAuth } from "../middleware/auth";
-import { authRateLimit } from "../middleware/rateLimit";
+import { authRateLimit, phoneIpRateLimit, phoneNumberRateLimit } from "../middleware/rateLimit";
 
 const router = Router();
 
@@ -27,11 +27,11 @@ const router = Router();
 // so it can't be used to sweep for valid codes.
 router.post("/invite/check", authRateLimit, checkInvite);
 router.post("/register", authRateLimit, register);
-// Phone sign-in. Each /phone/start sends a paid WhatsApp message, so it sits behind the
-// same limiter, and phoneCodes caps sends per number on top.
-router.post("/phone/start", authRateLimit, startPhoneSignIn);
-router.post("/phone/verify", authRateLimit, verifyPhoneSignIn);
-router.post("/phone/register", authRateLimit, registerWithPhone);
+// Phone sign-in: limited per number and, loosely, per IP — see rateLimit.ts.
+// phoneCodes caps paid sends per number on top.
+router.post("/phone/start", phoneNumberRateLimit, phoneIpRateLimit, startPhoneSignIn);
+router.post("/phone/verify", phoneNumberRateLimit, phoneIpRateLimit, verifyPhoneSignIn);
+router.post("/phone/register", phoneIpRateLimit, registerWithPhone);
 router.post("/login", authRateLimit, login);
 router.post("/google", authRateLimit, googleAuth);
 router.get("/me", requireAuth, me);
