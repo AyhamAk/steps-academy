@@ -79,10 +79,10 @@ export default function AuthScreen() {
     }
   };
 
-  const checkCode = async () => {
-    if (code.length < 6) return setFormError(t.auth.codeInvalid);
+  const checkCode = async (entered = code) => {
+    if (entered.length < 6) return setFormError(t.auth.codeInvalid);
     setFormError(null);
-    const result = await verifyPhoneSignIn(phone, code);
+    const result = await verifyPhoneSignIn(phone, entered);
     if (result === "signedIn") {
       // An existing account for this number.
       router.replace("/(tabs)");
@@ -143,13 +143,15 @@ export default function AuthScreen() {
                   onChange={(v) => {
                     setCode(v);
                     setFormError(null);
+                    // The sixth digit, typed or autofilled, sends it — no tap on Continue.
+                    if (v.length === 6 && !isLoading) checkCode(v);
                   }}
                   accessibilityLabel={t.auth.codeLabel}
                 />
                 {message ? <Text style={styles.error}>{message}</Text> : null}
                 <StepsButton
                   label={t.auth.verifyCode}
-                  onPress={checkCode}
+                  onPress={() => checkCode()}
                   loading={isLoading}
                   disabled={code.length < 6}
                   flat
