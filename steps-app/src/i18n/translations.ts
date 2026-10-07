@@ -51,6 +51,8 @@ export const en = {
     profile: "Profile",
   },
   home: {
+    viewManager: "Manager",
+    viewParent: "Parent",
     goodMorning: "Good morning",
     goodAfternoon: "Good afternoon",
     goodEvening: "Good evening",
@@ -881,6 +883,8 @@ export const ar: Translations = {
     profile: "الملف الشخصي",
   },
   home: {
+    viewManager: "مدير",
+    viewParent: "ولي أمر",
     goodMorning: "صباح الخير",
     goodAfternoon: "طاب يومك",
     goodEvening: "مساء الخير",
@@ -1704,6 +1708,8 @@ export const he: Translations = {
     profile: "פרופיל",
   },
   home: {
+    viewManager: "מנהל",
+    viewParent: "הורה",
     goodMorning: "בוקר טוב",
     goodAfternoon: "צהריים טובים",
     goodEvening: "ערב טוב",

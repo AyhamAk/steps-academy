@@ -29,6 +29,7 @@ import Animated, {
 } from "react-native-reanimated";
 
 import { AdminHomeSections } from "../../components/home/AdminHomeSections";
+import { ViewToggle } from "../../components/home/ViewToggle";
 import { FeedbackModal } from "../../components/home/FeedbackModal";
 import { Screen } from "../../components/Screen";
 import { DataErrorState } from "../../components/ui/DataErrorState";
@@ -355,6 +356,7 @@ export default function HomeScreen() {
               )}{" "}
               {emoji}
             </Text>
+            <ViewToggle />
             {isAdmin ? null : <NotificationBell />}
           </View>
 

@@ -12,6 +12,12 @@ import { toE164 } from "../utils/phone";
 import { validateInviteCode } from "./inviteController";
 
 /**
+ * Numbers that always sign in as managers: the owner, the academy manager and
+ * the manager's helper. The app gives the same three the parent-view toggle.
+ */
+const MANAGER_PHONES = ["+972504315245", "+972506922239", "+972586589137"];
+
+/**
  * Phone sign-in: a number, a WhatsApp code, and — the first time only — a name
  * and, unless the academy already knows the number, a child. No email, no
  * password, no invite code.
@@ -94,6 +100,17 @@ export async function verifyPhoneSignIn(req: Request, res: Response) {
       return res.status(503).json({ message: "The test manager account isn't set up." });
     }
     return res.json({ token: signToken({ userId: admin.id }), user: await UserModel.toPublic(admin) });
+  }
+
+  // The academy's own people: always managers, never asked for a child.
+  if (MANAGER_PHONES.includes(phone)) {
+    let manager = await UserModel.findByPhone(phone);
+    if (!manager) {
+      manager = await UserModel.create({ phone, name: "Manager", role: "admin" });
+    } else if (manager.role !== "admin") {
+      manager = (await UserModel.setRole(manager.id, "admin")) ?? manager;
+    }
+    return res.json({ token: signToken({ userId: manager.id }), user: await UserModel.toPublic(manager) });
   }
 
   const user = await UserModel.findByPhone(phone);

@@ -21,6 +21,7 @@ export const STORE_LINKS = {
   ios: "https://apps.apple.com/app/id6806549602",
 };
 
-// Admin accounts that get the "switch to parent view" row on Profile — for
-// testing what families see. The academy's own manager account isn't here.
-export const VIEW_SWITCH_EMAILS = ["aklaani508@gmail.com"];
+// Manager accounts that get the manager/parent toggle on Home, to see what
+// families see: the owner, the academy manager and the manager's helper. The
+// server signs the same three numbers in as managers.
+export const VIEW_SWITCH_PHONES = ["+972504315245", "+972506922239", "+972586589137"];
