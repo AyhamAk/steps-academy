@@ -18,6 +18,7 @@ export type CreateTipInput = {
   month: number;
   year: number;
   minutes?: number;
+  youtubeUrl?: string | null;
   isPublished?: boolean;
 };
 
@@ -43,6 +44,7 @@ export const TipModel = {
         month: input.month,
         year: input.year,
         minutes: input.minutes ?? 3,
+        youtubeUrl: input.youtubeUrl ?? null,
         isPublished: input.isPublished ?? false,
         createdBy: input.createdBy,
       },
@@ -71,6 +73,7 @@ export const TipModel = {
         ...(input.month !== undefined ? { month: input.month } : {}),
         ...(input.year !== undefined ? { year: input.year } : {}),
         ...(input.minutes !== undefined ? { minutes: input.minutes } : {}),
+        ...(input.youtubeUrl !== undefined ? { youtubeUrl: input.youtubeUrl } : {}),
         ...(input.isPublished !== undefined ? { isPublished: input.isPublished } : {}),
       },
     });
@@ -114,3 +117,10 @@ export const TipModel = {
     });
   },
 };
+
+/** The 11-character video id from a watch, youtu.be, shorts or embed link. */
+const YOUTUBE_ID = /(?:youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/)|youtu\.be\/)([\w-]{11})/;
+
+export function isYoutubeUrl(value: string): boolean {
+  return /^https?:\/\//.test(value) && YOUTUBE_ID.test(value);
+}

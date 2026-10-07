@@ -1,9 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { Image, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 
-import ChildTag from "../../components/gallery/ChildTag";
 import { PillarPhotoGallery } from "../../components/gallery/PillarPhotoGallery";
+import { ParentTipCard } from "../../components/tips/ParentTipCard";
 import { DayTimeline } from "../../components/schedule/DayTimeline";
 import {
   minutesNow,
@@ -17,7 +17,6 @@ import { ScreenFadeIn } from "../../components/ui/ScreenFadeIn";
 import { SkeletonScheduleRows } from "../../components/ui/Skeleton";
 import { StepsHeader } from "../../components/ui/StepsHeader";
 import { SubTabSwitcher } from "../../components/ui/SubTabSwitcher";
-import { Touchable } from "../../components/ui/Touchable";
 import { Colors } from "../../constants/Colors";
 import { CardWash } from "../../components/ui/CardWash";
 import { Fonts } from "../../constants/Fonts";
@@ -28,13 +27,7 @@ import {
   WEEK_DAYS,
   WeekDay,
 } from "../../services/scheduleApi";
-import {
-  isInSection,
-  isPhotoTaggedWithAny,
-  myGallery,
-  resolvePhotoUrl,
-} from "../../services/galleryApi";
-import { useChildren } from "../../store/authStore";
+import { listTips } from "../../services/tipsApi";
 import { AGE_BANDS } from "../../utils/ageBand";
 
 /**
@@ -68,31 +61,12 @@ export default function NurseryScreen() {
     queryFn: getWeekSchedule,
   });
 
-  // Shares its key with the gallery tab, so this is almost always a cache read.
-  const children = useChildren();
-  const { data: galleryGroups } = useQuery({
-    queryKey: ["gallery", "mine"],
-    queryFn: myGallery,
-    enabled: children.length > 0,
+  // Same key as the Tips screen, so the card and the pillar show one tip.
+  const { data: tips } = useQuery({
+    queryKey: ["tips", "published"],
+    queryFn: listTips,
   });
-
-  /**
-   * The newest album, and the first three photos in it.
-   *
-   * One album rather than a mix across albums, so the "+N" tile counts
-   * something a parent can actually go and look at.
-   */
-  const newestAlbum = galleryGroups?.find((group) =>
-    isInSection(group.event, "nursery"),
-  );
-  const latestPhotos = useMemo(
-    () => (newestAlbum?.photos ?? []).slice(0, 3),
-    [newestAlbum],
-  );
-  const remainingCount = Math.max(
-    0,
-    (newestAlbum?.photos.length ?? 0) - latestPhotos.length,
-  );
+  const currentTip = tips?.[0];
 
   const dayData = days?.find((day) => day.day === selectedDay);
   const activities = useMemo(() => dayData?.activities ?? [], [dayData]);
@@ -231,63 +205,6 @@ export default function NurseryScreen() {
                 )}
               </View>
 
-              {latestPhotos.length > 0 ? (
-                // Touchable, not Pressable — a function `style` on Pressable
-                // silently loses the card's background and padding on this build.
-                <Touchable
-                  onPress={() => setTab(1)}
-                  accessibilityLabel={t.academy.nurseryOpenGallery}
-                  style={styles.photosCard}
-                >
-                  <View
-                    style={[styles.photosHeader, isRTL && styles.rowReverse]}
-                  >
-                    <Text
-                      style={styles.photosTitle}
-                      maxFontSizeMultiplier={1.3}
-                    >
-                      📷 {t.academy.nurseryLatestPhotos}
-                    </Text>
-                    <Text style={styles.photosCta} maxFontSizeMultiplier={1.3}>
-                      {t.academy.nurseryOpenGallery} {isRTL ? "‹" : "›"}
-                    </Text>
-                  </View>
-                  <View
-                    style={[styles.photosStrip, isRTL && styles.rowReverse]}
-                  >
-                    {latestPhotos.map((photo) => (
-                      <View key={photo.id} style={styles.photoTile}>
-                        {/* Fixed 64x64 with an explicit resizeMode. A percentage
-                        height inside an aspectRatio parent never resolved on
-                        this build, so a portrait photo rendered at its natural
-                        height and pushed the schedule off the screen. */}
-                        <Image
-                          source={{ uri: resolvePhotoUrl(photo.url) }}
-                          style={styles.photoImage}
-                          resizeMode="cover"
-                        />
-                        {isPhotoTaggedWithAny(
-                          photo,
-                          children.map((child) => child.id),
-                        ) ? (
-                          <ChildTag />
-                        ) : null}
-                      </View>
-                    ))}
-                    {remainingCount > 0 ? (
-                      <View style={[styles.photoTile, styles.countTile]}>
-                        <Text
-                          style={styles.countTileText}
-                          maxFontSizeMultiplier={1.3}
-                        >
-                          +{remainingCount}
-                        </Text>
-                      </View>
-                    ) : null}
-                  </View>
-                </Touchable>
-              ) : null}
-
               <Text
                 style={[styles.sectionLabel, { textAlign }]}
                 maxFontSizeMultiplier={1.3}
@@ -320,6 +237,8 @@ export default function NurseryScreen() {
                   nowMinutes={now}
                 />
               )}
+
+              {currentTip ? <ParentTipCard tip={currentTip} /> : null}
             </>
           )}
         </ScrollView>
@@ -370,45 +289,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: Colors.textLight,
     marginTop: 4,
-  },
-  photosCard: {
-    backgroundColor: Colors.linen,
-    borderRadius: 14,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    marginBottom: 18,
-  },
-  photosHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 10,
-  },
-  photosTitle: { fontFamily: Fonts.semiBold, fontSize: 13, color: Colors.bark },
-  photosCta: {
-    fontFamily: Fonts.semiBold,
-    fontSize: 12,
-    color: Colors.sage,
-  },
-  photosStrip: { flexDirection: "row", gap: 6, marginTop: 10 },
-  // Fixed, not flex + aspectRatio: that combination let a portrait photo
-  // render at its natural height and push the schedule below the fold.
-  photoTile: {
-    width: 64,
-    height: 64,
-    borderRadius: 10,
-    backgroundColor: Colors.cream,
-  },
-  photoImage: { width: 64, height: 64, borderRadius: 10 },
-  countTile: {
-    backgroundColor: Colors.roseLight,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  countTileText: {
-    fontFamily: Fonts.semiBold,
-    fontSize: 13,
-    color: Colors.rose,
   },
   sectionLabel: {
     fontFamily: Fonts.semiBold,

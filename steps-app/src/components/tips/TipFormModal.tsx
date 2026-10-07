@@ -6,6 +6,7 @@ import { Fonts } from "../../constants/Fonts";
 import { useSheetPadding } from "../../hooks/useLayout";
 import { useTranslation } from "../../i18n/useTranslation";
 import { Tip, TipInput } from "../../services/tipsApi";
+import { isYoutubeUrl } from "../../utils/youtube";
 import { StepsButton } from "../ui/StepsButton";
 import { Touchable } from "../ui/Touchable";
 
@@ -47,6 +48,7 @@ export function TipFormModal({
   const [month, setMonth] = useState("");
   const [year, setYear] = useState("");
   const [minutes, setMinutes] = useState("");
+  const [youtubeUrl, setYoutubeUrl] = useState("");
   const [isPublished, setIsPublished] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -65,6 +67,7 @@ export function TipFormModal({
     setMonth(String(tip?.month ?? now.getMonth() + 1));
     setYear(String(tip?.year ?? now.getFullYear()));
     setMinutes(String(tip?.minutes ?? 3));
+    setYoutubeUrl(tip?.youtubeUrl ?? "");
     setIsPublished(tip?.isPublished ?? false);
     setError(null);
   }, [visible, tip]);
@@ -85,6 +88,10 @@ export function TipFormModal({
     if (!Number.isInteger(parsedMinutes) || parsedMinutes < 1 || parsedMinutes > 120) {
       return setError(t.tipsAdmin.minutesInvalid);
     }
+    const trimmedUrl = youtubeUrl.trim();
+    if (trimmedUrl && !isYoutubeUrl(trimmedUrl)) {
+      return setError(t.tipsAdmin.videoInvalid);
+    }
 
     onSubmit({
       emoji,
@@ -98,6 +105,7 @@ export function TipFormModal({
       month: parsedMonth,
       year: parsedYear,
       minutes: parsedMinutes,
+      youtubeUrl: trimmedUrl || null,
       isPublished,
     });
   };
@@ -171,6 +179,23 @@ export function TipFormModal({
               multiline
               style={[styles.input, styles.inputMultiline, rtlText]}
             />
+
+            <Text style={[styles.label, rtlText]}>{t.tipsAdmin.fieldVideo}</Text>
+            {/* A link reads left to right in every language, like a phone number. */}
+            <TextInput
+              value={youtubeUrl}
+              onChangeText={(value) => {
+                setYoutubeUrl(value);
+                setError(null);
+              }}
+              placeholder="https://youtube.com/watch?v=…"
+              placeholderTextColor={Colors.textLight}
+              autoCapitalize="none"
+              autoCorrect={false}
+              keyboardType="url"
+              style={[styles.input, styles.inputLtr]}
+            />
+            <Text style={[styles.hint, rtlText]}>{t.tipsAdmin.videoHint}</Text>
 
             <Text style={[styles.label, rtlText]}>{t.tipsAdmin.fieldBody}</Text>
             <TextInput
@@ -310,6 +335,7 @@ const styles = StyleSheet.create({
   },
   inputMultiline: { minHeight: 64, textAlignVertical: "top" },
   inputBody: { minHeight: 140, textAlignVertical: "top" },
+  inputLtr: { textAlign: "left", writingDirection: "ltr" },
   hint: {
     fontFamily: Fonts.regular,
     fontSize: 12,

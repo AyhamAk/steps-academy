@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 
 import { becamePublished, notifyTipPublished } from "../lib/tipNotify";
-import { TipModel } from "../models/tip";
+import { isYoutubeUrl, TipModel } from "../models/tip";
 
 function param(req: Request, key: string): string {
   return (req.params as Record<string, string>)[key];
@@ -62,6 +62,11 @@ function validateTip(body: Record<string, unknown>, requireCore: boolean): strin
   if (minutes !== undefined) {
     if (typeof minutes !== "number" || !Number.isInteger(minutes) || minutes < 1 || minutes > 120) {
       return "minutes must be a whole number from 1 to 120";
+    }
+  }
+  if (body.youtubeUrl !== undefined && body.youtubeUrl !== null) {
+    if (typeof body.youtubeUrl !== "string" || !isYoutubeUrl(body.youtubeUrl)) {
+      return "youtubeUrl must be a YouTube link";
     }
   }
   if (body.isPublished !== undefined && typeof body.isPublished !== "boolean") {

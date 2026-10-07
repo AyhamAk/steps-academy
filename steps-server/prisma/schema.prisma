@@ -449,6 +449,8 @@ model Tip {
   year      Int
   /// Rough reading time in minutes, written by the author.
   minutes   Int      @default(3)
+  /// Optional YouTube link. When set, the app shows the tip as a video card.
+  youtubeUrl String?
   /// Drafts stay invisible to parents until an admin publishes them.
   isPublished Boolean @default(false)
   createdBy String

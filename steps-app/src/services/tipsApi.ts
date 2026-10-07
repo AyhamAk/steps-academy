@@ -17,6 +17,8 @@ export type Tip = {
   month: number;
   year: number;
   minutes: number;
+  /** When set, the tip shows as a video card. */
+  youtubeUrl: string | null;
   isPublished: boolean;
   /** Only present on the parent list; the admin list has no reader. */
   read?: boolean;
@@ -36,6 +38,7 @@ export type TipInput = {
   month: number;
   year: number;
   minutes?: number;
+  youtubeUrl?: string | null;
   isPublished?: boolean;
 };
 

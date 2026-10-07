@@ -12,7 +12,7 @@ import { NotificationModel } from "../models/notification";
 import { PhotoModel } from "../models/photo";
 import { ScheduleModel, WEEK_DAYS, isWeekDay } from "../models/schedule";
 import { SETTING_KEYS, SettingModel } from "../models/setting";
-import { TipModel } from "../models/tip";
+import { isYoutubeUrl, TipModel } from "../models/tip";
 import { UserModel } from "../models/user";
 import {
   banner,
@@ -269,6 +269,7 @@ export async function tipPage(req: Request, res: Response) {
         ${textField("year", "Year", String(tip?.year ?? now.getFullYear()), { type: "number" })}
         ${textField("minutes", "Read time (minutes)", String(tip?.minutes ?? 3), { type: "number" })}
       </div>
+      ${textField("youtubeUrl", "YouTube link", tip?.youtubeUrl ?? "", { type: "url", placeholder: "https://www.youtube.com/watch?v=…", hint: "Optional. With a link, the app shows this tip as a video." })}
       ${textArea("excerpt", "Excerpt", tip?.excerpt ?? "", { rows: 2, hint: "The line shown in the list. Up to 400 characters." })}
       ${textArea("body", "Body", tip?.body ?? "", { rows: 10 })}
       <div class="grid2">
@@ -450,6 +451,9 @@ function readTip(body: Record<string, unknown>): { error: string } | { input: Pa
   const minutes = Number(body.minutes) || 3;
   if (minutes < 1 || minutes > 120) return { error: "Read time must be 1 to 120 minutes." };
 
+  const youtubeUrl = orNull(body.youtubeUrl);
+  if (youtubeUrl && !isYoutubeUrl(youtubeUrl)) return { error: "That doesn't look like a YouTube link." };
+
   return {
     input: {
       emoji: String(body.emoji ?? "").trim() || "💡",
@@ -463,6 +467,7 @@ function readTip(body: Record<string, unknown>): { error: string } | { input: Pa
       month,
       year,
       minutes,
+      youtubeUrl,
       isPublished: body.isPublished === "1",
       createdBy: "",
     },
