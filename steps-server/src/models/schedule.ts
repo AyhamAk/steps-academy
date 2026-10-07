@@ -5,6 +5,7 @@ import { prisma } from "../lib/prisma";
 export type ScheduleActivity = PrismaScheduleActivity;
 export type { WeekDay };
 
+/** The nursery week. Courses can also meet on Friday and Saturday. */
 export const WEEK_DAYS: WeekDay[] = ["sun", "mon", "tue", "wed", "thu"];
 
 export function isWeekDay(value: unknown): value is WeekDay {

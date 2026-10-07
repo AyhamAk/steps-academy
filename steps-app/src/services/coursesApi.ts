@@ -1,5 +1,5 @@
 import { api } from "./api";
-import { WeekDay } from "./scheduleApi";
+import { CourseDay } from "./scheduleApi";
 import { useAuthStore } from "../store/authStore";
 
 export type EnrollmentStatus = "pending" | "approved" | "rejected" | "cancelled";
@@ -23,7 +23,7 @@ export type Course = {
   emoji: string;
   instructor: string | null;
   /** Days it runs on, e.g. ["sun","wed"]. Structured so it can be translated. */
-  weekDays: WeekDay[];
+  weekDays: CourseDay[];
   /** 24-hour "HH:MM". */
   startTime: string | null;
   /** Calendar range, "YYYY-MM-DD". */
@@ -123,7 +123,7 @@ export type CourseInput = {
   descriptionHe?: string | null;
   emoji?: string;
   instructor?: string | null;
-  weekDays?: WeekDay[];
+  weekDays?: CourseDay[];
   startTime?: string | null;
   startDate?: string | null;
   endDate?: string | null;

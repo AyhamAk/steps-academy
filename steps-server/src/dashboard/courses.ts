@@ -33,7 +33,7 @@ import {
  */
 
 const LIST = "/dashboard/courses";
-const WEEK_DAYS = ["sun", "mon", "tue", "wed", "thu"] as const;
+const COURSE_DAYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const;
 
 export async function coursesPage(req: Request, res: Response) {
   const csrf = csrfToken(req.userId!);
@@ -247,7 +247,7 @@ function courseForm(csrf: string, action: string, course: Awaited<ReturnType<typ
     <div class="field">
       <span class="field-label">Days</span>
       <div class="row-actions">
-        ${WEEK_DAYS.map((day) => checkboxField(`day_${day}`, day, days.has(day))).join("")}
+        ${COURSE_DAYS.map((day) => checkboxField(`day_${day}`, day, days.has(day))).join("")}
       </div>
     </div>
     <div class="grid2">
@@ -306,7 +306,7 @@ function readCourse(body: Record<string, unknown>): { error: string } | { input:
       descriptionHe: orNull(body.descriptionHe),
       emoji: String(body.emoji ?? "").trim() || "🎓",
       instructor: orNull(body.instructor),
-      weekDays: WEEK_DAYS.filter((day) => body[`day_${day}`] === "1"),
+      weekDays: COURSE_DAYS.filter((day) => body[`day_${day}`] === "1"),
       startTime,
       startDate,
       endDate,

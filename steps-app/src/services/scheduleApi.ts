@@ -6,6 +6,11 @@ export type WeekDay = "sun" | "mon" | "tue" | "wed" | "thu";
 
 export const WEEK_DAYS: WeekDay[] = ["sun", "mon", "tue", "wed", "thu"];
 
+/** Courses can also meet on the weekend; the nursery week above cannot. */
+export type CourseDay = WeekDay | "fri" | "sat";
+
+export const COURSE_DAYS: CourseDay[] = [...WEEK_DAYS, "fri", "sat"];
+
 export type ScheduleActivity = {
   id: string;
   day: WeekDay;

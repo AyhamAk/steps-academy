@@ -94,15 +94,15 @@ export async function listCourses(req: Request, res: Response) {
   });
 }
 
-const WEEK_DAYS = ["sun", "mon", "tue", "wed", "thu"];
+const COURSE_DAYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
 const TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 /** Shared by create and update; only checks fields that were actually sent. */
 function validateCourse(body: Record<string, unknown>): string | null {
   if (body.weekDays !== undefined) {
-    if (!Array.isArray(body.weekDays) || body.weekDays.some((d) => !WEEK_DAYS.includes(d as string))) {
-      return "weekDays must be an array of sun, mon, tue, wed or thu";
+    if (!Array.isArray(body.weekDays) || body.weekDays.some((d) => !COURSE_DAYS.includes(d as string))) {
+      return "weekDays must be an array of sun, mon, tue, wed, thu, fri or sat";
     }
   }
   if (body.startTime !== undefined && body.startTime !== null) {

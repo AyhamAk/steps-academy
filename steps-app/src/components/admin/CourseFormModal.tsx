@@ -14,7 +14,7 @@ import { Type } from "../../constants/Typography";
 import { useSheetPadding } from "../../hooks/useLayout";
 import { useTranslation } from "../../i18n/useTranslation";
 import { Course, CourseInput } from "../../services/coursesApi";
-import { WEEK_DAYS, WeekDay } from "../../services/scheduleApi";
+import { COURSE_DAYS, CourseDay } from "../../services/scheduleApi";
 import { StepsButton } from "../ui/StepsButton";
 import { Touchable } from "../ui/Touchable";
 
@@ -52,7 +52,7 @@ export function CourseFormModal({
   const [descriptionAr, setDescriptionAr] = useState("");
   const [descriptionHe, setDescriptionHe] = useState("");
   const [instructor, setInstructor] = useState("");
-  const [weekDays, setWeekDays] = useState<WeekDay[]>([]);
+  const [weekDays, setWeekDays] = useState<CourseDay[]>([]);
   const [hour, setHour] = useState("");
   const [minute, setMinute] = useState("");
   const [startDate, setStartDate] = useState("");
@@ -266,7 +266,7 @@ export function CourseFormModal({
 
             <Text style={[styles.label, rtlText]}>{t.coursesAdmin.fieldDays}</Text>
             <View style={styles.pickRow}>
-              {WEEK_DAYS.map((day) => {
+              {COURSE_DAYS.map((day) => {
                 const isOn = weekDays.includes(day);
                 return (
                   <Touchable

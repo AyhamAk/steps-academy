@@ -1,12 +1,12 @@
 import { Translations } from "../i18n/translations";
 import { Course } from "../services/coursesApi";
-import { formatTime, WEEK_DAYS } from "../services/scheduleApi";
+import { COURSE_DAYS, formatTime } from "../services/scheduleApi";
 import { parseIsoDate } from "./date";
 
 /** "Sun · Wed · 3:30 PM", or null when the academy hasn't set one. */
 export function formatCourseDays(course: Course, t: Translations): string | null {
   // Ordered by the week, not by the order they were tapped in the picker.
-  const days = WEEK_DAYS.filter((day) => course.weekDays.includes(day)).map(
+  const days = COURSE_DAYS.filter((day) => course.weekDays.includes(day)).map(
     (day) => t.home.weekDays[day]
   );
   const time = course.startTime ? formatTime(course.startTime, t) : null;

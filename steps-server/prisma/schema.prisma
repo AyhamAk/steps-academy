@@ -37,13 +37,15 @@ enum Program {
   both
 }
 
-/// The academy runs Sunday–Thursday.
+/// The nursery runs Sunday–Thursday; courses may also meet Friday and Saturday.
 enum WeekDay {
   sun
   mon
   tue
   wed
   thu
+  fri
+  sat
 }
 
 /// A parent's rating and note about the app itself, read by the academy.
