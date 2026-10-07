@@ -59,8 +59,13 @@ export function ActivityFormModal({
     if (!visible) return;
     const [h, m] = (activity?.startTime ?? "09:00").split(":");
     setSlot(activity?.slot ?? null);
-    // Older rows kept their text in name; it is the description now.
-    setDescription(activity?.description ?? activity?.name ?? "");
+    // Opens with exactly what parents see under the title, so editing it is
+    // editing that line. Older rows kept their text in name.
+    setDescription(
+      activity
+        ? activity.description ?? activity.name ?? t.academy.slotDescriptions[activity.slot]
+        : ""
+    );
     setEmoji(activity?.emoji ?? "🌟");
     setHour(h);
     setMinute(m);
@@ -77,6 +82,8 @@ export function ActivityFormModal({
     setSlot(next);
     setError(null);
     if (activity) return;
+    // A new activity starts from the slot's usual line, ready to change.
+    setDescription(t.academy.slotDescriptions[next]);
     const defaults = SCHEDULE_SLOTS.find((entry) => entry.slot === next);
     if (!defaults) return;
     const [h, m] = defaults.startTime.split(":");

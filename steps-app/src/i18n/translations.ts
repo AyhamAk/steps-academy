@@ -468,8 +468,8 @@ Open the app and sign in with this phone number. You'll be connected to ${child}
     fieldTime: "Start time",
     fieldDuration: "Duration (minutes)",
     fieldColor: "Colour",
-    fieldDescription: "Description (optional)",
-    descriptionPlaceholder: "Leave empty to show the usual line for this slot",
+    fieldDescription: "Description (shown under the title)",
+    descriptionPlaceholder: "e.g. A movement activity about hygiene",
     timeHint: "24-hour clock",
   },
   myCourses: {
@@ -1296,8 +1296,8 @@ export const ar: Translations = {
     fieldTime: "وقت البدء",
     fieldDuration: "المدة (دقائق)",
     fieldColor: "اللون",
-    fieldDescription: "الوصف (اختياري)",
-    descriptionPlaceholder: "اتركه فارغاً لعرض الوصف المعتاد لهذه الفترة",
+    fieldDescription: "الوصف (يظهر تحت العنوان)",
+    descriptionPlaceholder: "مثال: نشاط حركي عن النظافة",
     timeHint: "نظام 24 ساعة",
   },
   myCourses: {
@@ -2115,8 +2115,8 @@ export const he: Translations = {
     fieldTime: "שעת התחלה",
     fieldDuration: "משך (דקות)",
     fieldColor: "צבע",
-    fieldDescription: "תיאור (לא חובה)",
-    descriptionPlaceholder: "השאירו ריק כדי להציג את התיאור הרגיל",
+    fieldDescription: "תיאור (מוצג מתחת לכותרת)",
+    descriptionPlaceholder: "לדוגמה: פעילות תנועה על ניקיון",
     timeHint: "שעון 24 שעות",
   },
   myCourses: {
