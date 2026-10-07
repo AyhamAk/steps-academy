@@ -48,6 +48,7 @@ export function ActivityFormModal({
   const { sheetPadding, keyboardPadding } = useSheetPadding(28);
   const [slot, setSlot] = useState<ScheduleSlot | null>(null);
   const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
   const [emoji, setEmoji] = useState("🌟");
   const [hour, setHour] = useState("09");
   const [minute, setMinute] = useState("00");
@@ -60,6 +61,7 @@ export function ActivityFormModal({
     const [h, m] = (activity?.startTime ?? "09:00").split(":");
     setSlot(activity?.slot ?? null);
     setName(activity?.name ?? "");
+    setDescription(activity?.description ?? "");
     setEmoji(activity?.emoji ?? "🌟");
     setHour(h);
     setMinute(m);
@@ -106,6 +108,7 @@ export function ActivityFormModal({
       day,
       slot,
       name: name.trim() || null,
+      description: description.trim() || null,
       emoji,
       startTime: `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`,
       durationMinutes: duration,
@@ -156,6 +159,17 @@ export function ActivityFormModal({
               placeholder={t.scheduleAdmin.namePlaceholder}
               placeholderTextColor={Colors.textLight}
               style={[styles.input, rtlText]}
+            />
+
+            <Text style={[styles.label, rtlText]}>{t.scheduleAdmin.fieldDescription}</Text>
+            <TextInput
+              value={description}
+              onChangeText={setDescription}
+              placeholder={t.scheduleAdmin.descriptionPlaceholder}
+              placeholderTextColor={Colors.textLight}
+              multiline
+              maxLength={600}
+              style={[styles.input, styles.inputMultiline, rtlText]}
             />
 
             <Text style={[styles.label, rtlText]}>{t.scheduleAdmin.fieldIcon}</Text>
@@ -289,6 +303,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: Colors.bark,
   },
+  inputMultiline: { minHeight: 72, textAlignVertical: "top" },
   pickRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   rowReverse: { flexDirection: "row-reverse" },
   emojiTile: {

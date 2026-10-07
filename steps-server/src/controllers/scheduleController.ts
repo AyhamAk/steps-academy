@@ -16,6 +16,7 @@ function serialize(activity: ScheduleActivity) {
     day: activity.day,
     slot: activity.slot,
     name: activity.name,
+    description: activity.description,
     emoji: activity.emoji,
     startTime: activity.startTime,
     durationMinutes: activity.durationMinutes,
@@ -41,11 +42,15 @@ function validate(body: Record<string, unknown>, requireAll: boolean) {
   }
   // No slot means an older app build; the model picks one from the start time.
   if (body.slot !== undefined && !isScheduleSlot(body.slot)) {
-    return "slot must be one of reception, breakfast, prepAndFreeChoice, dailyActivity, storyOrCircle, lunch, napTime";
+    return "slot must be one of reception, breakfast, prepAndFreeChoice, dailyActivity, storyOrCircle, lunch, napTime, freePlayAndTalk";
   }
   // Optional: an activity with no name of its own shows its slot's name.
   if (body.name !== undefined && body.name !== null && typeof body.name !== "string") {
     return "name must be text";
+  }
+  if (body.description !== undefined && body.description !== null) {
+    if (typeof body.description !== "string") return "description must be text";
+    if (body.description.length > 600) return "description must be 600 characters or fewer";
   }
   if (requireAll || body.startTime !== undefined) {
     if (typeof body.startTime !== "string" || !TIME_PATTERN.test(body.startTime)) {

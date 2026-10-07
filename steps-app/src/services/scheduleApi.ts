@@ -26,6 +26,7 @@ export const SCHEDULE_SLOTS = [
   { slot: "storyOrCircle", startTime: "11:15", durationMinutes: 60 },
   { slot: "lunch", startTime: "12:15", durationMinutes: 30 },
   { slot: "napTime", startTime: "12:15", durationMinutes: 115 },
+  { slot: "freePlayAndTalk", startTime: "14:15", durationMinutes: 75 },
 ] as const;
 
 export type ScheduleSlot = (typeof SCHEDULE_SLOTS)[number]["slot"];
@@ -36,6 +37,8 @@ export type ScheduleActivity = {
   slot: ScheduleSlot;
   /** Null when the slot is all there is — reception, say. */
   name: string | null;
+  /** What happens in the slot today, shown under the title. */
+  description: string | null;
   emoji: string;
   /** 24-hour "HH:MM" — format for display, don't show raw. */
   startTime: string;
@@ -69,6 +72,7 @@ export type ActivityInput = {
   day: WeekDay;
   slot: ScheduleSlot;
   name: string | null;
+  description: string | null;
   emoji?: string;
   startTime: string;
   durationMinutes?: number;

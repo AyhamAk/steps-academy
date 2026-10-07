@@ -152,6 +152,7 @@ export async function contentPage(req: Request, res: Response) {
         ${selectField("day", "Day", WEEK_DAYS.map((day) => ({ value: day, label: day })))}
         ${selectField("slot", "Slot", SCHEDULE_SLOTS.map((slot) => ({ value: slot, label: slot })))}
         ${textField("name", "Activity", "", { hint: "Optional. Leave empty when the slot is all there is, like reception." })}
+        ${textArea("description", "Description", "", { rows: 2, hint: "Optional. Shown under the title in the app." })}
         ${textField("emoji", "Emoji", "🎨")}
         ${textField("startTime", "Starts", "", { type: "time", required: true })}
         ${textField("durationMinutes", "Minutes", "45", { type: "number" })}
@@ -539,6 +540,7 @@ export async function createActivity(req: Request, res: Response) {
     day,
     slot,
     name: name || null,
+    description: orNull(req.body.description),
     emoji: String(req.body.emoji ?? "").trim() || undefined,
     startTime,
     durationMinutes: Number(req.body.durationMinutes) || undefined,

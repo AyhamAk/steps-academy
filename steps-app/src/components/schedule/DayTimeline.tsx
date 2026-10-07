@@ -171,6 +171,11 @@ export function DayTimeline({
                     {t.academy.slots[activity.slot]}
                   </Text>
                 ) : null}
+                {activity.description ? (
+                  <Text style={[styles.description, rtlText]} maxFontSizeMultiplier={1.3}>
+                    {activity.description}
+                  </Text>
+                ) : null}
               </View>
               {/* Separate node, not appended to the name — a tick concatenated
                   onto an Arabic title lands on the wrong end of it. */}
@@ -263,6 +268,16 @@ const styles = StyleSheet.create({
     lineHeight: 16,
     color: Colors.textLight,
     marginTop: 1,
+  },
+  description: {
+    fontFamily: Fonts.regular,
+    fontSize: 13,
+    lineHeight: 19,
+    color: Colors.bark,
+    opacity: 0.8,
+    marginTop: 4,
+    // Admin-entered, like the name: resolves its own direction.
+    writingDirection: "auto",
   },
   doneCheck: { color: Colors.coral, fontSize: 13, fontFamily: Fonts.bold, lineHeight: 20 },
   // No alignItems and no padding of its own: the rail has to stretch the

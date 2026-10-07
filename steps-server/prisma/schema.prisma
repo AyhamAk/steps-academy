@@ -47,6 +47,7 @@ enum ScheduleSlot {
   storyOrCircle
   lunch
   napTime
+  freePlayAndTalk
 }
 
 /// The nursery runs Sunday–Thursday; courses may also meet Friday and Saturday.
@@ -98,6 +99,8 @@ model ScheduleActivity {
   /// 24-hour "HH:MM" so the day sorts correctly; formatted for display client-side.
   startTime       String
   durationMinutes Int      @default(30)
+  /// A line or two on what happens in this slot today, under the title.
+  description     String?
   accentColor     String?
   createdAt       DateTime @default(now())
 

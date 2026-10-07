@@ -21,6 +21,7 @@ export const SCHEDULE_SLOTS: ScheduleSlot[] = [
   "storyOrCircle",
   "lunch",
   "napTime",
+  "freePlayAndTalk",
 ];
 
 export function isScheduleSlot(value: unknown): value is ScheduleSlot {
@@ -34,13 +35,15 @@ export function slotForTime(startTime: string): ScheduleSlot {
   if (startTime < "10:00") return "prepAndFreeChoice";
   if (startTime < "11:15") return "dailyActivity";
   if (startTime < "12:15") return "storyOrCircle";
-  return "napTime";
+  if (startTime < "14:15") return "napTime";
+  return "freePlayAndTalk";
 }
 
 type ActivityInput = {
   day: WeekDay;
   slot?: ScheduleSlot;
   name?: string | null;
+  description?: string | null;
   emoji?: string;
   startTime: string;
   durationMinutes?: number;
@@ -64,6 +67,7 @@ export const ScheduleModel = {
         // Older app builds send no slot; their activities still need one.
         slot: input.slot ?? slotForTime(input.startTime),
         name: input.name?.trim() || null,
+        description: input.description?.trim() || null,
         emoji: input.emoji?.trim() || "🌟",
         startTime: input.startTime,
         durationMinutes: input.durationMinutes ?? 30,
@@ -80,6 +84,9 @@ export const ScheduleModel = {
           ...(input.day !== undefined ? { day: input.day } : {}),
           ...(input.slot !== undefined ? { slot: input.slot } : {}),
           ...(input.name !== undefined ? { name: input.name?.trim() || null } : {}),
+          ...(input.description !== undefined
+            ? { description: input.description?.trim() || null }
+            : {}),
           ...(input.emoji !== undefined ? { emoji: input.emoji || "🌟" } : {}),
           ...(input.startTime !== undefined ? { startTime: input.startTime } : {}),
           ...(input.durationMinutes !== undefined
