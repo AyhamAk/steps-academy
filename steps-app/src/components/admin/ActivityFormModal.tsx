@@ -47,7 +47,6 @@ export function ActivityFormModal({
   const { t, isRTL, rtlText } = useTranslation();
   const { sheetPadding, keyboardPadding } = useSheetPadding(28);
   const [slot, setSlot] = useState<ScheduleSlot | null>(null);
-  const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [emoji, setEmoji] = useState("🌟");
   const [hour, setHour] = useState("09");
@@ -60,8 +59,8 @@ export function ActivityFormModal({
     if (!visible) return;
     const [h, m] = (activity?.startTime ?? "09:00").split(":");
     setSlot(activity?.slot ?? null);
-    setName(activity?.name ?? "");
-    setDescription(activity?.description ?? "");
+    // Older rows kept their text in name; it is the description now.
+    setDescription(activity?.description ?? activity?.name ?? "");
     setEmoji(activity?.emoji ?? "🌟");
     setHour(h);
     setMinute(m);
@@ -107,7 +106,7 @@ export function ActivityFormModal({
     onSubmit({
       day,
       slot,
-      name: name.trim() || null,
+      name: null,
       description: description.trim() || null,
       emoji,
       startTime: `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`,
@@ -148,18 +147,6 @@ export function ActivityFormModal({
                 </Touchable>
               ))}
             </View>
-
-            <Text style={[styles.label, rtlText]}>{t.scheduleAdmin.fieldName}</Text>
-            <TextInput
-              value={name}
-              onChangeText={(value) => {
-                setName(value);
-                setError(null);
-              }}
-              placeholder={t.scheduleAdmin.namePlaceholder}
-              placeholderTextColor={Colors.textLight}
-              style={[styles.input, rtlText]}
-            />
 
             <Text style={[styles.label, rtlText]}>{t.scheduleAdmin.fieldDescription}</Text>
             <TextInput

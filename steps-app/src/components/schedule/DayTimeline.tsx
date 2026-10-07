@@ -3,7 +3,13 @@ import { StyleSheet, Text, View, ViewStyle } from "react-native";
 import { Colors } from "../../constants/Colors";
 import { Fonts } from "../../constants/Fonts";
 import { useTranslation } from "../../i18n/useTranslation";
-import { formatTimeRange, ScheduleActivity, WeekDay } from "../../services/scheduleApi";
+import {
+  activityDescription,
+  activityTitle,
+  formatTimeRange,
+  ScheduleActivity,
+  WeekDay,
+} from "../../services/scheduleApi";
 import { ltrIsolate } from "../../utils/bidi";
 import { dayIsOver, toMinutes, todayAcademyDay } from "./scheduleTime";
 
@@ -154,9 +160,9 @@ export function DayTimeline({
               />
             </View>
 
-            {/* What happens, with the slot it belongs to underneath. A slot
-                with nothing more specific — reception — is its own title.
-                The range in the time column already says how long it lasts. */}
+            {/* The slot is the title, the same every day; what happens in it
+                today sits underneath. The range in the time column already
+                says how long it lasts. */}
             <View style={[styles.slotBody, isRTL && styles.rowReverse]}>
               <View style={styles.flex}>
                 <Text
@@ -164,18 +170,11 @@ export function DayTimeline({
                   numberOfLines={2}
                   maxFontSizeMultiplier={1.3}
                 >
-                  {activity.name ?? t.academy.slots[activity.slot]}
+                  {activityTitle(activity, t)}
                 </Text>
-                {activity.name ? (
-                  <Text style={[styles.slotLabel, rtlText]} maxFontSizeMultiplier={1.3}>
-                    {t.academy.slots[activity.slot]}
-                  </Text>
-                ) : null}
-                {activity.description ? (
-                  <Text style={[styles.description, rtlText]} maxFontSizeMultiplier={1.3}>
-                    {activity.description}
-                  </Text>
-                ) : null}
+                <Text style={[styles.description, rtlText]} maxFontSizeMultiplier={1.3}>
+                  {activityDescription(activity, t)}
+                </Text>
               </View>
               {/* Separate node, not appended to the name — a tick concatenated
                   onto an Arabic title lands on the wrong end of it. */}
@@ -262,20 +261,13 @@ const styles = StyleSheet.create({
     writingDirection: "auto",
   },
   nameCurrent: { fontFamily: Fonts.bold },
-  slotLabel: {
-    fontFamily: Fonts.regular,
-    fontSize: 11.5,
-    lineHeight: 16,
-    color: Colors.textLight,
-    marginTop: 1,
-  },
   description: {
     fontFamily: Fonts.regular,
     fontSize: 13,
     lineHeight: 19,
     color: Colors.bark,
     opacity: 0.8,
-    marginTop: 4,
+    marginTop: 2,
     // Admin-entered, like the name: resolves its own direction.
     writingDirection: "auto",
   },

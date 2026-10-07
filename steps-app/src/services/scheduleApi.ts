@@ -48,9 +48,18 @@ export type ScheduleActivity = {
 
 export type ScheduleDay = { day: WeekDay; activities: ScheduleActivity[] };
 
-/** The activity's own name, or its slot's when it has none. */
+/** The slot's name — the same every day, whatever happens in it. */
 export function activityTitle(activity: ScheduleActivity, t: Translations): string {
-  return activity.name ?? t.academy.slots[activity.slot] ?? "";
+  return t.academy.slots[activity.slot] ?? activity.name ?? "";
+}
+
+/**
+ * What happens in the slot today: the academy's own text, or the slot's usual
+ * line when they wrote none. `name` is the older single field, read for rows
+ * written before descriptions existed.
+ */
+export function activityDescription(activity: ScheduleActivity, t: Translations): string {
+  return activity.description ?? activity.name ?? t.academy.slotDescriptions[activity.slot] ?? "";
 }
 
 /** "07:30" plus 90 minutes → "09:00". */

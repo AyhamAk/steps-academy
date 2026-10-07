@@ -80,7 +80,7 @@ export async function contentPage(req: Request, res: Response) {
 
   const scheduleRows = schedule.map((activity) => [
     escapeHtml(activity.day),
-    `${escapeHtml(activity.emoji)} ${escapeHtml(activity.name ?? "")} <span class="muted">${escapeHtml(activity.slot)}</span>`,
+    `${escapeHtml(activity.slot)} <span class="muted">${escapeHtml(activity.description ?? activity.name ?? "")}</span>`,
     escapeHtml(activity.startTime),
     `${activity.durationMinutes} min`,
     `${formStart(`${LIST}/schedule/${activity.id}/delete`, csrf, { inline: true })}${button("Remove", "quiet")}</form>`,
@@ -151,8 +151,7 @@ export async function contentPage(req: Request, res: Response) {
       <div class="grid2">
         ${selectField("day", "Day", WEEK_DAYS.map((day) => ({ value: day, label: day })))}
         ${selectField("slot", "Slot", SCHEDULE_SLOTS.map((slot) => ({ value: slot, label: slot })))}
-        ${textField("name", "Activity", "", { hint: "Optional. Leave empty when the slot is all there is, like reception." })}
-        ${textArea("description", "Description", "", { rows: 2, hint: "Optional. Shown under the title in the app." })}
+        ${textArea("description", "Description", "", { rows: 2, hint: "Optional. Shown under the slot in the app; empty shows the slot's usual line." })}
         ${textField("emoji", "Emoji", "🎨")}
         ${textField("startTime", "Starts", "", { type: "time", required: true })}
         ${textField("durationMinutes", "Minutes", "45", { type: "number" })}
@@ -529,7 +528,6 @@ export async function deleteTip(req: Request, res: Response) {
 export async function createActivity(req: Request, res: Response) {
   const day = String(req.body.day ?? "");
   const slot = String(req.body.slot ?? "");
-  const name = String(req.body.name ?? "").trim();
   const startTime = String(req.body.startTime ?? "").trim();
 
   if (!isWeekDay(day)) return res.redirect(redirectWith(LIST, { err: "Pick a day of the week." }));
@@ -539,7 +537,7 @@ export async function createActivity(req: Request, res: Response) {
   await ScheduleModel.create({
     day,
     slot,
-    name: name || null,
+    name: null,
     description: orNull(req.body.description),
     emoji: String(req.body.emoji ?? "").trim() || undefined,
     startTime,
@@ -547,7 +545,7 @@ export async function createActivity(req: Request, res: Response) {
     accentColor: orNull(req.body.accentColor),
   });
 
-  res.redirect(redirectWith(LIST, { ok: `${name || slot} added to ${day}.` }));
+  res.redirect(redirectWith(LIST, { ok: `${slot} added to ${day}.` }));
 }
 
 export async function deleteActivity(req: Request, res: Response) {
