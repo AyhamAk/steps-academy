@@ -4,7 +4,6 @@ import { useState } from "react";
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { ActivityFormModal } from "../components/admin/ActivityFormModal";
-import { SlotDescriptionsModal } from "../components/admin/SlotDescriptionsModal";
 import AdminHeader from "../components/admin/AdminHeader";
 import IconTile from "../components/ui/IconTile";
 import { EmptyState } from "../components/gallery/EmptyState";
@@ -15,7 +14,6 @@ import { StepsButton } from "../components/ui/StepsButton";
 import { Touchable } from "../components/ui/Touchable";
 import { Colors } from "../constants/Colors";
 import { Fonts } from "../constants/Fonts";
-import { useSlotDescriptions } from "../hooks/useSlotDescriptions";
 import { useTranslation } from "../i18n/useTranslation";
 import {
   ActivityInput,
@@ -25,8 +23,6 @@ import {
   formatTime,
   getWeekSchedule,
   ScheduleActivity,
-  setSlotDescriptions,
-  SlotDescriptions,
   updateActivity,
   WEEK_DAYS,
   WeekDay,
@@ -38,8 +34,6 @@ export default function ScheduleAdminScreen() {
   const [selectedDay, setSelectedDay] = useState<WeekDay>("sun");
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editing, setEditing] = useState<ScheduleActivity | null>(null);
-  const [isDefaultsOpen, setIsDefaultsOpen] = useState(false);
-  const { data: slotDefaults } = useSlotDescriptions();
 
   const { data: days, isError } = useQuery({ queryKey: ["schedule"], queryFn: getWeekSchedule });
   const refresh = () => queryClient.invalidateQueries({ queryKey: ["schedule"] });
@@ -54,16 +48,6 @@ export default function ScheduleAdminScreen() {
     },
     onError: () =>
       Alert.alert(t.scheduleAdmin.saveFailed, t.common.tryAgain, [{ text: t.common.ok }]),
-  });
-
-  const saveDefaults = useMutation({
-    mutationFn: (descriptions: SlotDescriptions) => setSlotDescriptions(descriptions),
-    onSuccess: () => {
-      refresh();
-      setIsDefaultsOpen(false);
-    },
-    onError: () =>
-      Alert.alert(t.scheduleAdmin.defaultsSaveFailed, t.common.tryAgain, [{ text: t.common.ok }]),
   });
 
   const remove = useMutation({
@@ -124,12 +108,6 @@ export default function ScheduleAdminScreen() {
             setIsFormOpen(true);
           }}
           style={styles.addButton}
-        />
-        <StepsButton
-          label={t.scheduleAdmin.editDefaults}
-          variant="outline"
-          onPress={() => setIsDefaultsOpen(true)}
-          style={styles.defaultsButton}
         />
 
         {isError ? (
@@ -210,13 +188,6 @@ export default function ScheduleAdminScreen() {
         }}
         onSubmit={(input) => save.mutate(input)}
       />
-      <SlotDescriptionsModal
-        visible={isDefaultsOpen}
-        saved={slotDefaults}
-        isSaving={saveDefaults.isPending}
-        onClose={() => setIsDefaultsOpen(false)}
-        onSubmit={(descriptions) => saveDefaults.mutate(descriptions)}
-      />
     </Screen>
   );
 }
@@ -248,7 +219,6 @@ const styles = StyleSheet.create({
   dayDotActive: { backgroundColor: Colors.cream },
   dayDotSpacer: { width: 6, height: 6, marginTop: 6 },
   addButton: { marginTop: 12, marginBottom: 4, height: 48, borderRadius: 14 },
-  defaultsButton: { marginBottom: 4, height: 44, borderRadius: 14 },
   list: { paddingTop: 12, paddingBottom: 32, gap: 12 },
   card: {
     backgroundColor: Colors.linen,

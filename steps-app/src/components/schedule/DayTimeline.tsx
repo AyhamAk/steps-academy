@@ -2,7 +2,6 @@ import { StyleSheet, Text, View, ViewStyle } from "react-native";
 
 import { Colors } from "../../constants/Colors";
 import { Fonts } from "../../constants/Fonts";
-import { useSlotDescriptions } from "../../hooks/useSlotDescriptions";
 import { useTranslation } from "../../i18n/useTranslation";
 import {
   activityDescription,
@@ -83,8 +82,7 @@ export function DayTimeline({
   selectedDay: WeekDay;
   nowMinutes: number;
 }) {
-  const { t, isRTL, rtlText, locale } = useTranslation();
-  const { data: slotDefaults } = useSlotDescriptions();
+  const { t, isRTL, rtlText } = useTranslation();
   const today = todayAcademyDay();
 
   // Every activity gets its own dot, including two that start at the same
@@ -175,7 +173,7 @@ export function DayTimeline({
                   {activityTitle(activity, t)}
                 </Text>
                 <Text style={[styles.description, rtlText]} maxFontSizeMultiplier={1.3}>
-                  {activityDescription(activity, t, slotDefaults, locale)}
+                  {activityDescription(activity, t)}
                 </Text>
               </View>
               {/* Separate node, not appended to the name — a tick concatenated
