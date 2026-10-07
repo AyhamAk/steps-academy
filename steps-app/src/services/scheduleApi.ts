@@ -23,8 +23,8 @@ export const SCHEDULE_SLOTS = [
   { slot: "breakfast", startTime: "09:00", durationMinutes: 30 },
   { slot: "prepAndFreeChoice", startTime: "09:30", durationMinutes: 30 },
   { slot: "dailyActivity", startTime: "10:00", durationMinutes: 75 },
-  { slot: "storyOrCircle", startTime: "11:15", durationMinutes: 60 },
-  { slot: "lunch", startTime: "12:15", durationMinutes: 30 },
+  { slot: "lunch", startTime: "11:15", durationMinutes: 20 },
+  { slot: "storyOrCircle", startTime: "11:35", durationMinutes: 40 },
   { slot: "napTime", startTime: "12:15", durationMinutes: 115 },
   { slot: "freePlayAndTalk", startTime: "14:15", durationMinutes: 75 },
 ] as const;

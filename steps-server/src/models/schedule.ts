@@ -18,8 +18,8 @@ export const SCHEDULE_SLOTS: ScheduleSlot[] = [
   "breakfast",
   "prepAndFreeChoice",
   "dailyActivity",
-  "storyOrCircle",
   "lunch",
+  "storyOrCircle",
   "napTime",
   "freePlayAndTalk",
 ];
@@ -28,12 +28,13 @@ export function isScheduleSlot(value: unknown): value is ScheduleSlot {
   return typeof value === "string" && (SCHEDULE_SLOTS as string[]).includes(value);
 }
 
-/** The slot an activity starting at this time most likely belongs to. Lunch is never guessed. */
+/** The slot an activity starting at this time most likely belongs to. */
 export function slotForTime(startTime: string): ScheduleSlot {
   if (startTime < "09:00") return "reception";
   if (startTime < "09:30") return "breakfast";
   if (startTime < "10:00") return "prepAndFreeChoice";
   if (startTime < "11:15") return "dailyActivity";
+  if (startTime < "11:35") return "lunch";
   if (startTime < "12:15") return "storyOrCircle";
   if (startTime < "14:15") return "napTime";
   return "freePlayAndTalk";
