@@ -13,7 +13,13 @@ import { Fonts } from "../../constants/Fonts";
 import { Type } from "../../constants/Typography";
 import { useSheetPadding } from "../../hooks/useLayout";
 import { useTranslation } from "../../i18n/useTranslation";
-import { ActivityInput, ScheduleActivity, WeekDay } from "../../services/scheduleApi";
+import {
+  ActivityInput,
+  SCHEDULE_SLOTS,
+  ScheduleActivity,
+  ScheduleSlot,
+  WeekDay,
+} from "../../services/scheduleApi";
 import { StepsButton } from "../ui/StepsButton";
 import { Touchable } from "../ui/Touchable";
 
@@ -38,8 +44,9 @@ export function ActivityFormModal({
   onClose,
   onSubmit,
 }: ActivityFormModalProps) {
-  const { t, rtlText } = useTranslation();
+  const { t, isRTL, rtlText } = useTranslation();
   const { sheetPadding, keyboardPadding } = useSheetPadding(28);
+  const [slot, setSlot] = useState<ScheduleSlot | null>(null);
   const [name, setName] = useState("");
   const [emoji, setEmoji] = useState("🌟");
   const [hour, setHour] = useState("09");
@@ -51,6 +58,7 @@ export function ActivityFormModal({
   useEffect(() => {
     if (!visible) return;
     const [h, m] = (activity?.startTime ?? "09:00").split(":");
+    setSlot(activity?.slot ?? null);
     setName(activity?.name ?? "");
     setEmoji(activity?.emoji ?? "🌟");
     setHour(h);
@@ -60,9 +68,32 @@ export function ActivityFormModal({
     setError(null);
   }, [visible, activity]);
 
+  /**
+   * Picking a slot for a new activity fills in the academy's usual time for
+   * it. An existing activity keeps its own time — it was set on purpose.
+   */
+  const pickSlot = (next: ScheduleSlot) => {
+    setSlot(next);
+    setError(null);
+    if (activity) return;
+    const defaults = SCHEDULE_SLOTS.find((entry) => entry.slot === next);
+    if (!defaults) return;
+    const [h, m] = defaults.startTime.split(":");
+    setHour(h);
+    setMinute(m);
+    setDuration(defaults.durationMinutes);
+  };
+
+  // A slot's usual length (75, 115…) or an older activity's odd one still
+  // shows as a selected chip rather than leaving none highlighted.
+  const durationChoices = DURATIONS.includes(duration)
+    ? DURATIONS
+    : [...DURATIONS, duration].sort((a, b) => a - b);
+
   const handleSubmit = () => {
-    if (!name.trim()) {
-      setError(t.scheduleAdmin.nameRequired);
+    // The name is optional — "just the slot" is a real case, like reception.
+    if (!slot) {
+      setError(t.scheduleAdmin.slotRequired);
       return;
     }
     const h = Number(hour);
@@ -73,7 +104,8 @@ export function ActivityFormModal({
     }
     onSubmit({
       day,
-      name: name.trim(),
+      slot,
+      name: name.trim() || null,
       emoji,
       startTime: `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`,
       durationMinutes: duration,
@@ -96,6 +128,24 @@ export function ActivityFormModal({
           <Text style={styles.dayHint}>{t.home.weekDays[day]}</Text>
 
           <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+            <Text style={[styles.label, rtlText]}>{t.scheduleAdmin.fieldSlot}</Text>
+            <View style={[styles.pickRow, isRTL && styles.rowReverse]}>
+              {SCHEDULE_SLOTS.map(({ slot: choice }) => (
+                <Touchable
+                  key={choice}
+                  onPress={() => pickSlot(choice)}
+                  accessibilityLabel={t.academy.slots[choice]}
+                  style={[styles.durationTile, slot === choice && styles.durationTileActive]}
+                >
+                  <Text
+                    style={[styles.durationText, slot === choice && styles.durationTextActive]}
+                  >
+                    {t.academy.slots[choice]}
+                  </Text>
+                </Touchable>
+              ))}
+            </View>
+
             <Text style={[styles.label, rtlText]}>{t.scheduleAdmin.fieldName}</Text>
             <TextInput
               value={name}
@@ -155,7 +205,7 @@ export function ActivityFormModal({
 
             <Text style={[styles.label, rtlText]}>{t.scheduleAdmin.fieldDuration}</Text>
             <View style={styles.pickRow}>
-              {DURATIONS.map((minutes) => (
+              {durationChoices.map((minutes) => (
                 <Touchable
                   key={minutes}
                   onPress={() => setDuration(minutes)}
@@ -240,6 +290,7 @@ const styles = StyleSheet.create({
     color: Colors.bark,
   },
   pickRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  rowReverse: { flexDirection: "row-reverse" },
   emojiTile: {
     width: 44,
     height: 44,

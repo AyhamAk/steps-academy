@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 
-import { isWeekDay, ScheduleActivity, ScheduleModel, WEEK_DAYS } from "../models/schedule";
+import { isScheduleSlot, isWeekDay, ScheduleActivity, ScheduleModel, WEEK_DAYS } from "../models/schedule";
 
 function param(req: Request, key: string): string {
   const value = req.params[key];
@@ -14,6 +14,7 @@ function serialize(activity: ScheduleActivity) {
   return {
     id: activity.id,
     day: activity.day,
+    slot: activity.slot,
     name: activity.name,
     emoji: activity.emoji,
     startTime: activity.startTime,
@@ -38,8 +39,13 @@ function validate(body: Record<string, unknown>, requireAll: boolean) {
   if (requireAll || body.day !== undefined) {
     if (!isWeekDay(body.day)) return "day must be one of sun, mon, tue, wed, thu";
   }
-  if (requireAll || body.name !== undefined) {
-    if (typeof body.name !== "string" || !body.name.trim()) return "name is required";
+  // No slot means an older app build; the model picks one from the start time.
+  if (body.slot !== undefined && !isScheduleSlot(body.slot)) {
+    return "slot must be one of reception, breakfast, prepAndFreeChoice, dailyActivity, storyOrCircle, lunch, napTime";
+  }
+  // Optional: an activity with no name of its own shows its slot's name.
+  if (body.name !== undefined && body.name !== null && typeof body.name !== "string") {
+    return "name must be text";
   }
   if (requireAll || body.startTime !== undefined) {
     if (typeof body.startTime !== "string" || !TIME_PATTERN.test(body.startTime)) {

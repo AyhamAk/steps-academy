@@ -37,6 +37,18 @@ enum Program {
   both
 }
 
+/// The parts of a nursery day, in order. The times differ per activity; the
+/// slot says what kind of time it is.
+enum ScheduleSlot {
+  reception
+  breakfast
+  prepAndFreeChoice
+  dailyActivity
+  storyOrCircle
+  lunch
+  napTime
+}
+
 /// The nursery runs Sunday–Thursday; courses may also meet Friday and Saturday.
 enum WeekDay {
   sun
@@ -77,7 +89,11 @@ model AppSetting {
 model ScheduleActivity {
   id              String   @id @default(uuid())
   day             WeekDay
-  name            String
+  /// Which part of the academy day this is. The day always runs the same slots.
+  slot            ScheduleSlot
+  /// What happens in the slot today. Null when the slot is all there is —
+  /// reception, say — and the app shows the slot's own name instead.
+  name            String?
   emoji           String   @default("🌟")
   /// 24-hour "HH:MM" so the day sorts correctly; formatted for display client-side.
   startTime       String

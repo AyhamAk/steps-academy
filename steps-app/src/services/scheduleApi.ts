@@ -11,10 +11,31 @@ export type CourseDay = WeekDay | "fri" | "sat";
 
 export const COURSE_DAYS: CourseDay[] = [...WEEK_DAYS, "fri", "sat"];
 
+/**
+ * The parts of a nursery day, in order. Every activity belongs to one; what
+ * happens inside it changes day to day.
+ *
+ * The times are only the academy's usual day, used to prefill a new activity.
+ * The timetable always shows each activity's own start time and duration.
+ */
+export const SCHEDULE_SLOTS = [
+  { slot: "reception", startTime: "07:30", durationMinutes: 90 },
+  { slot: "breakfast", startTime: "09:00", durationMinutes: 30 },
+  { slot: "prepAndFreeChoice", startTime: "09:30", durationMinutes: 30 },
+  { slot: "dailyActivity", startTime: "10:00", durationMinutes: 75 },
+  { slot: "storyOrCircle", startTime: "11:15", durationMinutes: 60 },
+  { slot: "lunch", startTime: "12:15", durationMinutes: 30 },
+  { slot: "napTime", startTime: "12:15", durationMinutes: 115 },
+] as const;
+
+export type ScheduleSlot = (typeof SCHEDULE_SLOTS)[number]["slot"];
+
 export type ScheduleActivity = {
   id: string;
   day: WeekDay;
-  name: string;
+  slot: ScheduleSlot;
+  /** Null when the slot is all there is — reception, say. */
+  name: string | null;
   emoji: string;
   /** 24-hour "HH:MM" — format for display, don't show raw. */
   startTime: string;
@@ -24,9 +45,30 @@ export type ScheduleActivity = {
 
 export type ScheduleDay = { day: WeekDay; activities: ScheduleActivity[] };
 
+/** The activity's own name, or its slot's when it has none. */
+export function activityTitle(activity: ScheduleActivity, t: Translations): string {
+  return activity.name ?? t.academy.slots[activity.slot] ?? "";
+}
+
+/** "07:30" plus 90 minutes → "09:00". */
+export function endTimeOf(startTime: string, durationMinutes: number): string {
+  const [hour, minute] = startTime.split(":").map(Number);
+  const total = (hour * 60 + minute + durationMinutes) % (24 * 60);
+  return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
+}
+
+/**
+ * "07:30–09:00", 24-hour so a range fits the timeline's narrow time column.
+ * Isolated so it reads left to right inside an Arabic or Hebrew row.
+ */
+export function formatTimeRange(activity: ScheduleActivity): string {
+  return ltrIsolate(`${activity.startTime}–${endTimeOf(activity.startTime, activity.durationMinutes)}`);
+}
+
 export type ActivityInput = {
   day: WeekDay;
-  name: string;
+  slot: ScheduleSlot;
+  name: string | null;
   emoji?: string;
   startTime: string;
   durationMinutes?: number;

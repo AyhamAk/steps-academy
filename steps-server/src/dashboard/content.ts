@@ -10,7 +10,7 @@ import { AnnouncementModel } from "../models/announcement";
 import { EventModel } from "../models/event";
 import { NotificationModel } from "../models/notification";
 import { PhotoModel } from "../models/photo";
-import { ScheduleModel, WEEK_DAYS, isWeekDay } from "../models/schedule";
+import { SCHEDULE_SLOTS, ScheduleModel, WEEK_DAYS, isScheduleSlot, isWeekDay } from "../models/schedule";
 import { SETTING_KEYS, SettingModel } from "../models/setting";
 import { isYoutubeUrl, TipModel } from "../models/tip";
 import { UserModel } from "../models/user";
@@ -80,7 +80,7 @@ export async function contentPage(req: Request, res: Response) {
 
   const scheduleRows = schedule.map((activity) => [
     escapeHtml(activity.day),
-    `${escapeHtml(activity.emoji)} ${escapeHtml(activity.name)}`,
+    `${escapeHtml(activity.emoji)} ${escapeHtml(activity.name ?? "")} <span class="muted">${escapeHtml(activity.slot)}</span>`,
     escapeHtml(activity.startTime),
     `${activity.durationMinutes} min`,
     `${formStart(`${LIST}/schedule/${activity.id}/delete`, csrf, { inline: true })}${button("Remove", "quiet")}</form>`,
@@ -150,7 +150,8 @@ export async function contentPage(req: Request, res: Response) {
        `${formStart(`${LIST}/schedule`, csrf)}
       <div class="grid2">
         ${selectField("day", "Day", WEEK_DAYS.map((day) => ({ value: day, label: day })))}
-        ${textField("name", "Activity", "", { required: true })}
+        ${selectField("slot", "Slot", SCHEDULE_SLOTS.map((slot) => ({ value: slot, label: slot })))}
+        ${textField("name", "Activity", "", { hint: "Optional. Leave empty when the slot is all there is, like reception." })}
         ${textField("emoji", "Emoji", "🎨")}
         ${textField("startTime", "Starts", "", { type: "time", required: true })}
         ${textField("durationMinutes", "Minutes", "45", { type: "number" })}
@@ -526,23 +527,25 @@ export async function deleteTip(req: Request, res: Response) {
 
 export async function createActivity(req: Request, res: Response) {
   const day = String(req.body.day ?? "");
+  const slot = String(req.body.slot ?? "");
   const name = String(req.body.name ?? "").trim();
   const startTime = String(req.body.startTime ?? "").trim();
 
   if (!isWeekDay(day)) return res.redirect(redirectWith(LIST, { err: "Pick a day of the week." }));
-  if (!name) return res.redirect(redirectWith(LIST, { err: "An activity needs a name." }));
+  if (!isScheduleSlot(slot)) return res.redirect(redirectWith(LIST, { err: "Pick a slot." }));
   if (!/^\d{2}:\d{2}$/.test(startTime)) return res.redirect(redirectWith(LIST, { err: "Start time must look like 09:30." }));
 
   await ScheduleModel.create({
     day,
-    name,
+    slot,
+    name: name || null,
     emoji: String(req.body.emoji ?? "").trim() || undefined,
     startTime,
     durationMinutes: Number(req.body.durationMinutes) || undefined,
     accentColor: orNull(req.body.accentColor),
   });
 
-  res.redirect(redirectWith(LIST, { ok: `${name} added to ${day}.` }));
+  res.redirect(redirectWith(LIST, { ok: `${name || slot} added to ${day}.` }));
 }
 
 export async function deleteActivity(req: Request, res: Response) {

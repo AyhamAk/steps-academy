@@ -2,9 +2,9 @@ import { StyleSheet, Text, View, ViewStyle } from "react-native";
 
 import { Colors } from "../../constants/Colors";
 import { Fonts } from "../../constants/Fonts";
-import { Type } from "../../constants/Typography";
 import { useTranslation } from "../../i18n/useTranslation";
-import { formatTimeColumn, ScheduleActivity, WeekDay } from "../../services/scheduleApi";
+import { formatTimeRange, ScheduleActivity, WeekDay } from "../../services/scheduleApi";
+import { ltrIsolate } from "../../utils/bidi";
 import { dayIsOver, toMinutes, todayAcademyDay } from "./scheduleTime";
 
 /** Vertical centre of a dot, measured from the top of its row. */
@@ -117,9 +117,9 @@ export function DayTimeline({
     return styles.railLineThrough;
   };
 
-  const nowLabel = formatTimeColumn(
-    `${String(Math.floor(nowMinutes / 60)).padStart(2, "0")}:${String(nowMinutes % 60).padStart(2, "0")}`,
-    t
+  // 24-hour, like the ranges above and below it.
+  const nowLabel = ltrIsolate(
+    `${String(Math.floor(nowMinutes / 60)).padStart(2, "0")}:${String(nowMinutes % 60).padStart(2, "0")}`
   );
 
   return (
@@ -144,7 +144,7 @@ export function DayTimeline({
               minimumFontScale={0.8}
               maxFontSizeMultiplier={1.3}
             >
-              {formatTimeColumn(activity.startTime, t)}
+              {formatTimeRange(activity)}
             </Text>
 
             <View style={styles.rail}>
@@ -154,17 +154,24 @@ export function DayTimeline({
               />
             </View>
 
-            {/* Name and duration sit at opposite ends of the row rather than
-                stacked at the leading edge, so the line spans the width
-                instead of hugging the rail. */}
+            {/* What happens, with the slot it belongs to underneath. A slot
+                with nothing more specific — reception — is its own title.
+                The range in the time column already says how long it lasts. */}
             <View style={[styles.slotBody, isRTL && styles.rowReverse]}>
-              <Text
-                style={[styles.name, rtlText, styles.flex, isCurrent && styles.nameCurrent]}
-                numberOfLines={2}
-                maxFontSizeMultiplier={1.3}
-              >
-                {activity.name}
-              </Text>
+              <View style={styles.flex}>
+                <Text
+                  style={[styles.name, rtlText, isCurrent && styles.nameCurrent]}
+                  numberOfLines={2}
+                  maxFontSizeMultiplier={1.3}
+                >
+                  {activity.name ?? t.academy.slots[activity.slot]}
+                </Text>
+                {activity.name ? (
+                  <Text style={[styles.slotLabel, rtlText]} maxFontSizeMultiplier={1.3}>
+                    {t.academy.slots[activity.slot]}
+                  </Text>
+                ) : null}
+              </View>
               {/* Separate node, not appended to the name — a tick concatenated
                   onto an Arabic title lands on the wrong end of it. */}
               {isPast ? (
@@ -172,9 +179,6 @@ export function DayTimeline({
                   ✓
                 </Text>
               ) : null}
-              <Text style={styles.duration} maxFontSizeMultiplier={1.4}>
-                {t.home.scheduleDuration(activity.durationMinutes)}
-              </Text>
             </View>
           </View>
         );
@@ -201,8 +205,8 @@ const styles = StyleSheet.create({
   // which is the whole point of leading with them.
   time: {
     width: 78,
-    fontFamily: Fonts.bold,
-    fontSize: 13.5,
+    fontFamily: Fonts.semiBold,
+    fontSize: 12,
     lineHeight: 20,
     color: Colors.bark,
     writingDirection: "ltr",
@@ -238,7 +242,7 @@ const styles = StyleSheet.create({
   slotBody: {
     flex: 1,
     flexDirection: "row",
-    alignItems: "baseline",
+    alignItems: "flex-start",
     gap: 8,
     paddingBottom: 14,
   },
@@ -253,8 +257,14 @@ const styles = StyleSheet.create({
     writingDirection: "auto",
   },
   nameCurrent: { fontFamily: Fonts.bold },
-  doneCheck: { color: Colors.coral, fontSize: 13, fontFamily: Fonts.bold },
-  duration: { ...Type.caption, color: Colors.textLight },
+  slotLabel: {
+    fontFamily: Fonts.regular,
+    fontSize: 11.5,
+    lineHeight: 16,
+    color: Colors.textLight,
+    marginTop: 1,
+  },
+  doneCheck: { color: Colors.coral, fontSize: 13, fontFamily: Fonts.bold, lineHeight: 20 },
   // No alignItems and no padding of its own: the rail has to stretch the
   // full height of the row, exactly as it does on an activity row.
   nowRow: { flexDirection: "row", gap: 10 },

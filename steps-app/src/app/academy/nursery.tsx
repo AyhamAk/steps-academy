@@ -22,6 +22,7 @@ import { CardWash } from "../../components/ui/CardWash";
 import { Fonts } from "../../constants/Fonts";
 import { useTranslation } from "../../i18n/useTranslation";
 import {
+  activityTitle,
   formatTimeColumn,
   getWeekSchedule,
   WEEK_DAYS,
@@ -171,7 +172,7 @@ export default function NurseryScreen() {
                   style={[styles.todayTitle, { textAlign }]}
                   maxFontSizeMultiplier={1.3}
                 >
-                  {upNext ? upNext.name : t.academy.nurseryDayDone}
+                  {upNext ? activityTitle(upNext, t) : t.academy.nurseryDayDone}
                 </Text>
 
                 {upNext ? (

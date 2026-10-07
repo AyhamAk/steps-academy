@@ -17,6 +17,7 @@ import { Fonts } from "../constants/Fonts";
 import { useTranslation } from "../i18n/useTranslation";
 import {
   ActivityInput,
+  activityTitle,
   createActivity,
   deleteActivity,
   formatTime,
@@ -57,7 +58,7 @@ export default function ScheduleAdminScreen() {
   const dayData = days?.find((entry) => entry.day === selectedDay);
 
   const confirmDelete = (activity: ScheduleActivity) =>
-    Alert.alert(t.scheduleAdmin.deleteTitle, t.scheduleAdmin.deleteMessage(activity.name), [
+    Alert.alert(t.scheduleAdmin.deleteTitle, t.scheduleAdmin.deleteMessage(activityTitle(activity, t)), [
       { text: t.common.cancel, style: "cancel" },
       {
         text: t.scheduleAdmin.delete,
@@ -135,7 +136,7 @@ export default function ScheduleAdminScreen() {
                   </IconTile>
                   <View style={styles.flex}>
                     <Text style={[styles.name, rtlText]} numberOfLines={1}>
-                      {activity.name}
+                      {activityTitle(activity, t)}
                     </Text>
                     {/* Separate Text nodes so the Latin time keeps its own
                         direction inside an Arabic line. */}

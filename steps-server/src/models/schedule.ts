@@ -1,9 +1,9 @@
-import { ScheduleActivity as PrismaScheduleActivity, WeekDay } from "@prisma/client";
+import { ScheduleActivity as PrismaScheduleActivity, ScheduleSlot, WeekDay } from "@prisma/client";
 
 import { prisma } from "../lib/prisma";
 
 export type ScheduleActivity = PrismaScheduleActivity;
-export type { WeekDay };
+export type { ScheduleSlot, WeekDay };
 
 /** The nursery week. Courses can also meet on Friday and Saturday. */
 export const WEEK_DAYS: WeekDay[] = ["sun", "mon", "tue", "wed", "thu"];
@@ -12,9 +12,35 @@ export function isWeekDay(value: unknown): value is WeekDay {
   return typeof value === "string" && (WEEK_DAYS as string[]).includes(value);
 }
 
+/** The parts of the academy day, in order. */
+export const SCHEDULE_SLOTS: ScheduleSlot[] = [
+  "reception",
+  "breakfast",
+  "prepAndFreeChoice",
+  "dailyActivity",
+  "storyOrCircle",
+  "lunch",
+  "napTime",
+];
+
+export function isScheduleSlot(value: unknown): value is ScheduleSlot {
+  return typeof value === "string" && (SCHEDULE_SLOTS as string[]).includes(value);
+}
+
+/** The slot an activity starting at this time most likely belongs to. Lunch is never guessed. */
+export function slotForTime(startTime: string): ScheduleSlot {
+  if (startTime < "09:00") return "reception";
+  if (startTime < "09:30") return "breakfast";
+  if (startTime < "10:00") return "prepAndFreeChoice";
+  if (startTime < "11:15") return "dailyActivity";
+  if (startTime < "12:15") return "storyOrCircle";
+  return "napTime";
+}
+
 type ActivityInput = {
   day: WeekDay;
-  name: string;
+  slot?: ScheduleSlot;
+  name?: string | null;
   emoji?: string;
   startTime: string;
   durationMinutes?: number;
@@ -35,7 +61,9 @@ export const ScheduleModel = {
     return prisma.scheduleActivity.create({
       data: {
         day: input.day,
-        name: input.name.trim(),
+        // Older app builds send no slot; their activities still need one.
+        slot: input.slot ?? slotForTime(input.startTime),
+        name: input.name?.trim() || null,
         emoji: input.emoji?.trim() || "🌟",
         startTime: input.startTime,
         durationMinutes: input.durationMinutes ?? 30,
@@ -50,7 +78,8 @@ export const ScheduleModel = {
         where: { id },
         data: {
           ...(input.day !== undefined ? { day: input.day } : {}),
-          ...(input.name !== undefined ? { name: input.name.trim() } : {}),
+          ...(input.slot !== undefined ? { slot: input.slot } : {}),
+          ...(input.name !== undefined ? { name: input.name?.trim() || null } : {}),
           ...(input.emoji !== undefined ? { emoji: input.emoji || "🌟" } : {}),
           ...(input.startTime !== undefined ? { startTime: input.startTime } : {}),
           ...(input.durationMinutes !== undefined
