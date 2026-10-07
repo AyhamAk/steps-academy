@@ -1,4 +1,4 @@
-import { VIEW_SWITCH_PHONES } from "../constants/academy";
+import { VIEW_SWITCH_EMAILS, VIEW_SWITCH_PHONES } from "../constants/academy";
 import { useAuthStore } from "../store/authStore";
 
 /** Whether to show the admin UI: an admin, unless they're viewing as a parent. */
@@ -10,6 +10,8 @@ export function useIsAdmin(): boolean {
 export function useCanSwitchView(): boolean {
   return useAuthStore(
     (state) =>
-      state.user?.role === "admin" && VIEW_SWITCH_PHONES.includes(state.user.phone ?? "")
+      state.user?.role === "admin" &&
+      (VIEW_SWITCH_PHONES.includes(state.user.phone ?? "") ||
+        VIEW_SWITCH_EMAILS.includes(state.user.email?.toLowerCase() ?? ""))
   );
 }

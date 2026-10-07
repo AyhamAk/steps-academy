@@ -25,3 +25,6 @@ export const STORE_LINKS = {
 // families see: the owner, the academy manager and the manager's helper. The
 // server signs the same three numbers in as managers.
 export const VIEW_SWITCH_PHONES = ["+972504315245", "+972506922239", "+972586589137"];
+// Manager accounts with no phone on them that get the toggle too: Nagam signs
+// in by email as well as by number.
+export const VIEW_SWITCH_EMAILS = ["nagam@steps-academy.com"];
