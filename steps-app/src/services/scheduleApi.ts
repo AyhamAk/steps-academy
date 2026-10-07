@@ -1,4 +1,5 @@
 import { Translations } from "../i18n/translations";
+import { Locale } from "../store/localeStore";
 import { ltrIsolate, NBSP } from "../utils/bidi";
 import { api } from "./api";
 
@@ -53,13 +54,42 @@ export function activityTitle(activity: ScheduleActivity, t: Translations): stri
   return t.academy.slots[activity.slot] ?? activity.name ?? "";
 }
 
+/** The academy's own default line per slot and language, set in the admin app. */
+export type SlotDescriptions = Partial<Record<ScheduleSlot, Partial<Record<Locale, string>>>>;
+
 /**
- * What happens in the slot today: the academy's own text, or the slot's usual
- * line when they wrote none. `name` is the older single field, read for rows
- * written before descriptions existed.
+ * What happens in the slot today: the academy's text for that day, else the
+ * academy's default for the slot, else the line built into the app. `name` is
+ * the older single field, read for rows written before descriptions existed.
  */
-export function activityDescription(activity: ScheduleActivity, t: Translations): string {
-  return activity.description ?? activity.name ?? t.academy.slotDescriptions[activity.slot] ?? "";
+export function activityDescription(
+  activity: ScheduleActivity,
+  t: Translations,
+  defaults?: SlotDescriptions,
+  locale?: Locale
+): string {
+  return (
+    activity.description ??
+    activity.name ??
+    (locale ? defaults?.[activity.slot]?.[locale] : undefined) ??
+    t.academy.slotDescriptions[activity.slot] ??
+    ""
+  );
+}
+
+export async function getSlotDescriptions() {
+  const { data } = await api.get<{ slotDescriptions: SlotDescriptions }>(
+    "/api/schedule/slot-descriptions"
+  );
+  return data.slotDescriptions;
+}
+
+export async function setSlotDescriptions(slotDescriptions: SlotDescriptions) {
+  const { data } = await api.put<{ slotDescriptions: SlotDescriptions }>(
+    "/api/schedule/slot-descriptions",
+    { slotDescriptions }
+  );
+  return data.slotDescriptions;
 }
 
 /** "07:30" plus 90 minutes → "09:00". */

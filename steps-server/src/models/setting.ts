@@ -3,6 +3,8 @@ import { prisma } from "../lib/prisma";
 /** Academy-wide settings. Keys are namespaced so this stays readable as it grows. */
 export const SETTING_KEYS = {
   galleryQuote: "gallery.quote",
+  /** JSON: { [slot]: { ar?, en?, he? } } — the nursery's default line per slot. */
+  scheduleSlotDescriptions: "schedule.slotDescriptions",
 } as const;
 
 export const SettingModel = {

@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 
 import { isScheduleSlot, isWeekDay, ScheduleActivity, ScheduleModel, WEEK_DAYS } from "../models/schedule";
+import { SETTING_KEYS, SettingModel } from "../models/setting";
 
 function param(req: Request, key: string): string {
   const value = req.params[key];
@@ -87,4 +88,60 @@ export async function deleteActivity(req: Request, res: Response) {
   const removed = await ScheduleModel.remove(param(req, "activityId"));
   if (!removed) return res.status(404).json({ message: "Activity not found" });
   res.json({ message: "Activity deleted" });
+}
+
+const SLOT_LANGUAGES = ["ar", "en", "he"] as const;
+const MAX_SLOT_DESCRIPTION = 300;
+
+type SlotDescriptions = Record<string, Partial<Record<(typeof SLOT_LANGUAGES)[number], string>>>;
+
+async function readSlotDescriptions(): Promise<SlotDescriptions> {
+  const raw = await SettingModel.get(SETTING_KEYS.scheduleSlotDescriptions);
+  if (!raw) return {};
+  try {
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * The academy's own default line under each slot, per language. Anything not
+ * set here falls back to the line built into the app.
+ */
+export async function getSlotDescriptions(_req: Request, res: Response) {
+  res.json({ slotDescriptions: await readSlotDescriptions() });
+}
+
+/** Replaces the whole set. Blank entries are dropped, so clearing a field restores the app's line. */
+export async function setSlotDescriptions(req: Request, res: Response) {
+  const body = req.body?.slotDescriptions;
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return res.status(400).json({ message: "slotDescriptions must be an object" });
+  }
+
+  const clean: SlotDescriptions = {};
+  for (const [slot, texts] of Object.entries(body as Record<string, unknown>)) {
+    if (!isScheduleSlot(slot)) return res.status(400).json({ message: `unknown slot: ${slot}` });
+    if (!texts || typeof texts !== "object" || Array.isArray(texts)) {
+      return res.status(400).json({ message: `${slot} must be an object of ar, en, he` });
+    }
+    for (const [language, value] of Object.entries(texts as Record<string, unknown>)) {
+      if (!(SLOT_LANGUAGES as readonly string[]).includes(language)) {
+        return res.status(400).json({ message: `unknown language: ${language}` });
+      }
+      if (value === null || value === undefined) continue;
+      if (typeof value !== "string") return res.status(400).json({ message: "descriptions must be text" });
+      const trimmed = value.trim();
+      if (trimmed.length > MAX_SLOT_DESCRIPTION) {
+        return res.status(400).json({ message: `descriptions must be ${MAX_SLOT_DESCRIPTION} characters or fewer` });
+      }
+      if (trimmed) (clean[slot] ??= {})[language as (typeof SLOT_LANGUAGES)[number]] = trimmed;
+    }
+  }
+
+  const hasAny = Object.keys(clean).length > 0;
+  await SettingModel.set(SETTING_KEYS.scheduleSlotDescriptions, hasAny ? JSON.stringify(clean) : null);
+  res.json({ slotDescriptions: clean });
 }
