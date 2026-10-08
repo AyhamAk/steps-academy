@@ -20,11 +20,3 @@ export const STORE_LINKS = {
   // Matches `ascAppId` in eas.json.
   ios: "https://apps.apple.com/app/id6806549602",
 };
-
-// Manager accounts that get the manager/parent toggle on Home, to see what
-// families see: the owner, the academy manager and the manager's helper. The
-// server signs the same three numbers in as managers.
-export const VIEW_SWITCH_PHONES = ["+972504315245", "+972506922239", "+972586589137"];
-// Manager accounts with no phone on them that get the toggle too: Nagam signs
-// in by email as well as by number.
-export const VIEW_SWITCH_EMAILS = ["nagam@steps-academy.com"];

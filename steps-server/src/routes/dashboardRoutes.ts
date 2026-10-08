@@ -31,9 +31,7 @@ import {
   bulkCreateStudents,
   createStudent,
   deleteStudent,
-  issueInvite,
   linkGuardian,
-  revokeInvite,
   studentDeletePage,
   studentDetailPage,
   studentsPage,
@@ -88,8 +86,6 @@ router.get("/students/:studentId/delete", studentDeletePage);
 router.post("/students/:studentId/edit", requireCsrf, updateStudent);
 router.post("/students/:studentId/link", requireCsrf, linkGuardian);
 router.post("/students/:studentId/unlink", requireCsrf, unlinkGuardian);
-router.post("/students/:studentId/codes", requireCsrf, issueInvite);
-router.post("/students/:studentId/codes/:codeId/revoke", requireCsrf, revokeInvite);
 router.post("/students/:studentId/delete", requireCsrf, deleteStudent);
 
 // -- courses

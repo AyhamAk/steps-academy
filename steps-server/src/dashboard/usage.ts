@@ -41,7 +41,6 @@ export async function usagePage(req: Request, res: Response) {
       dailyActives,
       screens,
       tabs,
-      inviteAttempts,
       onboardingSteps,
       registrations,
       courseFunnel,
@@ -120,10 +119,6 @@ export async function usagePage(req: Request, res: Response) {
         `select props->>'to_tab' tab, count(*)::int n from "AnalyticsEvent"
          where name = 'tab_switch' group by 1 order by n desc limit 8`
       ),
-      q<{ success: string; n: number }>(
-        `select props->>'success' success, count(*)::int n from "AnalyticsEvent"
-         where name = 'invite_code_entered' group by 1`
-      ),
       q<{ step: string; n: number }>(
         `select props->>'step' step, count(*)::int n from "AnalyticsEvent"
          where name = 'onboarding_step_completed' group by 1`
@@ -187,8 +182,6 @@ export async function usagePage(req: Request, res: Response) {
           : "no activity yet"
         : `${weekNow >= weekBefore ? "+" : ""}${pct(weekNow - weekBefore, weekBefore)}% vs last week`;
 
-    const inviteOk = Number(inviteAttempts.find((r) => r.success === "true")?.n ?? 0);
-    const inviteFail = Number(inviteAttempts.find((r) => r.success === "false")?.n ?? 0);
     const stepCount = (name: string) =>
       Number(onboardingSteps.find((r) => r.step === name)?.n ?? 0);
 
@@ -245,12 +238,10 @@ export async function usagePage(req: Request, res: Response) {
     <div>
       ${section("Getting started", `<div class="card"><div class="card-pad">
         ${funnel([
-          { label: "Invite code accepted", value: inviteOk },
           { label: "Details completed", value: stepCount("details") },
           { label: "Consent given", value: stepCount("consent") },
           { label: "Account created", value: Number(registrations[0]?.n ?? 0) },
         ])}
-        ${inviteFail > 0 ? `<p class="field-hint">${inviteFail} invite code${inviteFail === 1 ? "" : "s"} rejected.</p>` : ""}
       </div></div>`)}
     </div>
     <div>

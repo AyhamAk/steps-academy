@@ -1,7 +1,6 @@
 import { Request, Response } from "express";
 
 import { csrfToken } from "../middleware/dashboardAuth";
-import { formatCode, InviteModel, inviteStatus } from "../models/invite";
 import { DuplicateNationalIdError, StudentModel } from "../models/student";
 import { UserModel } from "../models/user";
 import { parseFamilyInput } from "../utils/studentInput";
@@ -17,7 +16,6 @@ import {
   selectField,
   drawer,
   section,
-  shortDate,
   statCard,
   table,
   tableCard,
@@ -128,9 +126,8 @@ export async function studentDetailPage(req: Request, res: Response) {
   const csrf = csrfToken(req.userId!);
   const base = `${LIST}/${student.id}`;
 
-  const [guardians, codes, parents] = await Promise.all([
+  const [guardians, parents] = await Promise.all([
     StudentModel.listGuardians(student.id),
-    InviteModel.listForStudent(student.id),
     UserModel.listAllWithChildren({ limit: 500 }),
   ]);
 
@@ -145,19 +142,6 @@ export async function studentDetailPage(req: Request, res: Response) {
       ${button("Unlink", "quiet")}
      </form>`,
   ]);
-
-  const codeRows = codes.map((code) => {
-    const status = inviteStatus(code);
-    return [
-      `<code>${escapeHtml(formatCode(code.code))}</code>`,
-      `<span class="pill pill-${status === "active" ? "approved" : "rejected"}">${escapeHtml(status)}</span>`,
-      `${code.useCount}/${code.maxUses}`,
-      escapeHtml(code.expiresAt ? shortDate(code.expiresAt) : "never"),
-      status === "active"
-        ? `${formStart(`${base}/codes/${code.id}/revoke`, csrf, { inline: true })}${button("Revoke", "quiet")}</form>`
-        : "",
-    ];
-  });
 
   const body = `
   <div class="cols">
@@ -174,7 +158,7 @@ export async function studentDetailPage(req: Request, res: Response) {
 
       ${section("Danger zone", `<div class="card"><div class="card-pad">
         <p class="sub">Removing a child takes their photo tags, album attendance,
-           course places and invite codes with them. The photographs themselves stay.</p>
+           and course places with them. The photographs themselves stay.</p>
         ${linkButton(`${base}/delete`, "Remove from roster", "danger")}
       </div></div>`)}
     </div>
@@ -195,18 +179,6 @@ export async function studentDetailPage(req: Request, res: Response) {
                </form>`
             : `<p class="field-hint">Every account is already linked.</p>`
         }
-      </div></div>`)}
-
-      ${section("Invite codes", `<div class="card"><div class="card-pad">
-        <p class="sub">A code lets one parent sign up and links them to this child automatically.</p>
-        ${table(["Code", "Status", "Used", "Expires", ""], codeRows)}
-        ${formStart(`${base}/codes`, csrf)}
-          <div class="grid2">
-            ${textField("maxUses", "Maximum uses", "2", { type: "number" })}
-            ${textField("expiresInDays", "Expires in (days)", "30", { type: "number", hint: "Blank never expires." })}
-          </div>
-          ${button("Issue a new code")}
-        </form>
       </div></div>`)}
     </div>
   </div>`;
@@ -229,10 +201,7 @@ export async function studentDeletePage(req: Request, res: Response) {
   if (!student) return res.status(404).type("html").send(notFound());
 
   const csrf = csrfToken(req.userId!);
-  const [guardians, codes] = await Promise.all([
-    StudentModel.listGuardians(student.id),
-    InviteModel.listForStudent(student.id),
-  ]);
+  const guardians = await StudentModel.listGuardians(student.id);
 
   const body = `
   ${banner("This cannot be undone.", "danger")}
@@ -242,7 +211,6 @@ export async function studentDeletePage(req: Request, res: Response) {
       <li>their link to ${guardians.length} guardian${guardians.length === 1 ? "" : "s"} — those accounts lose access to these photos</li>
       <li>every photo tag naming them, so they stop appearing in their parents' gallery</li>
       <li>their place in any course, and their attendance on any album</li>
-      <li>${codes.length} invite code${codes.length === 1 ? "" : "s"} issued for them</li>
     </ul>
     <p class="sub">The photographs stay in the albums. Only the tags linking them to this child go.</p>
     ${formStart(`${LIST}/${student.id}/delete`, csrf)}
@@ -408,27 +376,6 @@ export async function unlinkGuardian(req: Request, res: Response) {
   res.redirect(
     redirectWith(`${LIST}/${studentId}`, { ok: `${parent?.name ?? "That account"} no longer sees these photos.` }),
   );
-}
-
-export async function issueInvite(req: Request, res: Response) {
-  const studentId = String(req.params.studentId);
-  const maxUses = Number(req.body.maxUses) || 2;
-  const days = String(req.body.expiresInDays ?? "").trim();
-
-  const invite = await InviteModel.create({
-    studentId,
-    createdBy: req.userId!,
-    maxUses,
-    expiresInDays: days ? Number(days) : null,
-  });
-
-  res.redirect(redirectWith(`${LIST}/${studentId}`, { ok: `New code: ${formatCode(invite.code)}` }));
-}
-
-export async function revokeInvite(req: Request, res: Response) {
-  const studentId = String(req.params.studentId);
-  await InviteModel.revoke(String(req.params.codeId));
-  res.redirect(redirectWith(`${LIST}/${studentId}`, { ok: "Code revoked." }));
 }
 
 export async function deleteStudent(req: Request, res: Response) {

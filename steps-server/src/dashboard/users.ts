@@ -166,7 +166,6 @@ export async function userDetailPage(req: Request, res: Response) {
         <p class="sub">Created ${escapeHtml(owned.events)} album${owned.events === 1 ? "" : "s"},
            ${escapeHtml(owned.photos)} photo${owned.photos === 1 ? "" : "s"},
            ${escapeHtml(owned.announcements)} announcement${owned.announcements === 1 ? "" : "s"},
-           ${escapeHtml(owned.invites)} invite code${owned.invites === 1 ? "" : "s"},
            ${escapeHtml(owned.tips)} tip${owned.tips === 1 ? "" : "s"}.</p>
         ${linkButton(`${base}/delete`, "Delete this account", "danger")}
       </div></div>`)}
@@ -217,7 +216,7 @@ export async function userDeletePage(req: Request, res: Response) {
 
   const goesAway = [
     `their link to ${children.length} child${children.length === 1 ? "" : "ren"} (the ${children.length === 1 ? "child stays" : "children stay"} on the roster)`,
-    "their notifications and invite redemptions",
+    "their notifications",
     "their analytics history",
   ];
   const staysBehind = [
