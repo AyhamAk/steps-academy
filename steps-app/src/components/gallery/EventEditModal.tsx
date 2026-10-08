@@ -21,6 +21,7 @@ import {
   updateEventAttendees,
 } from "../../services/galleryApi";
 import { Student } from "../../services/studentsApi";
+import { normalizeIsoDate } from "../../utils/date";
 import { StepsButton } from "../ui/StepsButton";
 import { Touchable } from "../ui/Touchable";
 import { AttendeePicker } from "./AttendeePicker";
@@ -78,10 +79,15 @@ export function EventEditModal({
       setError(t.gallery.nameAndDateRequired);
       return;
     }
+    const isoDate = normalizeIsoDate(date);
+    if (!isoDate) {
+      setError(t.gallery.invalidDate);
+      return;
+    }
     setIsSaving(true);
     setError(null);
     try {
-      let saved = await updateEvent(event.id, { name: name.trim(), date: date.trim(), program });
+      let saved = await updateEvent(event.id, { name: name.trim(), date: isoDate, program });
       if (attendeesChanged) {
         saved = await updateEventAttendees(event.id, attendeeIds);
       }

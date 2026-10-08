@@ -15,7 +15,7 @@ import { useSheetPadding } from "../../hooks/useLayout";
 import { useTranslation } from "../../i18n/useTranslation";
 import { createEvent, GalleryEvent, Program } from "../../services/galleryApi";
 import { Student } from "../../services/studentsApi";
-import { formatIsoDate } from "../../utils/date";
+import { formatIsoDate, normalizeIsoDate } from "../../utils/date";
 import { StepsButton } from "../ui/StepsButton";
 import { Touchable } from "../ui/Touchable";
 import { AttendeePicker } from "./AttendeePicker";
@@ -72,6 +72,11 @@ export function EventPickerModal({
       setError(t.gallery.eventNameDateRequired);
       return;
     }
+    const isoDate = normalizeIsoDate(date);
+    if (!isoDate) {
+      setError(t.gallery.invalidDate);
+      return;
+    }
     if (!program) {
       setError(t.gallery.programRequired);
       return;
@@ -81,7 +86,7 @@ export function EventPickerModal({
     try {
       const event = await createEvent({
         name: name.trim(),
-        date: date.trim(),
+        date: isoDate,
         attendeeIds,
         program,
       });

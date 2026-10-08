@@ -262,7 +262,9 @@ export default function HomeScreen() {
   const { salutationKey, emoji } = getTimeOfDayGreeting();
   const salutation = t.home[salutationKey];
   const firstName = getFirstName(user?.name);
-  const daysAway = nextEvent ? getDaysAway(parseIsoDate(nextEvent.date), t) : null;
+  const nextEventDate = nextEvent ? parseIsoDate(nextEvent.date) : null;
+  const daysAway =
+    nextEventDate && !Number.isNaN(nextEventDate.getTime()) ? getDaysAway(nextEventDate, t) : null;
   const greetingComma = isRTL ? "،" : ",";
   const compactGreeting = firstName ? `${salutation}${greetingComma} ${firstName}` : t.home.welcomeBack;
 

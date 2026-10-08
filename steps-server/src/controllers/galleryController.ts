@@ -11,6 +11,7 @@ import { PhotoTagModel } from "../models/photoTag";
 import { SETTING_KEYS, SettingModel } from "../models/setting";
 import { StudentModel } from "../models/student";
 import { UserModel } from "../models/user";
+import { normalizeIsoDate } from "../utils/date";
 
 function param(req: Request, key: string): string {
   const value = req.params[key];
@@ -89,6 +90,10 @@ export async function createEvent(req: Request, res: Response) {
   if (!name || !date) {
     return res.status(400).json({ message: "name and date are required" });
   }
+  const isoDate = typeof date === "string" ? normalizeIsoDate(date) : null;
+  if (!isoDate) {
+    return res.status(400).json({ message: "date must be an ISO date (YYYY-MM-DD)" });
+  }
   // Optional: apps installed before programs existed never send it, and their
   // albums fall back to "both" so they still show everywhere.
   if (program !== undefined && !isProgram(program)) {
@@ -108,7 +113,7 @@ export async function createEvent(req: Request, res: Response) {
 
   const event = await EventModel.create({
     name,
-    date,
+    date: isoDate,
     attendeeIds: students.map((student) => student.id),
     createdBy: req.userId!,
     ...(program !== undefined ? { program } : {}),
@@ -175,7 +180,8 @@ export async function updateEvent(req: Request, res: Response) {
     return res.status(400).json({ message: "name must be 100 characters or fewer" });
   }
   // Same shape the app sends on create, and what the date index sorts on.
-  if (date !== undefined && (typeof date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(date))) {
+  const isoDate = typeof date === "string" ? normalizeIsoDate(date) : null;
+  if (date !== undefined && !isoDate) {
     return res.status(400).json({ message: "date must be an ISO date (YYYY-MM-DD)" });
   }
   if (program !== undefined && !isProgram(program)) {
@@ -187,7 +193,7 @@ export async function updateEvent(req: Request, res: Response) {
 
   const event = await EventModel.updateDetails(param(req, "eventId"), {
     ...(typeof name === "string" ? { name: name.trim() } : {}),
-    ...(typeof date === "string" ? { date } : {}),
+    ...(isoDate ? { date: isoDate } : {}),
     ...(program !== undefined ? { program } : {}),
   });
   if (!event) {
