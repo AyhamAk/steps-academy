@@ -24,6 +24,20 @@ function pagination(req: Request): { limit: number; offset: number } {
   return { limit, offset };
 }
 
+/**
+ * One album's photos. The app never sends a limit here and has no "load more",
+ * so the 50-photo default hid everything after the 50th photo of a big album -
+ * it looked like new uploads were being removed. Without a limit, return the
+ * whole album (bounded); an explicit limit still pages as before.
+ */
+const ALBUM_PHOTO_CAP = 1000;
+function albumPagination(req: Request): { limit: number; offset: number } {
+  if (req.query.limit === undefined) {
+    return { limit: ALBUM_PHOTO_CAP, offset: Math.max(Number(req.query.offset) || 0, 0) };
+  }
+  return pagination(req);
+}
+
 type TagShape = { id: string; studentId: string; student: { id: string; name: string } };
 
 /** Every photo read goes through a signed URL — nothing in R2 is public. */
@@ -362,7 +376,7 @@ export async function listEventPhotos(req: Request, res: Response) {
     return res.status(404).json({ message: "Event not found" });
   }
 
-  const { limit, offset } = pagination(req);
+  const { limit, offset } = albumPagination(req);
   const rawPhotos = await PhotoModel.listByEvent(event.id, limit, offset);
   const tags = await PhotoTagModel.listByPhotoIds(rawPhotos.map((photo) => photo.id));
   const photos = await Promise.all(
@@ -478,7 +492,7 @@ export async function myEventGallery(req: Request, res: Response) {
     return res.json({ event: serializeEvent(event), photos: [] });
   }
 
-  const { limit, offset } = pagination(req);
+  const { limit, offset } = albumPagination(req);
   const rawPhotos = await PhotoModel.listForStudentsInEvent(event.id, studentIds, limit, offset);
   const photos = await Promise.all(
     rawPhotos.map((photo) => serializePhotoWithTags(photo, photo.tags))
