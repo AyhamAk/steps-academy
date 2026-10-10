@@ -13,11 +13,16 @@ export function todayAcademyDay(): WeekDay {
   return WEEK_DAYS[new Date().getDay()] ?? "sun";
 }
 
-/** Calendar date for each academy day in the week containing today. */
+/**
+ * Calendar date for each academy day in the current academy week. Once the
+ * week ends (Friday and Saturday) that is the coming week, which is the one
+ * the manager is preparing and parents are looking ahead to.
+ */
 export function datesForThisWeek(): Record<WeekDay, number> {
   const now = new Date();
+  const weekIsOver = now.getDay() >= 5;
   const sunday = new Date(now);
-  sunday.setDate(now.getDate() - now.getDay());
+  sunday.setDate(now.getDate() - now.getDay() + (weekIsOver ? 7 : 0));
 
   const dates = {} as Record<WeekDay, number>;
   WEEK_DAYS.forEach((day, index) => {
