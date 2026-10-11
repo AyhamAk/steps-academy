@@ -142,6 +142,10 @@ export function FullscreenPhotoViewer({
           showsHorizontalScrollIndicator={false}
           scrollEnabled={!isZoomed}
           onMomentumScrollEnd={handleMomentumEnd}
+          // Starts on the tapped photo instead of scrolling there after the
+          // first frame, which could land on photo 1. onLayout stays as the
+          // fallback where contentOffset isn't honoured.
+          contentOffset={{ x: initialIndex * width, y: 0 }}
           onLayout={() => {
             if (didInitialScroll.current) return;
             didInitialScroll.current = true;

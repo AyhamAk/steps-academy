@@ -166,13 +166,18 @@ export default function EventGalleryScreen() {
         </View>
       </ScreenFadeIn>
 
-      <FullscreenPhotoViewer
-        albumId={eventId as string}
-        photos={activeIndex === null ? null : photos}
-        initialIndex={activeIndex ?? 0}
-        childIds={childIds}
-        onClose={() => setActiveIndex(null)}
-      />
+      {/* Mounted per open, so every tap starts the viewer on that photo —
+          kept mounted, it remembered the first photo it was opened on. */}
+      {activeIndex !== null ? (
+        <FullscreenPhotoViewer
+          key={activeIndex}
+          albumId={eventId as string}
+          photos={photos}
+          initialIndex={activeIndex}
+          childIds={childIds}
+          onClose={() => setActiveIndex(null)}
+        />
+      ) : null}
     </Screen>
   );
 }
