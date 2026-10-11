@@ -8,6 +8,7 @@ import { DayTimeline } from "../../components/schedule/DayTimeline";
 import {
   minutesNow,
   toMinutes,
+  currentWeekStart,
   todayAcademyDay,
 } from "../../components/schedule/scheduleTime";
 import { WeekDaySelector } from "../../components/schedule/WeekDaySelector";
@@ -41,6 +42,7 @@ import { AGE_BANDS } from "../../utils/ageBand";
 export default function NurseryScreen() {
   const { t, isRTL } = useTranslation();
   const today = todayAcademyDay();
+  const weekStart = currentWeekStart();
   const [selectedDay, setSelectedDay] = useState<WeekDay>(today);
   const [tab, setTab] = useState<0 | 1>(0);
 
@@ -58,8 +60,8 @@ export default function NurseryScreen() {
     isError,
     refetch,
   } = useQuery({
-    queryKey: ["schedule"],
-    queryFn: getWeekSchedule,
+    queryKey: ["schedule", weekStart],
+    queryFn: () => getWeekSchedule(weekStart),
   });
 
   // Same key as the Tips screen, so the card and the pillar show one tip.

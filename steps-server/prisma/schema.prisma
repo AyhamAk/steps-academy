@@ -102,9 +102,42 @@ model ScheduleActivity {
   /// A line or two on what happens in this slot today, under the title.
   description     String?
   accentColor     String?
+  /// The Sunday ("YYYY-MM-DD") of the week this row belongs to. Null rows are
+  /// the default week, shown until some week is edited.
+  weekStart       String?
   createdAt       DateTime @default(now())
 
   @@index([day])
+  @@index([weekStart])
+}
+
+/// A saved week, applied to any other week in one go. Shared by all admins.
+model WeekTemplate {
+  id              String   @id @default(uuid())
+  name            String
+  /// { sun: [...], mon: [...], ... } — copies of the activities, no ids.
+  days            Json
+  /// The week it was saved from.
+  sourceWeekStart String
+  /// Plain id rather than a relation, so a template never blocks deleting an account.
+  createdBy       String
+  createdAt       DateTime @default(now())
+}
+
+/// A template applied to a week. Kept after the template is deleted.
+model TemplateApplication {
+  id         String   @id @default(uuid())
+  templateId String
+  weekStart  String
+  appliedAt  DateTime @default(now())
+
+  @@index([weekStart])
+}
+
+/// A week where an admin closed the "used last year" suggestion.
+model ScheduleSuggestionDismissal {
+  weekStart   String   @id
+  dismissedAt DateTime @default(now())
 }
 
 model User {

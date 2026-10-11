@@ -46,6 +46,7 @@ import { useReduceMotionSetting } from "../../hooks/useReduceMotionSetting";
 import { Translations } from "../../i18n/translations";
 import { useTranslation } from "../../i18n/useTranslation";
 import { listCourses } from "../../services/coursesApi";
+import { currentWeekStart } from "../../components/schedule/scheduleTime";
 import { getWeekSchedule, WEEK_DAYS } from "../../services/scheduleApi";
 import { adminOverview } from "../../services/studentsApi";
 import {
@@ -170,7 +171,11 @@ export default function HomeScreen() {
   // reads their status: it needs to know when *everything* has landed before it
   // drops the skeleton, otherwise sections pop in one at a time.
   const coursesQuery = useQuery({ queryKey: ["courses"], queryFn: listCourses });
-  const scheduleQuery = useQuery({ queryKey: ["schedule"], queryFn: getWeekSchedule });
+  const weekStart = currentWeekStart();
+  const scheduleQuery = useQuery({
+    queryKey: ["schedule", weekStart],
+    queryFn: () => getWeekSchedule(weekStart),
+  });
   const adminOverviewQuery = useQuery({
     queryKey: ["admin", "overview"],
     queryFn: adminOverview,

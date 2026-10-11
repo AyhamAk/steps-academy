@@ -5,6 +5,8 @@ import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, View } from "re
 
 import { ActivityFormModal } from "../components/admin/ActivityFormModal";
 import AdminHeader from "../components/admin/AdminHeader";
+import { ScheduleTemplatesSheet } from "../components/admin/ScheduleTemplatesSheet";
+import { addWeeks, currentWeekStart, formatWeekRange } from "../components/schedule/scheduleTime";
 import IconTile from "../components/ui/IconTile";
 import { EmptyState } from "../components/gallery/EmptyState";
 import { Screen } from "../components/Screen";
@@ -18,9 +20,12 @@ import { useTranslation } from "../i18n/useTranslation";
 import {
   ActivityInput,
   activityTitle,
+  applyWeekTemplate,
   createActivity,
   deleteActivity,
+  dismissTemplateSuggestion,
   formatTime,
+  getTemplateSuggestion,
   getWeekSchedule,
   ScheduleActivity,
   updateActivity,
@@ -32,15 +37,53 @@ export default function ScheduleAdminScreen() {
   const { t, isRTL, rtlText } = useTranslation();
   const queryClient = useQueryClient();
   const [selectedDay, setSelectedDay] = useState<WeekDay>("sun");
+  // Every load and edit on this screen is about this one dated week.
+  const [weekStart, setWeekStart] = useState(currentWeekStart);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editing, setEditing] = useState<ScheduleActivity | null>(null);
+  const [templatesOpen, setTemplatesOpen] = useState(false);
 
-  const { data: days, isError } = useQuery({ queryKey: ["schedule"], queryFn: getWeekSchedule });
-  const refresh = () => queryClient.invalidateQueries({ queryKey: ["schedule"] });
+  const { data: days, isError } = useQuery({
+    queryKey: ["schedule", weekStart],
+    queryFn: () => getWeekSchedule(weekStart),
+  });
+  const { data: suggestion } = useQuery({
+    queryKey: ["schedule-suggestion", weekStart],
+    queryFn: () => getTemplateSuggestion(weekStart),
+  });
+  // Every week, not only this one: an edit carries forward into later weeks
+  // that have none of their own, and parents' screens share these keys.
+  const refresh = () => {
+    queryClient.invalidateQueries({ queryKey: ["schedule"] });
+    queryClient.invalidateQueries({ queryKey: ["schedule-suggestion"] });
+  };
+
+  const apply = useMutation({
+    mutationFn: (templateId: string) => applyWeekTemplate(templateId, weekStart),
+    onSuccess: () => {
+      refresh();
+      setTemplatesOpen(false);
+    },
+    onError: () => Alert.alert(t.common.somethingWentWrong, t.common.tryAgain),
+  });
+
+  const dismiss = useMutation({
+    mutationFn: () => dismissTemplateSuggestion(weekStart),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["schedule-suggestion", weekStart] }),
+  });
+
+  const weekLabel = formatWeekRange(weekStart, t);
+  const weekHasActivities = (days ?? []).some((day) => day.activities.length > 0);
+
+  const confirmApply = (templateId: string) =>
+    Alert.alert(t.scheduleAdmin.applyConfirmTitle, t.scheduleAdmin.applyConfirmBody(weekLabel), [
+      { text: t.common.cancel, style: "cancel" },
+      { text: t.scheduleAdmin.apply, style: "destructive", onPress: () => apply.mutate(templateId) },
+    ]);
 
   const save = useMutation({
     mutationFn: (input: ActivityInput) =>
-      editing ? updateActivity(editing.id, input) : createActivity(input),
+      editing ? updateActivity(editing.id, input, weekStart) : createActivity(input, weekStart),
     onSuccess: () => {
       refresh();
       setIsFormOpen(false);
@@ -51,7 +94,7 @@ export default function ScheduleAdminScreen() {
   });
 
   const remove = useMutation({
-    mutationFn: (activityId: string) => deleteActivity(activityId),
+    mutationFn: (activityId: string) => deleteActivity(activityId, weekStart),
     onSuccess: refresh,
   });
 
@@ -71,6 +114,50 @@ export default function ScheduleAdminScreen() {
     <Screen safeBottom>
       <ScreenFadeIn style={styles.flex}>
         <AdminHeader title={t.scheduleAdmin.title} subtitle={t.scheduleAdmin.subtitle} />
+
+        {/* The week being edited. "Previous" sits on the reading-start side,
+            so the arrows swap places and glyphs in RTL. */}
+        <View style={[styles.weekRow, isRTL && styles.rowReverse]}>
+          <Touchable
+            onPress={() => setWeekStart((week) => addWeeks(week, -1))}
+            style={styles.chevronBtn}
+            accessibilityLabel={t.scheduleAdmin.previousWeek}
+          >
+            <Ionicons name={isRTL ? "chevron-forward" : "chevron-back"} size={22} color={Colors.textLight} />
+          </Touchable>
+          <Text style={styles.weekLabel}>{weekLabel}</Text>
+          <Touchable
+            onPress={() => setWeekStart((week) => addWeeks(week, 1))}
+            style={styles.chevronBtn}
+            accessibilityLabel={t.scheduleAdmin.nextWeek}
+          >
+            <Ionicons name={isRTL ? "chevron-back" : "chevron-forward"} size={22} color={Colors.textLight} />
+          </Touchable>
+        </View>
+
+        {suggestion ? (
+          <View style={[styles.suggestionRow, isRTL && styles.rowReverse]}>
+            <Text style={styles.suggestionIcon}>💡</Text>
+            <View style={styles.suggestionText}>
+              <Text style={[styles.suggestionTitle, rtlText]} numberOfLines={1}>
+                {suggestion.name}
+              </Text>
+              <Text style={[styles.suggestionSub, rtlText]} numberOfLines={1}>
+                {t.scheduleAdmin.suggestionSub}
+              </Text>
+            </View>
+            <Touchable style={styles.applySmallBtn} onPress={() => confirmApply(suggestion.templateId)}>
+              <Text style={styles.applySmallText}>{t.scheduleAdmin.apply}</Text>
+            </Touchable>
+            <Touchable
+              onPress={() => dismiss.mutate()}
+              style={styles.dismissBtn}
+              accessibilityLabel={t.common.done}
+            >
+              <Text style={styles.dismissText}>✕</Text>
+            </Touchable>
+          </View>
+        ) : null}
 
         {/* Same day-tab pattern parents see, so the admin edits what they'll get. */}
         <View style={[styles.dayTabs, isRTL && styles.rowReverse]}>
@@ -101,14 +188,21 @@ export default function ScheduleAdminScreen() {
           })}
         </View>
 
-        <StepsButton
-          label={t.scheduleAdmin.addActivity}
-          onPress={() => {
-            setEditing(null);
-            setIsFormOpen(true);
-          }}
-          style={styles.addButton}
-        />
+        <View style={[styles.actionsRow, isRTL && styles.rowReverse]}>
+          <StepsButton
+            label={t.scheduleAdmin.addActivity}
+            onPress={() => {
+              setEditing(null);
+              setIsFormOpen(true);
+            }}
+            style={styles.addButton}
+          />
+          <Touchable style={styles.templatesBtn} onPress={() => setTemplatesOpen(true)}>
+            <Text style={styles.templatesBtnText} numberOfLines={1}>
+              📋 {t.scheduleAdmin.templates}
+            </Text>
+          </Touchable>
+        </View>
 
         {isError ? (
           <EmptyState emoji="⚠️" title={t.scheduleAdmin.couldntLoad} subtitle={t.common.tryAgain} />
@@ -188,6 +282,14 @@ export default function ScheduleAdminScreen() {
         }}
         onSubmit={(input) => save.mutate(input)}
       />
+
+      <ScheduleTemplatesSheet
+        visible={templatesOpen}
+        weekStart={weekStart}
+        weekHasActivities={weekHasActivities}
+        onClose={() => setTemplatesOpen(false)}
+        onApply={confirmApply}
+      />
     </Screen>
   );
 }
@@ -218,7 +320,54 @@ const styles = StyleSheet.create({
   },
   dayDotActive: { backgroundColor: Colors.cream },
   dayDotSpacer: { width: 6, height: 6, marginTop: 6 },
-  addButton: { marginTop: 12, marginBottom: 4, height: 48, borderRadius: 14 },
+  weekRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 4,
+    marginBottom: 8,
+  },
+  chevronBtn: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
+  weekLabel: { fontFamily: Fonts.bold, fontSize: 15, color: Colors.text },
+  suggestionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    backgroundColor: Colors.goldLight,
+    borderRadius: 13,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    marginBottom: 10,
+  },
+  suggestionIcon: { fontSize: 16 },
+  suggestionText: { flex: 1, minWidth: 0 },
+  suggestionTitle: { fontFamily: Fonts.bold, fontSize: 12.5, color: Colors.text },
+  suggestionSub: { fontFamily: Fonts.regular, fontSize: 11, color: Colors.textLight },
+  applySmallBtn: {
+    backgroundColor: Colors.primary,
+    borderRadius: 10,
+    paddingHorizontal: 13,
+    minHeight: 44,
+    minWidth: 44,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  applySmallText: { fontFamily: Fonts.bold, fontSize: 12, color: Colors.background },
+  dismissBtn: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
+  dismissText: { fontSize: 15, color: Colors.textLight },
+  actionsRow: { flexDirection: "row", gap: 8, marginTop: 12, marginBottom: 4 },
+  addButton: { flex: 1, height: 48, borderRadius: 14 },
+  templatesBtn: {
+    flex: 1,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: Colors.card,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  templatesBtnText: { fontFamily: Fonts.bold, fontSize: 14, color: Colors.primary },
   list: { paddingTop: 12, paddingBottom: 32, gap: 12 },
   card: {
     backgroundColor: Colors.linen,

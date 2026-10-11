@@ -132,24 +132,85 @@ export function formatTimeColumn(startTime: string, t: Translations): string {
   return ltrIsolate(`${padded}:${minute}${NBSP}${suffix}`);
 }
 
-export async function getWeekSchedule() {
-  const { data } = await api.get<{ days: ScheduleDay[] }>("/api/schedule");
+/** One dated week, named by its Sunday ("YYYY-MM-DD"). */
+export async function getWeekSchedule(weekStart: string) {
+  const { data } = await api.get<{ days: ScheduleDay[] }>("/api/schedule", {
+    params: { weekStart },
+  });
   return data.days;
 }
 
-export async function createActivity(input: ActivityInput) {
-  const { data } = await api.post<{ activity: ScheduleActivity }>("/api/schedule", input);
+// Every edit names its week, so it can never change another one.
+
+export async function createActivity(input: ActivityInput, weekStart: string) {
+  const { data } = await api.post<{ activity: ScheduleActivity }>("/api/schedule", {
+    ...input,
+    weekStart,
+  });
   return data.activity;
 }
 
-export async function updateActivity(activityId: string, input: Partial<ActivityInput>) {
+export async function updateActivity(
+  activityId: string,
+  input: Partial<ActivityInput>,
+  weekStart: string
+) {
   const { data } = await api.patch<{ activity: ScheduleActivity }>(
     `/api/schedule/${activityId}`,
-    input
+    { ...input, weekStart }
   );
   return data.activity;
 }
 
-export async function deleteActivity(activityId: string) {
-  await api.delete(`/api/schedule/${activityId}`);
+export async function deleteActivity(activityId: string, weekStart: string) {
+  await api.delete(`/api/schedule/${activityId}`, { params: { weekStart } });
+}
+
+// ── Week templates (admin only, shared by every admin) ──────────────────────
+
+export type WeekTemplateSummary = {
+  id: string;
+  name: string;
+  sourceWeekStart: string;
+  createdAt: string;
+};
+
+export type TemplateSuggestion = { templateId: string; name: string };
+
+export async function listWeekTemplates() {
+  const { data } = await api.get<{ templates: WeekTemplateSummary[] }>("/api/schedule/templates");
+  return data.templates;
+}
+
+/** The server copies the week itself, so the template is exactly what it holds. */
+export async function saveWeekTemplate(name: string, weekStart: string) {
+  const { data } = await api.post<{ template: WeekTemplateSummary }>("/api/schedule/templates", {
+    name,
+    weekStart,
+  });
+  return data.template;
+}
+
+export async function deleteWeekTemplate(templateId: string) {
+  await api.delete(`/api/schedule/templates/${templateId}`);
+}
+
+export async function applyWeekTemplate(templateId: string, weekStart: string) {
+  const { data } = await api.post<{ days: ScheduleDay[] }>(
+    `/api/schedule/templates/${templateId}/apply`,
+    { weekStart }
+  );
+  return data.days;
+}
+
+export async function getTemplateSuggestion(weekStart: string) {
+  const { data } = await api.get<{ suggestion: TemplateSuggestion | null }>(
+    "/api/schedule/templates/suggestion",
+    { params: { weekStart } }
+  );
+  return data.suggestion;
+}
+
+export async function dismissTemplateSuggestion(weekStart: string) {
+  await api.post("/api/schedule/templates/suggestion/dismiss", { weekStart });
 }

@@ -10,7 +10,7 @@ import { AnnouncementModel } from "../models/announcement";
 import { EventModel } from "../models/event";
 import { NotificationModel } from "../models/notification";
 import { PhotoModel } from "../models/photo";
-import { SCHEDULE_SLOTS, ScheduleModel, WEEK_DAYS, isScheduleSlot, isWeekDay } from "../models/schedule";
+import { SCHEDULE_SLOTS, ScheduleModel, WEEK_DAYS, currentWeekStart, isScheduleSlot, isWeekDay } from "../models/schedule";
 import { SETTING_KEYS, SettingModel } from "../models/setting";
 import { isYoutubeUrl, TipModel } from "../models/tip";
 import { UserModel } from "../models/user";
@@ -52,7 +52,7 @@ export async function contentPage(req: Request, res: Response) {
   const [albums, tips, schedule, quote, latest] = await Promise.all([
     EventModel.listWithPhotoCounts(100, 0, 1),
     TipModel.listAll(),
-    ScheduleModel.listWeek(),
+    ScheduleModel.resolveWeek(currentWeekStart()),
     SettingModel.get(SETTING_KEYS.galleryQuote),
     AnnouncementModel.findLatest(),
   ]);
@@ -143,7 +143,7 @@ export async function contentPage(req: Request, res: Response) {
   )}
 
   ${section(
-    "Weekly schedule",
+    `Weekly schedule · week of ${escapeHtml(currentWeekStart())}`,
     `${tableCard(["Day", "Activity", "Starts", "Lasts", ""], scheduleRows)}
      ${drawer(
        "Add an activity",
@@ -534,7 +534,7 @@ export async function createActivity(req: Request, res: Response) {
   if (!isScheduleSlot(slot)) return res.redirect(redirectWith(LIST, { err: "Pick a slot." }));
   if (!/^\d{2}:\d{2}$/.test(startTime)) return res.redirect(redirectWith(LIST, { err: "Start time must look like 09:30." }));
 
-  await ScheduleModel.create({
+  await ScheduleModel.create(currentWeekStart(), {
     day,
     slot,
     name: null,
@@ -549,7 +549,7 @@ export async function createActivity(req: Request, res: Response) {
 }
 
 export async function deleteActivity(req: Request, res: Response) {
-  await ScheduleModel.remove(String(req.params.activityId));
+  await ScheduleModel.remove(currentWeekStart(), String(req.params.activityId));
   res.redirect(redirectWith(LIST, { ok: "Activity removed." }));
 }
 
