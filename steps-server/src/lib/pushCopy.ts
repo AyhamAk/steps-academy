@@ -74,6 +74,25 @@ export function coursePlaceConfirmed(
   };
 }
 
+/** The evening before a course meets. `time` is "16:00", or null if unset. */
+export function courseTomorrow(
+  childNames: string,
+  courseName: string,
+  time: string | null,
+  locale: PushLocale
+): PushPayload {
+  return {
+    title: pick(
+      time
+        ? { en: `Tomorrow at ${time}`, ar: `غداً الساعة ${time}`, he: `מחר בשעה ${time}` }
+        : { en: "Tomorrow", ar: "غداً", he: "מחר" },
+      locale
+    ),
+    body: `${courseName} — ${childNames}`,
+    data: { type: "course" },
+  };
+}
+
 export function coursePlaceDeclined(
   childName: string,
   courseName: string,

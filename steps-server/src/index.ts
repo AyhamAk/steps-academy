@@ -10,6 +10,7 @@ import { env } from "./config/env";
 import { runDevSeed } from "./devSeed";
 import { scheduleAnalyticsPurge } from "./lib/analyticsRetention";
 import { scheduleCourseCleanup } from "./lib/courseCleanup";
+import { scheduleCourseReminders } from "./lib/courseReminders";
 import { errorHandler, notFound } from "./middleware/errorHandler";
 import { requestTelemetry } from "./middleware/requestTelemetry";
 import announcementRoutes from "./routes/announcementRoutes";
@@ -79,5 +80,6 @@ app.listen(env.port, () => {
   console.log(`Steps API listening on port ${env.port}`);
   void runDevSeed();
   scheduleCourseCleanup();
+  scheduleCourseReminders();
   scheduleAnalyticsPurge();
 });
