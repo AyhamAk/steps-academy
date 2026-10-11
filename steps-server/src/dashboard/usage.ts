@@ -4,16 +4,38 @@ import { prisma } from "../lib/prisma";
 import {
   ago,
   barChart,
+  drawer,
   escapeHtml,
   flashFrom,
   funnel,
   layout,
+  meter,
   pct,
+  person,
   section,
   statCard,
   table,
   tableCard,
+  whatsappLink,
 } from "../utils/html";
+import {
+  albumNames,
+  albumReach,
+  commonMoves,
+  israelTime,
+  notificationSends,
+  quietFamilies,
+  screenName,
+  screenReach,
+} from "./activity";
+
+const NOTIFICATION_KIND: Record<string, string> = {
+  photo: "New photos",
+  event: "Album",
+  announcement: "Announcement",
+  course: "Course",
+  tip: "Tip",
+};
 
 /**
  * The usage page — the panel's original and only read-only tab.
@@ -49,6 +71,12 @@ export async function usagePage(req: Request, res: Response) {
       clientErrors,
       serverErrors,
       feed,
+      quiet,
+      moves,
+      reach,
+      albumsReach,
+      sends,
+      albumMap,
     ] = await Promise.all([
       q<{ n: number }>(
         `select count(distinct coalesce("userId", "anonId"))::int n from "AnalyticsEvent"
@@ -148,8 +176,8 @@ export async function usagePage(req: Request, res: Response) {
          left join "Event" ev on ev.id = a.album_id
          order by a.opens desc limit 12`
       ),
-      q<{ name: string; email: string; last: Date; events: number }>(
-        `select u.name, u.email, max(e."createdAt") last, count(*)::int events
+      q<{ id: string; name: string; email: string; last: Date; events: number }>(
+        `select u.id, u.name, u.email, max(e."createdAt") last, count(*)::int events
          from "AnalyticsEvent" e join "User" u on u.id = e."userId"
          where u.role = 'parent'
          group by u.id, u.name, u.email
@@ -171,6 +199,12 @@ export async function usagePage(req: Request, res: Response) {
          from "AnalyticsEvent" e left join "User" u on u.id = e."userId"
          order by e."createdAt" desc limit 150`
       ),
+      quietFamilies(14),
+      commonMoves(14),
+      screenReach(14),
+      albumReach(12),
+      notificationSends(15),
+      albumNames(),
     ]);
 
     const weekNow = activeWeek[0]?.n ?? 0;
@@ -214,13 +248,13 @@ export async function usagePage(req: Request, res: Response) {
       ? `<div class="card"><p class="empty">Nobody is using the app at the moment.</p></div>`
       : tableCard(
           ["Who", "On screen", "Last action", "Events"],
-          whoIsHere.map((person) => [
-            person.name
-              ? `<span class="pill pill-live">live</span> ${escapeHtml(person.name)}`
-              : `<span class="pill pill-live">live</span> <span class="muted">Not signed in</span>`,
-            person.screen ? `<code>${escapeHtml(person.screen)}</code>` : `<span class="muted">—</span>`,
-            escapeHtml(ago(person.last)),
-            String(person.events),
+          whoIsHere.map((visitor) => [
+            visitor.name
+              ? `<span class="dot dot-live"></span>${person(visitor.ident, visitor.name)}`
+              : `<span class="dot dot-live"></span><span class="muted">Not signed in</span>`,
+            escapeHtml(screenName(visitor.screen, albumMap)),
+            escapeHtml(ago(visitor.last)),
+            String(visitor.events),
           ]),
         ),
     whoIsHere.length
@@ -232,6 +266,79 @@ export async function usagePage(req: Request, res: Response) {
     "Daily active users",
     `<div class="card"><div class="card-pad">${barChart(dailyActives.map((r) => ({ label: r.label, value: Number(r.n) })))}</div></div>`,
     "last 14 days",
+  )}
+
+  ${section(
+    "Quiet families",
+    quiet.length === 0
+      ? `<div class="card"><p class="empty">Every family has opened the app in the last 14 days.</p></div>`
+      : tableCard(
+          ["Family", "Children", "Last seen", "Joined", ""],
+          quiet.map((family) => [
+            person(family.id, family.name, family.phone ?? family.email),
+            family.children ? escapeHtml(family.children) : `<span class="muted">none linked</span>`,
+            family.last ? escapeHtml(ago(family.last)) : `<span class="muted">never opened</span>`,
+            escapeHtml(new Date(family.joined).toLocaleDateString("en-GB")),
+            whatsappLink(family.phone),
+          ]),
+          { hideOnPhone: [1, 3] },
+        ),
+    `${quiet.length} not seen in 14 days · worth a message`,
+  )}
+
+  <div class="cols">
+    <div>
+      ${section(
+        "Where people go",
+        tableCard(
+          ["From", "To", "Times"],
+          moves.map((move) => [escapeHtml(move.from), `→ ${escapeHtml(move.to)}`, String(move.n)]),
+        ),
+        "screen to screen · last 30 days",
+      )}
+    </div>
+    <div>
+      ${section(
+        "Screens",
+        tableCard(
+          ["Screen", "Views", "People"],
+          reach.map((row) => [escapeHtml(row.screen), String(row.views), String(row.people)]),
+        ),
+        "last 30 days",
+      )}
+    </div>
+  </div>
+
+  ${section(
+    "Album reach",
+    tableCard(
+      ["Album", "Date", "Families who opened it", ""],
+      albumsReach.map((album) => [
+        escapeHtml(album.name),
+        escapeHtml(album.date),
+        album.audience ? meter(album.reached, album.audience) : `<span class="muted">nobody tagged</span>`,
+        `<a class="btn btn-quiet btn-small" href="/dashboard/content/albums/${escapeHtml(album.id)}#reach">Who</a>`,
+      ]),
+      { hideOnPhone: [1] },
+    ),
+    "families of the children tagged in it",
+  )}
+
+  ${section(
+    "Notifications",
+    tableCard(
+      ["Sent", "Kind", "About", "Seen in the app"],
+      sends.map((send) => [
+        escapeHtml(israelTime(send.sent, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })),
+        `<span class="pill">${escapeHtml(NOTIFICATION_KIND[send.type] ?? send.type)}</span>`,
+        send.about
+          ? escapeHtml(send.about.length > 70 ? `${send.about.slice(0, 70)}…` : send.about)
+          : `<span class="muted">—</span>`,
+        meter(send.seen, send.recipients),
+      ]),
+      { hideOnPhone: [2] },
+    ),
+    "seen = opened the notifications list after it arrived",
   )}
 
   <div class="cols">
@@ -259,7 +366,7 @@ export async function usagePage(req: Request, res: Response) {
     </div>
   </div>
 
-  ${section("Albums", tableCard(
+  ${section("Albums in detail", tableCard(
       ["Album", "Opened", "Scrolled to end", "Viewer opened", "Saved"],
       albums.map((a) => [
         escapeHtml(a.album),
@@ -267,27 +374,21 @@ export async function usagePage(req: Request, res: Response) {
         `${a.ends} <span class="muted">(${pct(Number(a.ends), Number(a.opens))}%)</span>`,
         String(a.viewer),
         String(a.downloads),
-      ])
+      ]),
+      { hideOnPhone: [2, 3] },
     ))}
 
   <div class="cols">
     <div>
-      ${section("Screens", tableCard(["Route", "Views"], screens.map((s) => [`<code>${escapeHtml(s.route)}</code>`, String(s.n)])))}
+      ${section("Families", tableCard(
+          ["Family", "Last seen", "Events"],
+          lastSeen.map((f) => [person(f.id, f.name, f.email), escapeHtml(ago(f.last)), String(f.events)])
+        ), "most recently seen")}
     </div>
     <div>
       ${section("Tabs opened", tableCard(["Tab", "Switches"], tabs.map((t) => [escapeHtml(t.tab), String(t.n)])))}
     </div>
   </div>
-
-  ${section("Families", tableCard(
-      ["Family", "Email", "Last seen", "Events"],
-      lastSeen.map((f) => [
-        escapeHtml(f.name),
-        `<span class="muted">${escapeHtml(f.email)}</span>`,
-        escapeHtml(ago(f.last)),
-        String(f.events),
-      ])
-    ))}
 
   <div class="cols">
     <div>
@@ -304,15 +405,17 @@ export async function usagePage(req: Request, res: Response) {
     </div>
   </div>
 
-  ${section("Raw events", `<div class="card feed">${table(
+  <section class="block">
+    ${drawer("Raw events (latest 150)", `<div class="feed">${table(
       ["When", "Event", "Who", "Details"],
       feed.map((row) => [
-        `<span class="muted">${escapeHtml(new Date(row.created).toLocaleTimeString("en-GB"))}</span>`,
+        `<span class="muted">${escapeHtml(israelTime(row.created, { hour: "2-digit", minute: "2-digit", second: "2-digit" }))}</span>`,
         escapeHtml(row.name),
         escapeHtml(row.who ?? "—"),
         `<code>${escapeHtml(row.props ? JSON.stringify(row.props) : "")}</code>`,
       ])
     )}</div>`)}
+  </section>
 `;
 
     res.type("html").send(

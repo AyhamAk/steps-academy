@@ -95,6 +95,8 @@ type QueuedEvent = {
   locale: string;
   isLoggedIn: boolean;
   props?: EventProps;
+  /** Epoch ms on the phone. */
+  at: number;
 };
 
 function randomId(): string {
@@ -163,6 +165,8 @@ export function track(name: EventName, props?: EventProps): void {
       locale: useLocaleStore.getState().locale,
       isLoggedIn: !!useAuthStore.getState().token,
       props: sanitize(props),
+      // Sent in batches every 15s; this keeps each event's real moment.
+      at: Date.now(),
     });
   } catch {
     // A failed track call must never propagate into the caller.

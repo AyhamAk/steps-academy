@@ -23,6 +23,8 @@ import {
   formStart,
   layout,
   linkButton,
+  pct,
+  person,
   redirectWith,
   selectField,
   drawer,
@@ -34,7 +36,9 @@ import {
   tableCard,
   textArea,
   textField,
+  whatsappLink,
 } from "../utils/html";
+import { albumAudience, israelTime } from "./activity";
 
 /**
  * Everything the academy publishes: albums, announcements, tips, the weekly
@@ -181,7 +185,23 @@ export async function albumPage(req: Request, res: Response) {
 
   const csrf = csrfToken(req.userId!);
   const base = `${LIST}/albums/${album.id}`;
-  const photoCount = await PhotoModel.countByEvent(album.id);
+  const [photoCount, audience] = await Promise.all([
+    PhotoModel.countByEvent(album.id),
+    albumAudience(album.id),
+  ]);
+  const reached = audience.filter((family) => family.firstOpen).length;
+
+  const reachRows = audience.map((family) => [
+    person(family.id, family.name, family.children),
+    family.firstOpen
+      ? `<span class="dot dot-live"></span>${escapeHtml(
+          israelTime(family.firstOpen, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }),
+        )}`
+      : `<span class="dot dot-cold"></span><span class="muted">not yet</span>`,
+    family.opens ? String(family.opens) : `<span class="muted">0</span>`,
+    family.saved ? String(family.saved) : `<span class="muted">0</span>`,
+    family.firstOpen ? "" : whatsappLink(family.phone),
+  ]);
 
   const body = `
   <div class="stats">
@@ -192,6 +212,22 @@ export async function albumPage(req: Request, res: Response) {
       value: album.notifiedAt ? shortDate(album.notifiedAt) : "Not yet",
       sub: album.notifiedAt ? "parents have been told" : "nobody has been notified",
     })}
+    ${statCard({
+      label: "Families who opened it",
+      value: `${reached}/${audience.length}`,
+      sub: audience.length ? `${pct(reached, audience.length)}% of the families who can see it` : "nobody tagged yet",
+      tone: "var(--forest)",
+    })}
+  </div>
+
+  <div id="reach">
+  ${section(
+    "Who opened it",
+    audience.length
+      ? tableCard(["Family", "First opened", "Opens", "Photos saved", ""], reachRows, { hideOnPhone: [2, 3] })
+      : `<div class="card"><p class="empty">No child is tagged in this album's photos yet, so no family can see it.</p></div>`,
+    audience.length ? "the guardians of the children tagged in its photos" : undefined,
+  )}
   </div>
 
   <div class="cols">

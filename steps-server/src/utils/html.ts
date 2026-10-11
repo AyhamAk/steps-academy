@@ -49,7 +49,7 @@ export function shortDate(date: Date | string | null): string {
 export type Stat = { label: string; value: string; sub?: string; tone?: string };
 
 export function statCard({ label, value, sub, tone }: Stat): string {
-  return `<div class="stat">
+  return `<div class="stat"${tone ? ` style="--tone:${tone}"` : ""}>
     <div class="stat-value"${tone ? ` style="color:${tone}"` : ""}>${escapeHtml(value)}</div>
     <div class="stat-label">${escapeHtml(label)}</div>
     ${sub ? `<div class="stat-sub">${escapeHtml(sub)}</div>` : ""}
@@ -251,18 +251,94 @@ export function banner(text: string, tone: "warn" | "danger" | "good" = "warn"):
   return `<div class="banner banner-${tone}">${escapeHtml(text)}</div>`;
 }
 
+// ------------------------------------------------------------ activity parts
+
+/** A coloured circle with initials — tells people apart in a long list. */
+export function avatar(name: string | null | undefined): string {
+  const clean = (name ?? "").trim();
+  const initials =
+    clean
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((part) => part[0] ?? "")
+      .join("")
+      .toUpperCase() || "?";
+  const tones = ["#E07A3A", "#5B8A5E", "#7B9EC4", "#D4A843", "#C4756A", "#8E7CC3"];
+  const tone = tones[[...clean].reduce((sum, char) => sum + char.charCodeAt(0), 0) % tones.length];
+  return `<span class="avatar" style="background:${tone}">${escapeHtml(initials)}</span>`;
+}
+
+/** Name with avatar, linking to the account. */
+export function person(id: string, name: string | null, sub?: string | null): string {
+  return `<a class="person" href="/dashboard/users/${escapeHtml(id)}">${avatar(name)}<span>
+    <span class="person-name">${escapeHtml(name ?? "—")}</span>
+    ${sub ? `<span class="person-sub">${escapeHtml(sub)}</span>` : ""}</span></a>`;
+}
+
+/** "12 of 18" with a bar, for reach and open rates. */
+export function meter(part: number, whole: number): string {
+  const share = pct(part, whole);
+  const tone = share >= 70 ? "var(--forest)" : share >= 40 ? "var(--honey)" : "var(--clay)";
+  return `<div class="meter"><div class="meter-track"><div class="meter-fill" style="width:${share}%;background:${tone}"></div></div>
+    <span class="meter-label">${part}/${whole} <span class="muted">· ${share}%</span></span></div>`;
+}
+
+/** Thirty tiny bars: a month of someone's activity at a glance. */
+export function sparkline(values: number[]): string {
+  const max = Math.max(...values, 1);
+  const w = 4;
+  const gap = 2;
+  const h = 28;
+  const bars = values
+    .map((value, index) => {
+      const bh = value > 0 ? Math.max(3, Math.round((value / max) * h)) : 2;
+      return `<rect x="${index * (w + gap)}" y="${h - bh}" width="${w}" height="${bh}" rx="1"
+        fill="${value > 0 ? "#E07A3A" : "#E5DCC8"}"></rect>`;
+    })
+    .join("");
+  return `<svg class="spark" viewBox="0 0 ${values.length * (w + gap)} ${h}" role="img">${bars}</svg>`;
+}
+
+/** One visit drawn as a row of screens: Home → Nursery (2m) → … */
+export function routePath(steps: { screen: string; ms: string; notes: string[] }[]): string {
+  if (steps.length === 0) return `<span class="muted">No screens recorded</span>`;
+  return `<div class="path">${steps
+    .map(
+      (step, index) => `${index ? `<span class="path-arrow">→</span>` : ""}<span class="path-step">
+        <span class="path-screen">${escapeHtml(step.screen)}</span>
+        <span class="path-time">${escapeHtml(step.ms)}</span>
+        ${step.notes.map((note) => `<span class="path-note">${escapeHtml(note)}</span>`).join("")}
+      </span>`,
+    )
+    .join("")}</div>`;
+}
+
+/** Label/value pairs in two columns. */
+export function kv(rows: [string, string][]): string {
+  return `<dl class="kv">${rows
+    .map(([label, value]) => `<dt>${escapeHtml(label)}</dt><dd>${value}</dd>`)
+    .join("")}</dl>`;
+}
+
+/** A WhatsApp chat link for an Israeli number stored as +972…. */
+export function whatsappLink(phone: string | null | undefined): string {
+  const digits = (phone ?? "").replace(/\D/g, "");
+  if (!digits) return `<span class="muted">no phone</span>`;
+  return `<a class="btn btn-quiet btn-small" href="https://wa.me/${escapeHtml(digits)}" target="_blank" rel="noopener">WhatsApp</a>`;
+}
+
 // -------------------------------------------------------------------- layout
 
 export type NavKey = "usage" | "users" | "students" | "courses" | "content" | "health" | "sql";
 
-const NAV: { key: NavKey; href: string; label: string }[] = [
-  { key: "usage", href: "/dashboard", label: "Usage" },
-  { key: "users", href: "/dashboard/users", label: "Users" },
-  { key: "students", href: "/dashboard/students", label: "Students" },
-  { key: "courses", href: "/dashboard/courses", label: "Courses" },
-  { key: "content", href: "/dashboard/content", label: "Content" },
-  { key: "health", href: "/dashboard/health", label: "Health" },
-  { key: "sql", href: "/dashboard/sql", label: "SQL" },
+const NAV: { key: NavKey; href: string; label: string; icon: string }[] = [
+  { key: "usage", href: "/dashboard", label: "Usage", icon: "📈" },
+  { key: "users", href: "/dashboard/users", label: "Users", icon: "👪" },
+  { key: "students", href: "/dashboard/students", label: "Students", icon: "🧒" },
+  { key: "courses", href: "/dashboard/courses", label: "Courses", icon: "🎨" },
+  { key: "content", href: "/dashboard/content", label: "Content", icon: "🖼" },
+  { key: "health", href: "/dashboard/health", label: "Health", icon: "🩺" },
+  { key: "sql", href: "/dashboard/sql", label: "SQL", icon: "⌨" },
 ];
 
 const STYLES = `
@@ -286,18 +362,22 @@ const STYLES = `
     backdrop-filter:saturate(1.6) blur(8px); border-bottom:1px solid var(--border); }
   .topbar-inner { display:flex; align-items:center; justify-content:space-between;
     gap:12px; padding:10px 0 0; }
-  .brand { font-size:16px; font-weight:800; color:var(--terracotta); margin:0; letter-spacing:-.2px; }
+  .brand { display:flex; align-items:center; gap:9px; font-size:16px; font-weight:800;
+    color:var(--bark); margin:0; letter-spacing:-.2px; }
+  .brand-mark { width:26px; height:26px; border-radius:8px; background:var(--terracotta);
+    color:#fff; display:inline-flex; align-items:center; justify-content:center; font-size:14px; }
   .whoami { color:var(--muted); font-size:12px; }
-  nav { display:flex; gap:2px; margin-top:8px; overflow-x:auto; scrollbar-width:none; }
+  nav { display:flex; gap:4px; margin-top:10px; padding-bottom:10px; overflow-x:auto; scrollbar-width:none; }
   nav::-webkit-scrollbar { display:none; }
-  nav a { padding:8px 13px 10px; text-decoration:none; color:var(--muted);
-    font-size:14px; font-weight:700; white-space:nowrap; border-bottom:2px solid transparent; }
-  nav a:hover { color:var(--bark); }
-  nav a.on { color:var(--terracotta); border-bottom-color:var(--terracotta); }
+  nav a { display:inline-flex; align-items:center; gap:6px; padding:7px 13px; text-decoration:none;
+    color:var(--muted); font-size:14px; font-weight:700; white-space:nowrap; border-radius:999px; }
+  nav a:hover { color:var(--bark); background:var(--linen); }
+  nav a.on { color:#fff; background:var(--terracotta); }
+  .nav-icon { font-size:14px; line-height:1; }
 
   .page-head { display:flex; align-items:flex-end; justify-content:space-between;
     gap:12px; flex-wrap:wrap; margin:26px 0 2px; }
-  h1 { font-size:25px; font-weight:800; margin:0; letter-spacing:-.4px; }
+  h1 { font-size:26px; font-weight:800; margin:26px 0 0; letter-spacing:-.4px; }
   .sub { color:var(--muted); font-size:14px; margin:4px 0 0; }
 
   /* sections */
@@ -317,7 +397,8 @@ const STYLES = `
   .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
     gap:10px; margin-top:18px; }
   .stat { background:var(--panel); border:1px solid var(--border); border-radius:14px;
-    padding:13px 15px; box-shadow:var(--shadow); }
+    padding:13px 15px; box-shadow:var(--shadow); position:relative; overflow:hidden; }
+  .stat::before { content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--tone, var(--border)); }
   .stat-value { font-size:26px; font-weight:800; line-height:1.15; letter-spacing:-.5px; }
   .stat-label { font-size:12px; color:var(--muted); margin-top:2px; font-weight:600; }
   .stat-sub { font-size:11px; color:var(--muted); margin-top:5px; }
@@ -414,8 +495,56 @@ const STYLES = `
   .funnel-fill { height:100%; background:var(--terracotta); }
   .funnel-drop { font-size:11.5px; color:var(--clay); margin-top:4px; }
 
+  /* people and activity */
+  .avatar { display:inline-flex; align-items:center; justify-content:center; flex:none;
+    width:30px; height:30px; border-radius:50%; color:#fff; font-size:11.5px; font-weight:800;
+    letter-spacing:.3px; }
+  .person { display:inline-flex; align-items:center; gap:10px; color:var(--bark); text-decoration:none; }
+  .person:hover .person-name { text-decoration:underline; }
+  .person > span:last-child { display:flex; flex-direction:column; line-height:1.25; }
+  .person-name { font-weight:700; }
+  .person-sub { font-size:12px; color:var(--muted); font-weight:400; }
+  td a.person { font-weight:400; }
+  td a.person:hover { text-decoration:none; }
+
+  .meter { display:flex; align-items:center; gap:10px; min-width:150px; }
+  .meter-track { flex:1; height:7px; background:var(--linen); border-radius:999px; overflow:hidden; min-width:60px; }
+  .meter-fill { height:100%; border-radius:999px; }
+  .meter-label { font-size:12.5px; font-weight:700; white-space:nowrap; }
+
+  .spark { width:180px; height:28px; display:block; }
+  .dot { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:6px; vertical-align:middle; }
+  .dot-live { background:var(--forest); } .dot-warm { background:var(--honey); }
+  .dot-cold { background:var(--clay); } .dot-none { background:var(--border); }
+
+  .path { display:flex; flex-wrap:wrap; align-items:flex-start; gap:6px 4px; }
+  .path-step { display:inline-flex; flex-direction:column; background:var(--linen);
+    border:1px solid var(--border); border-radius:10px; padding:5px 10px; line-height:1.3; }
+  .path-screen { font-weight:700; font-size:13px; }
+  .path-time { font-size:11px; color:var(--muted); }
+  .path-note { font-size:11px; color:var(--forest); font-weight:700; }
+  .path-arrow { color:var(--muted); align-self:center; font-size:13px; }
+
+  .visit { padding:14px 16px; border-bottom:1px solid var(--border); }
+  .visit:last-child { border-bottom:0; }
+  .visit-head { display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;
+    font-size:12.5px; color:var(--muted); margin-bottom:8px; }
+  .visit-head strong { color:var(--bark); }
+
+  .kv { display:grid; grid-template-columns:max-content 1fr; gap:8px 18px; margin:0; font-size:14px; }
+  .kv dt { color:var(--muted); font-weight:600; }
+  .kv dd { margin:0; font-weight:700; }
+
+  .btn-small { padding:4px 10px; font-size:12px; }
+  .tabs-inline { display:flex; gap:6px; flex-wrap:wrap; margin-top:14px; }
+  .tabs-inline a { padding:6px 12px; border-radius:999px; border:1px solid var(--border);
+    background:var(--panel); color:var(--bark); text-decoration:none; font-size:13px; font-weight:700; }
+  .tabs-inline a.on { background:var(--bark); border-color:var(--bark); color:#fff; }
+
   @media (max-width:760px) {
     th.opt, td.opt { display:none; }
+    .kv { grid-template-columns:1fr; gap:2px; }
+    .kv dd { margin-bottom:8px; }
   }
   @media (max-width:640px) {
     .wrap { padding:0 14px; }
@@ -447,7 +576,7 @@ export function layout(opts: {
 
   const nav = NAV.map(
     (item) =>
-      `<a href="${item.href}" class="${item.key === active ? "on" : ""}">${escapeHtml(item.label)}</a>`,
+      `<a href="${item.href}" class="${item.key === active ? "on" : ""}"><span class="nav-icon">${item.icon}</span>${escapeHtml(item.label)}</a>`,
   ).join("");
 
   return `<!doctype html>
@@ -467,7 +596,7 @@ ${refreshSeconds ? `<meta http-equiv="refresh" content="${refreshSeconds}">` : "
 <div class="topbar">
   <div class="wrap">
     <div class="topbar-inner">
-      <p class="brand">Steps Academy</p>
+      <p class="brand"><span class="brand-mark">🦋</span>Steps Academy</p>
       <span class="whoami">${who ? escapeHtml(`signed in as ${who}`) : ""}</span>
     </div>
     <nav>${nav}</nav>

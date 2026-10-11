@@ -4,21 +4,41 @@ import { csrfToken } from "../middleware/dashboardAuth";
 import { StudentModel } from "../models/student";
 import { UserModel } from "../models/user";
 import {
+  ago,
   banner,
   button,
   escapeHtml,
   flashFrom,
   formStart,
+  kv,
   layout,
   linkButton,
+  person,
   redirectWith,
+  routePath,
   selectField,
   section,
   shortDate,
+  sparkline,
   statCard,
   table,
   tableCard,
+  whatsappLink,
 } from "../utils/html";
+import { duration, israelTime, lastSeenByUser, userActivity } from "./activity";
+
+const DAY_MS = 86400000;
+
+/** Green today, honey this fortnight, clay beyond that, grey for never. */
+function seenDot(last: Date | null | undefined): string {
+  if (!last) return `<span class="dot dot-none"></span><span class="muted">never</span>`;
+  const age = Date.now() - new Date(last).getTime();
+  const tone = age < DAY_MS ? "live" : age < 14 * DAY_MS ? "warm" : "cold";
+  return `<span class="dot dot-${tone}"></span>${escapeHtml(ago(last))}`;
+}
+
+const PLATFORM: Record<string, string> = { ios: "iPhone", android: "Android", web: "Web" };
+const LANGUAGE: Record<string, string> = { ar: "Arabic", he: "Hebrew", en: "English" };
 
 /**
  * Accounts.
@@ -33,25 +53,40 @@ const LIST = "/dashboard/users";
 export async function usersPage(req: Request, res: Response) {
   const search = typeof req.query.q === "string" ? req.query.q : "";
   const { users, total } = await UserModel.listAllWithChildren({ search, limit: 200 });
-  const awaiting = await UserModel.listAwaitingLink();
+  const [awaiting, seen] = await Promise.all([UserModel.listAwaitingLink(), lastSeenByUser()]);
 
-  const rows = users.map((user) => [
-    `<a href="${LIST}/${escapeHtml(user.id)}">${escapeHtml(user.name)}</a>`,
-    `<span class="muted">${escapeHtml(user.email ?? user.phone)}</span>`,
-    user.role === "admin" ? `<span class="pill pill-admin">admin</span>` : `<span class="pill">parent</span>`,
-    user.children.length
-      ? user.children.map((child) => escapeHtml(child.name)).join(", ")
-      : user.claimedChildName
-        ? `<span class="muted">claims “${escapeHtml(user.claimedChildName)}”</span>`
-        : `<span class="muted">none</span>`,
-    escapeHtml(shortDate(user.createdAt)),
-    `<div class="row-actions">${linkButton(`${LIST}/${user.id}`, "Open")}</div>`,
-  ]);
+  const rows = users.map((user) => {
+    const activity = seen.get(user.id);
+    return [
+      person(user.id, user.name, user.email ?? user.phone),
+      user.role === "admin" ? `<span class="pill pill-admin">admin</span>` : `<span class="pill">parent</span>`,
+      user.children.length
+        ? user.children.map((child) => escapeHtml(child.name)).join(", ")
+        : user.claimedChildName
+          ? `<span class="muted">claims “${escapeHtml(user.claimedChildName)}”</span>`
+          : `<span class="muted">none</span>`,
+      seenDot(activity?.last),
+      activity?.days30 ? `${activity.days30} <span class="muted">/ 30</span>` : `<span class="muted">0</span>`,
+      escapeHtml(shortDate(user.createdAt)),
+    ];
+  });
+
+  const parents = users.filter((u) => u.role === "parent");
+  const activeWeek = parents.filter((u) => {
+    const last = seen.get(u.id)?.last;
+    return last && Date.now() - new Date(last).getTime() < 7 * DAY_MS;
+  }).length;
 
   const body = `
   <div class="stats">
     ${statCard({ label: "Accounts", value: String(total) })}
     ${statCard({ label: "Admins", value: String(users.filter((u) => u.role === "admin").length) })}
+    ${statCard({
+      label: "Families active this week",
+      value: `${activeWeek}/${parents.length}`,
+      sub: "opened the app in the last 7 days",
+      tone: "var(--forest)",
+    })}
     ${statCard({
       label: "Awaiting a child link",
       value: String(awaiting.length),
@@ -68,7 +103,9 @@ export async function usersPage(req: Request, res: Response) {
 
   ${section(
     "All accounts",
-    tableCard(["Name", "Email", "Role", "Children", "Joined", ""], rows, { hideOnPhone: [1, 4] }),
+    tableCard(["Account", "Role", "Children", "Last seen", "Active days", "Joined"], rows, {
+      hideOnPhone: [1, 4, 5],
+    }),
     search ? `matching “${search}”` : undefined,
   )}`;
 
@@ -92,11 +129,12 @@ export async function userDetailPage(req: Request, res: Response) {
   const csrf = csrfToken(req.userId!);
   const base = `${LIST}/${user.id}`;
 
-  const [children, allStudents, owned, admins] = await Promise.all([
+  const [children, allStudents, owned, admins, activity] = await Promise.all([
     StudentModel.listByParent(user.id),
     StudentModel.listAll(),
     UserModel.ownedContentCounts(user.id),
     UserModel.listAdmins(),
+    userActivity(user.id),
   ]);
 
   const linkedIds = new Set(children.map((child) => child.id));
@@ -111,17 +149,91 @@ export async function userDetailPage(req: Request, res: Response) {
      </form>`,
   ]);
 
+  const { counts, device } = activity;
+  const visits = activity.visits.map(
+    (visit) => `<div class="visit">
+      <div class="visit-head">
+        <span><strong>${escapeHtml(israelTime(visit.start, { weekday: "short", day: "numeric", month: "short" }))}</strong>
+          · ${escapeHtml(israelTime(visit.start, { hour: "2-digit", minute: "2-digit" }))}–${escapeHtml(
+            israelTime(visit.end, { hour: "2-digit", minute: "2-digit" }),
+          )}</span>
+        <span>${escapeHtml(duration(visit.end.getTime() - visit.start.getTime()))}${
+          visit.platform ? ` · ${escapeHtml(PLATFORM[visit.platform] ?? visit.platform)}` : ""
+        }</span>
+      </div>
+      ${routePath(visit.steps.map((step) => ({ ...step, ms: duration(step.ms) })))}
+    </div>`,
+  );
+
   const body = `
   <div class="stats">
-    ${statCard({ label: "Role", value: user.role })}
-    ${statCard({ label: "Children linked", value: String(children.length) })}
-    ${statCard({ label: "Joined", value: shortDate(user.createdAt) })}
     ${statCard({
-      label: "Sign-in",
-      value: user.passwordHash ? "Password" : "Google only",
-      sub: user.passwordHash ? undefined : "cannot use the dashboard",
+      label: "Last seen",
+      value: activity.lastSeen ? ago(activity.lastSeen) : "never",
+      sub: activity.lastSeen
+        ? israelTime(activity.lastSeen, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })
+        : "has not opened the app signed in",
+      tone: "var(--forest)",
     })}
+    ${statCard({ label: "Active days", value: `${activity.activeDays30}`, sub: "of the last 30" })}
+    ${statCard({ label: "Visits", value: String(activity.visits30), sub: "last 30 days" })}
+    ${statCard({ label: "Time in app", value: duration(activity.timeInApp30), sub: "last 30 days", tone: "var(--terracotta)" })}
+    ${statCard({ label: "Children linked", value: String(children.length) })}
   </div>
+
+  <div class="cols">
+    <div>
+      ${section(
+        "Last 30 days",
+        `<div class="card"><div class="card-pad">
+          ${sparkline(activity.daily.map((day) => day.n))}
+          <p class="field-hint">Each bar is one day, oldest on the left.</p>
+          ${kv([
+            ["Albums opened", String(counts.albums)],
+            ["Photos opened", String(counts.photosViewed)],
+            ["Photos saved", String(counts.photosSaved)],
+            ["Courses looked at", String(counts.coursesViewed)],
+            ["Course sign-ups", String(counts.courseSignups)],
+            ["Notifications opened", String(counts.notificationsOpened)],
+          ])}
+        </div></div>`,
+      )}
+    </div>
+    <div>
+      ${section(
+        "Account",
+        `<div class="card"><div class="card-pad">
+          ${kv([
+            ["Role", escapeHtml(user.role)],
+            ["Phone", user.phone ? `${escapeHtml(user.phone)} ${whatsappLink(user.phone)}` : `<span class="muted">—</span>`],
+            ["Email", escapeHtml(user.email ?? "—")],
+            ["Joined", escapeHtml(shortDate(user.createdAt))],
+            ["First seen in app", escapeHtml(activity.firstSeen ? shortDate(activity.firstSeen) : "—")],
+            [
+              "Phone and app",
+              device
+                ? escapeHtml(
+                    [PLATFORM[device.platform ?? ""] ?? device.platform, device.appVersion && `v${device.appVersion}`]
+                      .filter(Boolean)
+                      .join(" · ") || "—",
+                  )
+                : `<span class="muted">—</span>`,
+            ],
+            ["Language", escapeHtml(device?.locale ? LANGUAGE[device.locale] ?? device.locale : "—")],
+            ["Sign-in", escapeHtml(user.passwordHash ? "Password" : "Phone or Google")],
+          ])}
+        </div></div>`,
+      )}
+    </div>
+  </div>
+
+  ${section(
+    "Recent visits",
+    visits.length
+      ? `<div class="card">${visits.join("")}</div>`
+      : `<div class="card"><p class="empty">No visits in the last 30 days.</p></div>`,
+    visits.length ? "newest first · a new visit starts after 30 minutes away" : undefined,
+  )}
 
   <div class="cols">
     <div>
@@ -177,7 +289,7 @@ export async function userDetailPage(req: Request, res: Response) {
       active: "users",
       title: user.name,
       heading: user.name,
-      sub: user.email ?? user.phone ?? undefined,
+      sub: [user.role === "admin" ? "Admin" : "Parent", user.email ?? user.phone].filter(Boolean).join(" · "),
       who: res.locals.adminName,
       flash: flashFrom(req.query as Record<string, unknown>),
       body,

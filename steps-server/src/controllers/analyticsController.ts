@@ -58,6 +58,8 @@ type Incoming = {
   appVersion?: unknown;
   locale?: unknown;
   props?: unknown;
+  /** When it happened on the phone, epoch ms. Older builds send none. */
+  at?: unknown;
 };
 
 function clean(value: string, max = MAX_STRING): string {
@@ -82,6 +84,18 @@ function sanitizeProps(input: unknown): Record<string, string | number | boolean
   return Object.keys(out).length > 0 ? out : null;
 }
 
+/**
+ * A batch arrives up to 15 seconds after its first event. The phone's own
+ * time is used when it is believable — within the last two days and not in
+ * the future — so the order and time on each screen survive the batching.
+ * Without it the events keep their batch order, a millisecond apart.
+ */
+function eventTime(at: unknown, now: number, index: number): Date {
+  const ms = typeof at === "number" ? at : Number.NaN;
+  if (Number.isFinite(ms) && ms <= now + 60_000 && ms >= now - 2 * 86400000) return new Date(Math.min(ms, now));
+  return new Date(now + index);
+}
+
 export async function ingestEvents(req: Request, res: Response) {
   // Answer first, write after: the app is never waiting on analytics.
   res.status(202).json({ ok: true });
@@ -91,11 +105,13 @@ export async function ingestEvents(req: Request, res: Response) {
     if (!Array.isArray(body?.events)) return;
 
     const role = req.userRole ?? null;
+    const now = Date.now();
     const rows = body.events
       .slice(0, MAX_BATCH)
       .filter((item): item is Incoming => !!item && typeof item === "object")
       .filter((item) => typeof item.name === "string" && item.name.length > 0)
-      .map((item) => ({
+      .map((item, index) => ({
+        createdAt: eventTime(item.at, now, index),
         name: clean(item.name as string, MAX_NAME),
         userId: req.userId ?? null,
         anonId: typeof item.anonId === "string" ? clean(item.anonId, 64) : null,
