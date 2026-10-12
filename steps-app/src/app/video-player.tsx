@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useIsFocused } from "@react-navigation/native";
 import { useEvent } from "expo";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
@@ -6,6 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   AppState,
   FlatList,
+  Pressable,
   StyleSheet,
   Text,
   useWindowDimensions,
@@ -14,6 +16,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { formatDuration } from "../components/gallery/VideoCard";
 import { Touchable } from "../components/ui/Touchable";
 import { Colors } from "../constants/Colors";
 import { Fonts } from "../constants/Fonts";
@@ -106,23 +109,106 @@ function VideoPage({
   height: number;
 }) {
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
   const player = useVideoPlayer(resolvePhotoUrl(item.url), (p) => {
     p.loop = true;
+    p.timeUpdateEventInterval = 0.25;
   });
   const { status } = useEvent(player, "statusChange", { status: player.status });
+  const { isPlaying } = useEvent(player, "playingChange", { isPlaying: player.playing });
+  const { currentTime } = useEvent(player, "timeUpdate", {
+    currentTime: player.currentTime,
+    currentLiveTimestamp: null,
+    currentOffsetFromLive: null,
+    bufferedPosition: 0,
+  });
+  const duration = player.duration > 0 ? player.duration : item.durationSec ?? 0;
+
+  // Our own controls rather than the system's: inside a swipeable list the
+  // native ones hid themselves and at times never came back on a tap.
+  const [controlsVisible, setControlsVisible] = useState(true);
+  const [trackWidth, setTrackWidth] = useState(0);
 
   useEffect(() => {
     if (isActive) player.play();
     else player.pause();
+    setControlsVisible(true);
   }, [isActive, player]);
+
+  // Out of the way once it's playing; they stay while paused.
+  useEffect(() => {
+    if (!controlsVisible || !isPlaying) return;
+    const timer = setTimeout(() => setControlsVisible(false), 3000);
+    return () => clearTimeout(timer);
+  }, [controlsVisible, isPlaying, currentTime > 0]);
+
+  const seekBy = (seconds: number) => {
+    player.currentTime = Math.min(Math.max(player.currentTime + seconds, 0), Math.max(duration - 0.1, 0));
+    setControlsVisible(true);
+  };
+  const progress = duration > 0 ? Math.min(currentTime / duration, 1) : 0;
+
+  if (status === "error") {
+    return (
+      <View style={[styles.page, { width, height }]}>
+        <Text style={styles.errorText}>{t.gallery.videoError}</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.page, { width, height }]}>
-      {status === "error" ? (
-        <Text style={styles.errorText}>{t.gallery.videoError}</Text>
-      ) : (
-        <VideoView player={player} style={StyleSheet.absoluteFill} contentFit="contain" nativeControls />
-      )}
+      <VideoView player={player} style={StyleSheet.absoluteFill} contentFit="contain" nativeControls={false} />
+
+      {/* A tap anywhere shows or hides the controls; swipes still page. */}
+      <Pressable style={StyleSheet.absoluteFill} onPress={() => setControlsVisible((shown) => !shown)}>
+        {controlsVisible ? (
+          <View style={styles.controlsLayer}>
+            {/* Media buttons keep their usual left-to-right order in every language. */}
+            <View style={styles.centerRow}>
+              <Touchable style={styles.skipBtn} onPress={() => seekBy(-10)} accessibilityLabel="-10s">
+                <Ionicons name="play-back" size={24} color={Colors.white} />
+                <Text style={styles.skipText}>10</Text>
+              </Touchable>
+              <Touchable
+                style={styles.playBtn}
+                onPress={() => {
+                  if (isPlaying) player.pause();
+                  else player.play();
+                  setControlsVisible(true);
+                }}
+                accessibilityLabel={isPlaying ? "pause" : "play"}
+              >
+                <Ionicons name={isPlaying ? "pause" : "play"} size={34} color={Colors.white} style={!isPlaying && styles.playNudge} />
+              </Touchable>
+              <Touchable style={styles.skipBtn} onPress={() => seekBy(10)} accessibilityLabel="+10s">
+                <Ionicons name="play-forward" size={24} color={Colors.white} />
+                <Text style={styles.skipText}>10</Text>
+              </Touchable>
+            </View>
+
+            <View style={[styles.bottomBar, { bottom: insets.bottom + 24 }]}>
+              {/* Tap the bar to jump to that point. */}
+              <Pressable
+                style={styles.trackHit}
+                onLayout={(e) => setTrackWidth(e.nativeEvent.layout.width)}
+                onPress={(e) => {
+                  if (!trackWidth || !duration) return;
+                  player.currentTime = (e.nativeEvent.locationX / trackWidth) * duration;
+                  setControlsVisible(true);
+                }}
+              >
+                <View style={styles.track}>
+                  <View style={[styles.trackFill, { width: `${progress * 100}%` }]} />
+                </View>
+              </Pressable>
+              <Text style={styles.timeText}>
+                {formatDuration(currentTime)} / {formatDuration(duration)}
+              </Text>
+            </View>
+          </View>
+        ) : null}
+      </Pressable>
     </View>
   );
 }
@@ -149,6 +235,38 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   closeText: { color: Colors.white, fontSize: 18 },
+
+  controlsLayer: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.28)" },
+  centerRow: {
+    ...StyleSheet.absoluteFillObject,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 36,
+  },
+  playBtn: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: "rgba(0,0,0,0.45)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  playNudge: { marginLeft: 4 },
+  skipBtn: { width: 56, height: 56, alignItems: "center", justifyContent: "center" },
+  skipText: { color: Colors.white, fontFamily: Fonts.semiBold, fontSize: 11, marginTop: 1 },
+  bottomBar: { position: "absolute", left: 20, right: 20 },
+  trackHit: { height: 28, justifyContent: "center" },
+  track: { height: 4, borderRadius: 2, backgroundColor: "rgba(255,255,255,0.35)", overflow: "hidden" },
+  trackFill: { height: "100%", backgroundColor: Colors.white },
+  timeText: {
+    color: Colors.white,
+    fontFamily: Fonts.semiBold,
+    fontSize: 12,
+    marginTop: 2,
+    writingDirection: "ltr",
+    textAlign: "left",
+  },
   counter: {
     position: "absolute",
     left: 16,
