@@ -228,10 +228,22 @@ export async function updateEventAttendees(req: Request, res: Response) {
     return res.status(400).json({ message: "One or more attendeeIds are not valid students" });
   }
 
-  const event = await EventModel.setAttendees(param(req, "eventId"), requestedIds);
+  const before = await EventModel.findById(param(req, "eventId"));
+  if (!before) {
+    return res.status(404).json({ message: "Event not found" });
+  }
+  const event = await EventModel.setAttendees(before.id, requestedIds);
   if (!event) {
     return res.status(404).json({ message: "Event not found" });
   }
+
+  const previous = new Set(before.attendees.map((student) => student.id));
+  const next = new Set(requestedIds);
+  await PhotoTagModel.syncAlbumChildren(
+    event.id,
+    requestedIds.filter((id) => !previous.has(id)),
+    [...previous].filter((id) => !next.has(id)),
+  );
   res.json({ event: serializeEvent(event) });
 }
 
@@ -341,15 +353,14 @@ export async function publishEvent(req: Request, res: Response) {
 
   if (event.notifiedAt) {
     const since = event.notifiedAt;
-    const addedCount = await PhotoModel.countByEventSince(event.id, since);
-    if (addedCount === 0) {
-      return res.json({ published: false, reason: "nothing-new" });
-    }
-
-    // Tagged in the new photos, not merely on the attendee list — an album can
-    // gain photos of three children out of twenty, and the other seventeen
+    // Children tagged since the last round — in new photos, or added to the
+    // album afterwards — not merely on the attendee list: an album can gain
+    // photos of three children out of twenty, and the other seventeen
     // families have no reason to hear about it.
     const studentIds = await PhotoModel.studentIdsTaggedSince(event.id, since);
+    if (studentIds.length === 0) {
+      return res.json({ published: false, reason: "nothing-new" });
+    }
     const students = await StudentModel.listByIds(studentIds);
 
     // Stamped before the fan-out so a Done tap that arrives while this one is
@@ -365,8 +376,11 @@ export async function publishEvent(req: Request, res: Response) {
     return res.status(400).json({ message: "Add photos before publishing the album" });
   }
 
+  // The children actually in the photos: the list alone tags nothing that
+  // was uploaded before it was set.
+  const tagged = await StudentModel.listByIds(await PhotoModel.studentIdsTaggedSince(event.id));
   await EventModel.markNotified(event.id);
-  await notifyGuardiansOfStudents(event.attendees, event, albumPublished);
+  await notifyGuardiansOfStudents(tagged, event, albumPublished);
   res.json({ published: true });
 }
 

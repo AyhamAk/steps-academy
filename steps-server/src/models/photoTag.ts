@@ -15,6 +15,26 @@ export const PhotoTagModel = {
     });
   },
 
+  /**
+   * Keeps an album's photos in step with its children list. The list tags
+   * photos as they are uploaded, so changing it afterwards has to reach the
+   * photos already there — otherwise a child added later is in no photo, and
+   * their family sees nothing. A child taken off loses their tags in this
+   * album, the privacy-safe direction.
+   */
+  async syncAlbumChildren(eventId: string, added: string[], removed: string[]): Promise<void> {
+    if (added.length > 0) {
+      const photos = await prisma.photo.findMany({ where: { eventId }, select: { id: true } });
+      await prisma.photoTag.createMany({
+        data: photos.flatMap((photo) => added.map((studentId) => ({ photoId: photo.id, studentId }))),
+        skipDuplicates: true,
+      });
+    }
+    if (removed.length > 0) {
+      await prisma.photoTag.deleteMany({ where: { photo: { eventId }, studentId: { in: removed } } });
+    }
+  },
+
   async remove(tagId: string): Promise<boolean> {
     try {
       await prisma.photoTag.delete({ where: { id: tagId } });

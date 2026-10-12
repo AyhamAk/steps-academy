@@ -84,18 +84,18 @@ export const PhotoModel = {
    * reopens a published album and adds more photos should reach the families
    * of the children in *those* photos, not everyone who was at the event.
    */
-  async studentIdsTaggedSince(eventId: string, since: Date): Promise<string[]> {
+  async studentIdsTaggedSince(eventId: string, since?: Date): Promise<string[]> {
+    // By when the tag was made, not when the photo was: a child added to an
+    // album after its photos were uploaded is tagged on old photos, and their
+    // family is just as new to the album as one whose child is in a new photo.
     const rows = await prisma.photoTag.findMany({
-      where: { photo: { eventId, uploadedAt: { gt: since } } },
+      where: { photo: { eventId }, ...(since ? { createdAt: { gt: since } } : {}) },
       select: { studentId: true },
       distinct: ["studentId"],
     });
     return rows.map((row) => row.studentId);
   },
 
-  async countByEventSince(eventId: string, since: Date): Promise<number> {
-    return prisma.photo.count({ where: { eventId, uploadedAt: { gt: since } } });
-  },
 
   /** As above, scoped to one event. */
   async listForStudentsInEvent(eventId: string, studentIds: string[], limit: number, offset = 0) {

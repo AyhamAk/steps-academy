@@ -401,9 +401,7 @@ export async function publishAlbum(req: Request, res: Response) {
   if (!album) return res.redirect(redirectWith(LIST, { err: "That album is gone." }));
 
   const isFirst = !album.notifiedAt;
-  const studentIds = isFirst
-    ? album.attendees.map((child) => child.id)
-    : await PhotoModel.studentIdsTaggedSince(eventId, album.notifiedAt!);
+  const studentIds = await PhotoModel.studentIdsTaggedSince(eventId, isFirst ? undefined : album.notifiedAt!);
 
   if (studentIds.length === 0) {
     return res.redirect(
