@@ -32,6 +32,7 @@ export type EventName =
   | "album_opened"
   | "album_scrolled_to_end"
   | "video_player_opened"
+  | "video_downloaded"
   | "photo_viewer_opened"
   | "photo_viewer_closed"
   | "photo_downloaded"

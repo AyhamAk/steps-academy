@@ -1,10 +1,15 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useIsFocused } from "@react-navigation/native";
+import { File, Paths } from "expo-file-system";
+import * as MediaLibrary from "expo-media-library";
+import * as Sharing from "expo-sharing";
 import { useEvent } from "expo";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useVideoPlayer, VideoView } from "expo-video";
 import { useEffect, useRef, useState } from "react";
 import {
+  ActivityIndicator,
+  Alert,
   AppState,
   FlatList,
   Pressable,
@@ -25,13 +30,15 @@ import { track } from "../services/analytics";
 import { Photo, resolvePhotoUrl } from "../services/galleryApi";
 import { getPlayerVideos } from "../store/videoPlayerStore";
 
+const ACTION_HEIGHT = 48;
+
 /**
  * An album's videos, full screen, one per page: swipe sideways for the next,
  * like the photo viewer. Only the page on screen plays; everything pauses when
  * the screen loses focus or the app goes to the background.
  */
 export default function VideoPlayerScreen() {
-  const { t } = useTranslation();
+  const { t, isRTL } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
@@ -58,6 +65,51 @@ export default function VideoPlayerScreen() {
     if (visible?.index != null) setActiveIndex(visible.index);
   }).current;
 
+  // Save and Share, as in the photo viewer. The file is fetched once into
+  // the cache; its name keeps the .mp4/.mov ending the photo library needs.
+  const [busy, setBusy] = useState<"download" | "share" | null>(null);
+  const current = videos[activeIndex];
+  const downloadToCache = () =>
+    File.downloadFileAsync(resolvePhotoUrl(current.url), Paths.cache, { idempotent: true });
+
+  const handleDownload = async () => {
+    setBusy("download");
+    try {
+      const permission = await MediaLibrary.requestPermissionsAsync(true);
+      if (!permission.granted) {
+        Alert.alert(t.common.permissionNeeded, t.gallery.allowPhotoLibrarySave, [{ text: t.common.ok }]);
+        return;
+      }
+      const file = await downloadToCache();
+      await MediaLibrary.saveToLibraryAsync(file.uri);
+      track("video_downloaded", { album_id: albumId });
+      Alert.alert(t.gallery.saved, t.gallery.videoSavedToCameraRoll, [{ text: t.common.ok }]);
+    } catch {
+      Alert.alert(t.gallery.couldntSaveVideo, t.common.tryAgain, [{ text: t.common.ok }]);
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const handleShare = async () => {
+    setBusy("share");
+    try {
+      if (!(await Sharing.isAvailableAsync())) {
+        Alert.alert(t.gallery.sharingUnavailable, t.gallery.sharingNotSupported, [{ text: t.common.ok }]);
+        return;
+      }
+      const file = await downloadToCache();
+      await Sharing.shareAsync(file.uri);
+    } catch {
+      Alert.alert(t.gallery.couldntShareVideo, t.common.tryAgain, [{ text: t.common.ok }]);
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  // Where each page draws its progress bar: just above the buttons.
+  const barBottom = insets.bottom + 16 + ACTION_HEIGHT + 14;
+
   return (
     <View style={styles.playerScreen}>
       <Stack.Screen options={{ animation: "fade", gestureEnabled: false }} />
@@ -76,9 +128,40 @@ export default function VideoPlayerScreen() {
         initialNumToRender={1}
         maxToRenderPerBatch={2}
         renderItem={({ item, index }) => (
-          <VideoPage item={item} isActive={index === activeIndex && canPlay} width={width} height={height} />
+          <VideoPage
+            item={item}
+            isActive={index === activeIndex && canPlay}
+            width={width}
+            height={height}
+            barBottom={barBottom}
+          />
         )}
       />
+
+      {current ? (
+        <View style={[styles.actions, isRTL && styles.rowReverse, { bottom: insets.bottom + 16 }]}>
+          <Touchable style={[styles.actionButton, styles.saveButton]} onPress={handleDownload} disabled={!!busy}>
+            {busy === "download" ? (
+              <ActivityIndicator color={Colors.cream} />
+            ) : (
+              <View style={[styles.actionInner, isRTL && styles.rowReverse]}>
+                <Ionicons name="download-outline" size={18} color={Colors.cream} />
+                <Text style={[styles.actionText, styles.saveText]}>{t.gallery.save}</Text>
+              </View>
+            )}
+          </Touchable>
+          <Touchable style={[styles.actionButton, styles.shareButton]} onPress={handleShare} disabled={!!busy}>
+            {busy === "share" ? (
+              <ActivityIndicator color={Colors.sageLight} />
+            ) : (
+              <View style={[styles.actionInner, isRTL && styles.rowReverse]}>
+                <Ionicons name="share-outline" size={18} color={Colors.sageLight} />
+                <Text style={[styles.actionText, styles.shareText]}>{t.gallery.share}</Text>
+              </View>
+            )}
+          </Touchable>
+        </View>
+      ) : null}
 
       <Touchable
         style={[styles.closeBtn, { top: insets.top + 8 }]}
@@ -102,14 +185,16 @@ function VideoPage({
   isActive,
   width,
   height,
+  barBottom,
 }: {
   item: Photo;
   isActive: boolean;
   width: number;
   height: number;
+  /** Distance of the progress bar from the bottom edge, above Save and Share. */
+  barBottom: number;
 }) {
   const { t } = useTranslation();
-  const insets = useSafeAreaInsets();
   const player = useVideoPlayer(resolvePhotoUrl(item.url), (p) => {
     p.loop = true;
     p.timeUpdateEventInterval = 0.25;
@@ -187,7 +272,7 @@ function VideoPage({
               </Touchable>
             </View>
 
-            <View style={[styles.bottomBar, { bottom: insets.bottom + 24 }]}>
+            <View style={[styles.bottomBar, { bottom: barBottom }]}>
               {/* Tap the bar to jump to that point. */}
               <Pressable
                 style={styles.trackHit}
@@ -235,6 +320,34 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   closeText: { color: Colors.white, fontSize: 18 },
+
+  // Save and Share — the photo viewer's buttons, same look.
+  rowReverse: { flexDirection: "row-reverse" },
+  actions: { position: "absolute", left: 16, right: 16, flexDirection: "row", gap: 12 },
+  actionButton: {
+    flex: 1,
+    height: ACTION_HEIGHT,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  saveButton: {
+    backgroundColor: Colors.sage,
+    shadowColor: Colors.sageDeep,
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
+  },
+  shareButton: {
+    backgroundColor: "rgba(44,36,22,0.55)",
+    borderWidth: 1.5,
+    borderColor: Colors.sage,
+  },
+  actionInner: { flexDirection: "row", alignItems: "center", gap: 8 },
+  actionText: { fontFamily: Fonts.semiBold, fontSize: 15 },
+  saveText: { color: Colors.cream },
+  shareText: { color: Colors.sageLight },
 
   controlsLayer: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.28)" },
   centerRow: {

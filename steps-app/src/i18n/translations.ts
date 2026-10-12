@@ -821,6 +821,9 @@ Open the app and sign in with this phone number. You'll be connected to ${child}
     photosSection: "Photos",
     videoError: "This video couldn't be played",
     closeVideo: "Close",
+    videoSavedToCameraRoll: "The video was saved to your photos.",
+    couldntSaveVideo: "Couldn't save the video",
+    couldntShareVideo: "Couldn't share the video",
     failed: "Failed",
     uploadDone: "Done",
 
@@ -1672,6 +1675,9 @@ export const ar: Translations = {
     photosSection: "صور",
     videoError: "تعذّر تشغيل هذا الفيديو",
     closeVideo: "إغلاق",
+    videoSavedToCameraRoll: "تم حفظ الفيديو في معرض الصور.",
+    couldntSaveVideo: "تعذّر حفظ الفيديو",
+    couldntShareVideo: "تعذّرت مشاركة الفيديو",
     failed: "فشل",
     uploadDone: "تم",
 
@@ -2526,6 +2532,9 @@ export const he: Translations = {
     photosSection: "תמונות",
     videoError: "לא ניתן להפעיל את הסרטון",
     closeVideo: "סגירה",
+    videoSavedToCameraRoll: "הסרטון נשמר בגלריה שלך.",
+    couldntSaveVideo: "לא ניתן לשמור את הסרטון",
+    couldntShareVideo: "לא ניתן לשתף את הסרטון",
     failed: "נכשל",
     uploadDone: "הושלם",
 
