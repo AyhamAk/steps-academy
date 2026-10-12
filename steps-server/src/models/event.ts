@@ -80,8 +80,10 @@ export const EventModel = {
       skip: offset,
       include: {
         ...includeAttendees,
-        _count: { select: { photos: true } },
-        photos: { orderBy: { uploadedAt: "asc" }, take: previewCount },
+        // Stills only: older apps show this count as "N photos" and the
+        // previews as images.
+        _count: { select: { photos: { where: { mediaType: "photo" } } } },
+        photos: { where: { mediaType: "photo" }, orderBy: { uploadedAt: "asc" }, take: previewCount },
       },
     });
     return events.map((event) => {

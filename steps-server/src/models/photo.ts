@@ -5,6 +5,27 @@ import { DEFAULT_PAGE_SIZE } from "./event";
 
 export type Photo = PrismaPhoto;
 
+/**
+ * "photo" unless a caller asks for "all". App versions from before videos
+ * existed never ask, so they keep receiving exactly the stills they can show.
+ */
+export type MediaFilter = "photo" | "all";
+
+function mediaWhere(media: MediaFilter) {
+  return media === "all" ? {} : { mediaType: "photo" as const };
+}
+
+type CreateVideoInput = {
+  eventId: string;
+  filename: string;
+  uploadedBy: string;
+  videoKey: string;
+  posterKey: string;
+  durationSec: number;
+  mimeType: string;
+  sizeBytes: number;
+};
+
 type CreatePhotoInput = {
   eventId: string;
   filename: string;
@@ -32,13 +53,49 @@ export const PhotoModel = {
     });
   },
 
+  /** A video row: the file in `key`, its poster in thumbKey and mediumKey. */
+  async createVideo(input: CreateVideoInput): Promise<Photo> {
+    return prisma.photo.create({
+      data: {
+        eventId: input.eventId,
+        filename: input.filename,
+        mediaType: "video",
+        key: input.videoKey,
+        thumbKey: input.posterKey,
+        mediumKey: input.posterKey,
+        durationSec: input.durationSec,
+        mimeType: input.mimeType,
+        sizeBytes: input.sizeBytes,
+        uploadedBy: input.uploadedBy,
+      },
+    });
+  },
+
+  /** How many photos and videos of these children an album holds. */
+  async countForStudentsInEvent(eventId: string, studentIds: string[]) {
+    if (studentIds.length === 0) return { all: 0, photo: 0, video: 0 };
+    const rows = await prisma.photo.groupBy({
+      by: ["mediaType"],
+      where: { eventId, tags: { some: { studentId: { in: studentIds } } } },
+      _count: { _all: true },
+    });
+    const photo = rows.find((row) => row.mediaType === "photo")?._count._all ?? 0;
+    const video = rows.find((row) => row.mediaType === "video")?._count._all ?? 0;
+    return { all: photo + video, photo, video };
+  },
+
   async findById(id: string): Promise<Photo | null> {
     return prisma.photo.findUnique({ where: { id } });
   },
 
-  async listByEvent(eventId: string, limit = DEFAULT_PAGE_SIZE, offset = 0): Promise<Photo[]> {
+  async listByEvent(
+    eventId: string,
+    limit = DEFAULT_PAGE_SIZE,
+    offset = 0,
+    media: MediaFilter = "photo",
+  ): Promise<Photo[]> {
     return prisma.photo.findMany({
-      where: { eventId },
+      where: { eventId, ...mediaWhere(media) },
       orderBy: { uploadedAt: "asc" },
       take: limit,
       skip: offset,
@@ -66,7 +123,8 @@ export const PhotoModel = {
   async listForStudents(studentIds: string[], limit: number, offset = 0) {
     if (studentIds.length === 0) return [];
     return prisma.photo.findMany({
-      where: { tags: { some: { studentId: { in: studentIds } } } },
+      // Photos only: the feeds this serves (Home, gallery list) show stills.
+      where: { mediaType: "photo", tags: { some: { studentId: { in: studentIds } } } },
       include: {
         event: true,
         tags: { include: { student: { select: { id: true, name: true } } } },
@@ -98,10 +156,16 @@ export const PhotoModel = {
 
 
   /** As above, scoped to one event. */
-  async listForStudentsInEvent(eventId: string, studentIds: string[], limit: number, offset = 0) {
+  async listForStudentsInEvent(
+    eventId: string,
+    studentIds: string[],
+    limit: number,
+    offset = 0,
+    media: MediaFilter = "photo",
+  ) {
     if (studentIds.length === 0) return [];
     return prisma.photo.findMany({
-      where: { eventId, tags: { some: { studentId: { in: studentIds } } } },
+      where: { eventId, ...mediaWhere(media), tags: { some: { studentId: { in: studentIds } } } },
       include: { tags: { include: { student: { select: { id: true, name: true } } } } },
       orderBy: { uploadedAt: "asc" },
       take: limit,

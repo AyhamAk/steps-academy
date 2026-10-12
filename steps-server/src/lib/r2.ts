@@ -1,4 +1,4 @@
-import { DeleteObjectsCommand, GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { DeleteObjectsCommand, GetObjectCommand, HeadObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 import { env } from "../config/env";
@@ -31,6 +31,38 @@ export async function uploadObject(key: string, body: Buffer, contentType: strin
 export async function getSignedGetUrl(key: string, expiresInSeconds = 3600): Promise<string> {
   const command = new GetObjectCommand({ Bucket: env.r2.bucketName, Key: key });
   return getSignedUrl(r2, command, { expiresIn: expiresInSeconds });
+}
+
+/**
+ * A short-lived link the phone PUTs one file to, straight into R2.
+ *
+ * Videos are too big to pass through the API: uploads there are held in
+ * memory and capped at 15 MB. The type and exact size are signed in, so the
+ * link cannot be reused for a different or larger file.
+ */
+export async function getSignedPutUrl(
+  key: string,
+  contentType: string,
+  contentLength: number,
+  expiresInSeconds = 900,
+): Promise<string> {
+  const command = new PutObjectCommand({
+    Bucket: env.r2.bucketName,
+    Key: key,
+    ContentType: contentType,
+    ContentLength: contentLength,
+  });
+  return getSignedUrl(r2, command, { expiresIn: expiresInSeconds, signableHeaders: new Set(["content-type", "content-length"]) });
+}
+
+/** The object's size in bytes, or null if it isn't there. */
+export async function objectSize(key: string): Promise<number | null> {
+  try {
+    const head = await r2.send(new HeadObjectCommand({ Bucket: env.r2.bucketName, Key: key }));
+    return head.ContentLength ?? 0;
+  } catch {
+    return null;
+  }
 }
 
 /**

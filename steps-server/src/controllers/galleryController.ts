@@ -1,12 +1,14 @@
+import { randomUUID } from "crypto";
+
 import { Request, Response } from "express";
 
 import { processAndUploadImage } from "../lib/imageUpload";
 import { sendPushToUsers } from "../lib/push";
 import { albumPublished, albumUpdated } from "../lib/pushCopy";
-import { getSignedGetUrl } from "../lib/r2";
+import { deleteObjects, getSignedGetUrl, getSignedPutUrl, objectSize } from "../lib/r2";
 import { DEFAULT_PAGE_SIZE, EventModel } from "../models/event";
 import { NotificationModel } from "../models/notification";
-import { Photo, PhotoModel } from "../models/photo";
+import { MediaFilter, Photo, PhotoModel } from "../models/photo";
 import { PhotoTagModel } from "../models/photoTag";
 import { SETTING_KEYS, SettingModel } from "../models/setting";
 import { StudentModel } from "../models/student";
@@ -40,17 +42,34 @@ function albumPagination(req: Request): { limit: number; offset: number } {
 
 type TagShape = { id: string; studentId: string; student: { id: string; name: string } };
 
-/** Every photo read goes through a signed URL — nothing in R2 is public. */
+/**
+ * Every read goes through a signed URL — nothing in R2 is public. For a video
+ * `url` is the video file itself; its poster is `thumbnailUrl`.
+ */
 async function resolvePhotoUrl(photo: Photo): Promise<string> {
   if (photo.externalUrl) return photo.externalUrl;
+  if (photo.mediaType === "video") return getSignedGetUrl(photo.key!);
   return getSignedGetUrl(photo.mediumKey ?? photo.key!);
 }
 
+/** Album lists include videos only for app versions that ask for them. */
+function mediaFilter(req: Request): MediaFilter {
+  return req.query.media === "all" ? "all" : "photo";
+}
+
 async function serializePhotoWithTags(photo: Photo, tags: TagShape[]) {
+  const isVideo = photo.mediaType === "video";
   return {
     id: photo.id,
     eventId: photo.eventId,
+    type: photo.mediaType,
     url: await resolvePhotoUrl(photo),
+    ...(isVideo
+      ? {
+          thumbnailUrl: photo.thumbKey ? await getSignedGetUrl(photo.thumbKey) : null,
+          durationSec: photo.durationSec ?? 0,
+        }
+      : {}),
     uploadedAt: photo.uploadedAt,
     tags: tags.map((tag) => ({
       id: tag.id,
@@ -391,7 +410,7 @@ export async function listEventPhotos(req: Request, res: Response) {
   }
 
   const { limit, offset } = albumPagination(req);
-  const rawPhotos = await PhotoModel.listByEvent(event.id, limit, offset);
+  const rawPhotos = await PhotoModel.listByEvent(event.id, limit, offset, mediaFilter(req));
   const tags = await PhotoTagModel.listByPhotoIds(rawPhotos.map((photo) => photo.id));
   const photos = await Promise.all(
     rawPhotos.map((photo) =>
@@ -405,9 +424,16 @@ export async function listEventPhotos(req: Request, res: Response) {
 }
 
 export async function deletePhoto(req: Request, res: Response) {
-  const removed = await PhotoModel.remove(param(req, "photoId"));
-  if (!removed) {
+  const photo = await PhotoModel.findById(param(req, "photoId"));
+  const removed = photo ? await PhotoModel.remove(photo.id) : false;
+  if (!photo || !removed) {
     return res.status(404).json({ message: "Photo not found" });
+  }
+  // The files too — a deleted video would otherwise sit in the bucket for good.
+  try {
+    await deleteObjects([photo.key, photo.thumbKey, photo.mediumKey]);
+  } catch (error) {
+    console.error("[gallery] deleting files failed:", error);
   }
   res.json({ message: "Photo deleted" });
 }
@@ -502,15 +528,108 @@ export async function myEventGallery(req: Request, res: Response) {
   if (!event) {
     return res.status(404).json({ message: "Event not found" });
   }
+  const media = mediaFilter(req);
   if (studentIds.length === 0) {
-    return res.json({ event: serializeEvent(event), photos: [] });
+    return res.json({
+      event: serializeEvent(event),
+      photos: [],
+      ...(media === "all" ? { counts: { all: 0, photo: 0, video: 0 } } : {}),
+    });
   }
 
   const { limit, offset } = albumPagination(req);
-  const rawPhotos = await PhotoModel.listForStudentsInEvent(event.id, studentIds, limit, offset);
+  // Same visibility for both kinds: only items tagged with this parent's children.
+  const [rawPhotos, counts] = await Promise.all([
+    PhotoModel.listForStudentsInEvent(event.id, studentIds, limit, offset, media),
+    media === "all" ? PhotoModel.countForStudentsInEvent(event.id, studentIds) : null,
+  ]);
   const photos = await Promise.all(
     rawPhotos.map((photo) => serializePhotoWithTags(photo, photo.tags))
   );
 
-  res.json({ event: serializeEvent(event), photos });
+  res.json({ event: serializeEvent(event), photos, ...(counts ? { counts } : {}) });
+}
+
+// ── Videos ──────────────────────────────────────────────────────────────────
+// A video goes from the admin's phone straight into R2 through signed links:
+// the API holds uploads in memory with a 15 MB cap, far too small for video.
+// 1. presign: checks type, size and length, returns a PUT link for the video
+//    and one for its poster (made on the phone).
+// 2. register: confirms both files arrived, then records the video like a
+//    photo — tagged with the album's children, so the same parents see it.
+
+const VIDEO_TYPES: Record<string, string> = { "video/mp4": "mp4", "video/quicktime": "mov" };
+export const MAX_VIDEO_BYTES = 100 * 1024 * 1024;
+export const MAX_VIDEO_SECONDS = 100;
+const MAX_POSTER_BYTES = 5 * 1024 * 1024;
+
+type VideoInput = { mimeType?: unknown; sizeBytes?: unknown; durationSec?: unknown; posterBytes?: unknown };
+
+/** An error code the app translates, or null when the video is acceptable. */
+function videoProblem(body: VideoInput): string | null {
+  if (typeof body.mimeType !== "string" || !VIDEO_TYPES[body.mimeType]) return "video_type";
+  const size = Number(body.sizeBytes);
+  if (!Number.isFinite(size) || size <= 0 || size > MAX_VIDEO_BYTES) return "video_too_big";
+  const seconds = Number(body.durationSec);
+  // A second of slack: the picker reports 100.4s as 100.
+  if (!Number.isFinite(seconds) || seconds < 0 || seconds > MAX_VIDEO_SECONDS + 1) return "video_too_long";
+  return null;
+}
+
+export async function presignVideo(req: Request, res: Response) {
+  const event = await EventModel.findById(param(req, "eventId"));
+  if (!event) return res.status(404).json({ message: "Event not found" });
+
+  const body = (req.body ?? {}) as VideoInput;
+  const problem = videoProblem(body);
+  if (problem) return res.status(400).json({ code: problem, maxMb: MAX_VIDEO_BYTES / 1024 / 1024, maxSeconds: MAX_VIDEO_SECONDS });
+  const posterBytes = Number(body.posterBytes);
+  if (!Number.isFinite(posterBytes) || posterBytes <= 0 || posterBytes > MAX_POSTER_BYTES) {
+    return res.status(400).json({ code: "poster_invalid" });
+  }
+
+  const base = `events/${event.id}/${randomUUID()}`;
+  const videoKey = `${base}-video.${VIDEO_TYPES[body.mimeType as string]}`;
+  const posterKey = `${base}-poster.jpg`;
+  res.json({
+    videoKey,
+    posterKey,
+    videoPutUrl: await getSignedPutUrl(videoKey, body.mimeType as string, Number(body.sizeBytes)),
+    posterPutUrl: await getSignedPutUrl(posterKey, "image/jpeg", posterBytes),
+  });
+}
+
+export async function registerVideo(req: Request, res: Response) {
+  const event = await EventModel.findById(param(req, "eventId"));
+  if (!event) return res.status(404).json({ message: "Event not found" });
+
+  const body = (req.body ?? {}) as VideoInput & { videoKey?: unknown; posterKey?: unknown; filename?: unknown };
+  const problem = videoProblem(body);
+  if (problem) return res.status(400).json({ code: problem });
+
+  // Only keys this album's presign could have produced.
+  const prefix = `events/${event.id}/`;
+  const videoKey = typeof body.videoKey === "string" ? body.videoKey : "";
+  const posterKey = typeof body.posterKey === "string" ? body.posterKey : "";
+  if (!videoKey.startsWith(prefix) || !posterKey.startsWith(prefix) || videoKey.includes("..")) {
+    return res.status(400).json({ code: "video_keys" });
+  }
+
+  const [videoSize, posterSize] = await Promise.all([objectSize(videoKey), objectSize(posterKey)]);
+  if (videoSize === null || posterSize === null) return res.status(400).json({ code: "video_not_uploaded" });
+
+  const video = await PhotoModel.createVideo({
+    eventId: event.id,
+    filename: typeof body.filename === "string" ? body.filename.slice(0, 200) : "video",
+    uploadedBy: req.userId!,
+    videoKey,
+    posterKey,
+    durationSec: Math.round(Number(body.durationSec)),
+    mimeType: body.mimeType as string,
+    sizeBytes: videoSize,
+  });
+  // Tagged like an uploaded photo: everyone on the album's children list.
+  await Promise.all(event.attendees.map((student) => PhotoTagModel.create(video.id, student.id)));
+
+  res.status(201).json({ photo: await serializePhoto(video.id) });
 }

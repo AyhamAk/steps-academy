@@ -16,7 +16,9 @@ import {
   updateEvent,
   updateEventAttendees,
   updateEventCaption,
+  presignVideo,
   publishEvent,
+  registerVideo,
   uploadPhotos,
 } from "../controllers/galleryController";
 import { adminOnly, requireAuth } from "../middleware/auth";
@@ -41,6 +43,9 @@ router.post(
   uploadPhotos
 );
 router.get("/events/:eventId/photos", requireAuth, adminOnly, listEventPhotos);
+// Videos upload straight to R2 — see presignVideo.
+router.post("/events/:eventId/videos/presign", requireAuth, adminOnly, presignVideo);
+router.post("/events/:eventId/videos", requireAuth, adminOnly, registerVideo);
 // Announcing a finished album is its own step - see publishEvent.
 router.post("/events/:eventId/publish", requireAuth, adminOnly, publishEvent);
 router.patch("/events/:eventId/caption", requireAuth, adminOnly, updateEventCaption);

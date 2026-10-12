@@ -13,6 +13,11 @@ enum Role {
   parent
 }
 
+enum MediaType {
+  photo
+  video
+}
+
 enum NotificationType {
   photo
   announcement
@@ -351,6 +356,13 @@ model Photo {
   mediumKey   String?
   // Set only for dev-seed placeholder photos (e.g. picsum.photos) that bypass R2 entirely
   externalUrl String?
+
+  /// A video is a row here too, so tags, visibility and publishing are shared.
+  /// For a video, `key` is the video file and thumbKey/mediumKey its poster.
+  mediaType   MediaType @default(photo)
+  durationSec Int?
+  mimeType    String?
+  sizeBytes   Int?
 
   uploadedBy String
   uploader   User     @relation(fields: [uploadedBy], references: [id])
