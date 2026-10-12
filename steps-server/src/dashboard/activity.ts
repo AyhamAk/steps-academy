@@ -234,16 +234,39 @@ export async function userActivity(userId: string, maxVisits = 12): Promise<User
 // ── Everyone ─────────────────────────────────────────────────────────────────
 
 /** Last seen and active days per account, for the Users list. */
-export async function lastSeenByUser(): Promise<Map<string, { last: Date; days30: number }>> {
-  const rows = await q<{ uid: string; last: Date; days30: number }>(
-    `select "userId" uid, max("createdAt") last,
-            count(distinct date_trunc('day', "createdAt" at time zone 'Asia/Jerusalem'))
-              filter (where "createdAt" > now() - interval '30 days')::int days30
-     from "AnalyticsEvent"
-     where "userId" is not null and name <> 'api_request'
-     group by 1`,
+export type SeenSummary = {
+  last: Date;
+  days30: number;
+  /** The app version and phone the account last used — what it runs now. */
+  appVersion: string | null;
+  platform: string | null;
+};
+
+/** Last seen, active days and current app version per account, for the Users list. */
+export async function lastSeenByUser(): Promise<Map<string, SeenSummary>> {
+  const rows = await q<{ uid: string; last: Date; days30: number; appVersion: string | null; platform: string | null }>(
+    `select a.uid, a.last, a.days30, v."appVersion", v.platform
+     from (
+       select "userId" uid, max("createdAt") last,
+              count(distinct date_trunc('day', "createdAt" at time zone 'Asia/Jerusalem'))
+                filter (where "createdAt" > now() - interval '30 days')::int days30
+       from "AnalyticsEvent"
+       where "userId" is not null and name <> 'api_request'
+       group by 1
+     ) a
+     left join (
+       select distinct on ("userId") "userId", "appVersion", platform
+       from "AnalyticsEvent"
+       where "userId" is not null and name <> 'api_request' and "appVersion" is not null
+       order by "userId", "createdAt" desc
+     ) v on v."userId" = a.uid`,
   );
-  return new Map(rows.map((row) => [row.uid, { last: row.last, days30: row.days30 }]));
+  return new Map(
+    rows.map((row) => [
+      row.uid,
+      { last: row.last, days30: row.days30, appVersion: row.appVersion, platform: row.platform },
+    ]),
+  );
 }
 
 export type QuietFamily = {

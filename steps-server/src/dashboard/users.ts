@@ -25,9 +25,20 @@ import {
   tableCard,
   whatsappLink,
 } from "../utils/html";
-import { duration, israelTime, lastSeenByUser, userActivity } from "./activity";
+import { duration, israelTime, lastSeenByUser, SeenSummary, userActivity } from "./activity";
 
 const DAY_MS = 86400000;
+
+/** "1.0.10" after "1.0.9": compared part by part as numbers, not as text. */
+function compareVersions(a: string, b: string): number {
+  const pa = a.split(".").map(Number);
+  const pb = b.split(".").map(Number);
+  for (let i = 0; i < Math.max(pa.length, pb.length); i += 1) {
+    const diff = (pa[i] || 0) - (pb[i] || 0);
+    if (diff) return diff;
+  }
+  return 0;
+}
 
 /** Green today, honey this fortnight, clay beyond that, grey for never. */
 function seenDot(last: Date | null | undefined): string {
@@ -55,6 +66,19 @@ export async function usersPage(req: Request, res: Response) {
   const { users, total } = await UserModel.listAllWithChildren({ search, limit: 200 });
   const [awaiting, seen] = await Promise.all([UserModel.listAwaitingLink(), lastSeenByUser()]);
 
+  // The newest version anyone is on counts as current; older ones are flagged.
+  const versions = [...seen.values()].map((s) => s.appVersion).filter((v): v is string => !!v && v !== "unknown");
+  const sorted = versions.sort(compareVersions);
+  const newest = sorted.length ? sorted[sorted.length - 1] : null;
+  const versionPill = (s: SeenSummary | undefined) => {
+    if (!s?.appVersion || s.appVersion === "unknown") return `<span class="muted">—</span>`;
+    const phone = s.platform === "ios" ? "iPhone" : s.platform === "android" ? "Android" : "";
+    const tone = s.appVersion === newest ? "pill-approved" : "pill-pending";
+    return `<span class="pill ${tone}">${escapeHtml(s.appVersion)}</span>${
+      phone ? ` <span class="muted">${phone}</span>` : ""
+    }`;
+  };
+
   const rows = users.map((user) => {
     const activity = seen.get(user.id);
     return [
@@ -66,10 +90,22 @@ export async function usersPage(req: Request, res: Response) {
           ? `<span class="muted">claims “${escapeHtml(user.claimedChildName)}”</span>`
           : `<span class="muted">none</span>`,
       seenDot(activity?.last),
+      versionPill(activity),
       activity?.days30 ? `${activity.days30} <span class="muted">/ 30</span>` : `<span class="muted">0</span>`,
       escapeHtml(shortDate(user.createdAt)),
     ];
   });
+
+  // How many accounts run each version, newest first.
+  const byVersion = new Map<string, number>();
+  for (const user of users) {
+    const version = seen.get(user.id)?.appVersion;
+    if (version && version !== "unknown") byVersion.set(version, (byVersion.get(version) ?? 0) + 1);
+  }
+  const versionLine = [...byVersion.entries()]
+    .sort((a, b) => compareVersions(b[0], a[0]))
+    .map(([version, count]) => `${version}: ${count}`)
+    .join(" · ");
 
   const parents = users.filter((u) => u.role === "parent");
   const activeWeek = parents.filter((u) => {
@@ -88,6 +124,12 @@ export async function usersPage(req: Request, res: Response) {
       tone: "var(--forest)",
     })}
     ${statCard({
+      label: "On the newest app",
+      value: newest ? `${byVersion.get(newest) ?? 0}/${[...byVersion.values()].reduce((a, b) => a + b, 0)}` : "—",
+      sub: newest ? `v${newest} · ${versionLine}` : "no versions reported yet",
+      tone: "var(--sky)",
+    })}
+    ${statCard({
       label: "Awaiting a child link",
       value: String(awaiting.length),
       sub: awaiting.length ? "signed up but can see nothing" : "nobody waiting",
@@ -103,8 +145,8 @@ export async function usersPage(req: Request, res: Response) {
 
   ${section(
     "All accounts",
-    tableCard(["Account", "Role", "Children", "Last seen", "Active days", "Joined"], rows, {
-      hideOnPhone: [1, 4, 5],
+    tableCard(["Account", "Role", "Children", "Last seen", "App version", "Active days", "Joined"], rows, {
+      hideOnPhone: [1, 5, 6],
     }),
     search ? `matching “${search}”` : undefined,
   )}`;
