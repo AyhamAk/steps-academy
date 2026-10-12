@@ -10,6 +10,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Animated,
   AppState,
   FlatList,
   Pressable,
@@ -30,12 +31,15 @@ import { track } from "../services/analytics";
 import { Photo, resolvePhotoUrl } from "../services/galleryApi";
 import { getPlayerVideos } from "../store/videoPlayerStore";
 
-const ACTION_HEIGHT = 48;
+/** Height of the Save/Share row, so each page can sit its progress bar above it. */
+const ACTIONS_HEIGHT = 62;
 
 /**
  * An album's videos, full screen, one per page: swipe sideways for the next,
- * like the photo viewer. Only the page on screen plays; everything pauses when
- * the screen loses focus or the app goes to the background.
+ * like the photo viewer — and dressed like it: a plain ✕ and counter on top,
+ * Save and Share underneath, all hidden or shown by a single tap. Only the
+ * page on screen plays; everything pauses when the screen loses focus or the
+ * app goes to the background.
  */
 export default function VideoPlayerScreen() {
   const { t, isRTL } = useTranslation();
@@ -64,6 +68,18 @@ export default function VideoPlayerScreen() {
     const visible = viewableItems.find((entry) => entry.isViewable);
     if (visible?.index != null) setActiveIndex(visible.index);
   }).current;
+
+  // One switch for everything on top of the video: bars and playback controls.
+  const chromeOpacity = useRef(new Animated.Value(1)).current;
+  const [chromeVisible, setChromeVisible] = useState(true);
+  const showChrome = (next: boolean) => {
+    setChromeVisible(next);
+    Animated.timing(chromeOpacity, { toValue: next ? 1 : 0, duration: 150, useNativeDriver: true }).start();
+  };
+  // A new video starts with its controls showing.
+  useEffect(() => {
+    showChrome(true);
+  }, [activeIndex]);
 
   // Save and Share, as in the photo viewer. The file is fetched once into
   // the cache; its name keeps the .mp4/.mov ending the photo library needs.
@@ -107,9 +123,6 @@ export default function VideoPlayerScreen() {
     }
   };
 
-  // Where each page draws its progress bar: just above the buttons.
-  const barBottom = insets.bottom + 16 + ACTION_HEIGHT + 14;
-
   return (
     <View style={styles.playerScreen}>
       <Stack.Screen options={{ animation: "fade", gestureEnabled: false }} />
@@ -133,48 +146,58 @@ export default function VideoPlayerScreen() {
             isActive={index === activeIndex && canPlay}
             width={width}
             height={height}
-            barBottom={barBottom}
+            barBottom={insets.bottom + 14 + ACTIONS_HEIGHT}
+            chromeVisible={chromeVisible && index === activeIndex}
+            chromeOpacity={chromeOpacity}
+            onToggleChrome={() => showChrome(!chromeVisible)}
+            onHideChrome={() => showChrome(false)}
           />
         )}
       />
 
-      {current ? (
-        <View style={[styles.actions, isRTL && styles.rowReverse, { bottom: insets.bottom + 16 }]}>
-          <Touchable style={[styles.actionButton, styles.saveButton]} onPress={handleDownload} disabled={!!busy}>
-            {busy === "download" ? (
-              <ActivityIndicator color={Colors.cream} />
-            ) : (
-              <View style={[styles.actionInner, isRTL && styles.rowReverse]}>
-                <Ionicons name="download-outline" size={18} color={Colors.cream} />
-                <Text style={[styles.actionText, styles.saveText]}>{t.gallery.save}</Text>
-              </View>
-            )}
-          </Touchable>
-          <Touchable style={[styles.actionButton, styles.shareButton]} onPress={handleShare} disabled={!!busy}>
-            {busy === "share" ? (
-              <ActivityIndicator color={Colors.sageLight} />
-            ) : (
-              <View style={[styles.actionInner, isRTL && styles.rowReverse]}>
-                <Ionicons name="share-outline" size={18} color={Colors.sageLight} />
-                <Text style={[styles.actionText, styles.shareText]}>{t.gallery.share}</Text>
-              </View>
-            )}
-          </Touchable>
-        </View>
-      ) : null}
-
-      <Touchable
-        style={[styles.closeBtn, { top: insets.top + 8 }]}
-        hitSlop={12}
-        onPress={() => router.back()}
-        accessibilityLabel={t.gallery.closeVideo}
+      {/* ✕ on the same physical side in every language, as system photo apps do. */}
+      <Animated.View
+        pointerEvents={chromeVisible ? "box-none" : "none"}
+        style={[styles.topBar, { paddingTop: insets.top + 6, opacity: chromeOpacity }]}
       >
-        <Text style={styles.closeText}>✕</Text>
-      </Touchable>
-      {videos.length > 1 ? (
-        <Text style={[styles.counter, { top: insets.top + 20 }]}>
-          {activeIndex + 1} / {videos.length}
-        </Text>
+        <Touchable style={styles.iconBtn} onPress={() => router.back()} hitSlop={10} accessibilityLabel={t.gallery.closeVideo}>
+          <Ionicons name="close" size={26} color={Colors.white} />
+        </Touchable>
+        {videos.length > 1 ? (
+          <Text style={styles.counter}>
+            {activeIndex + 1} / {videos.length}
+          </Text>
+        ) : null}
+        <View style={styles.iconBtn} />
+      </Animated.View>
+
+      {/* Save then Share in reading order: Save on the right in Arabic and Hebrew. */}
+      {current ? (
+        <Animated.View
+          pointerEvents={chromeVisible ? "box-none" : "none"}
+          style={[
+            styles.actionsBar,
+            isRTL && styles.rowReverse,
+            { paddingBottom: insets.bottom + 14, opacity: chromeOpacity },
+          ]}
+        >
+          <Touchable style={styles.action} onPress={handleDownload} disabled={!!busy} accessibilityLabel={t.gallery.save}>
+            {busy === "download" ? (
+              <ActivityIndicator color={Colors.white} />
+            ) : (
+              <Ionicons name="download-outline" size={26} color={Colors.white} />
+            )}
+            <Text style={styles.actionLabel}>{t.gallery.save}</Text>
+          </Touchable>
+          <Touchable style={styles.action} onPress={handleShare} disabled={!!busy} accessibilityLabel={t.gallery.share}>
+            {busy === "share" ? (
+              <ActivityIndicator color={Colors.white} />
+            ) : (
+              <Ionicons name="share-outline" size={26} color={Colors.white} />
+            )}
+            <Text style={styles.actionLabel}>{t.gallery.share}</Text>
+          </Touchable>
+        </Animated.View>
       ) : null}
     </View>
   );
@@ -186,6 +209,10 @@ function VideoPage({
   width,
   height,
   barBottom,
+  chromeVisible,
+  chromeOpacity,
+  onToggleChrome,
+  onHideChrome,
 }: {
   item: Photo;
   isActive: boolean;
@@ -193,6 +220,10 @@ function VideoPage({
   height: number;
   /** Distance of the progress bar from the bottom edge, above Save and Share. */
   barBottom: number;
+  chromeVisible: boolean;
+  chromeOpacity: Animated.Value;
+  onToggleChrome: () => void;
+  onHideChrome: () => void;
 }) {
   const { t } = useTranslation();
   const player = useVideoPlayer(resolvePhotoUrl(item.url), (p) => {
@@ -208,28 +239,27 @@ function VideoPage({
     bufferedPosition: 0,
   });
   const duration = player.duration > 0 ? player.duration : item.durationSec ?? 0;
-
-  // Our own controls rather than the system's: inside a swipeable list the
-  // native ones hid themselves and at times never came back on a tap.
-  const [controlsVisible, setControlsVisible] = useState(true);
   const [trackWidth, setTrackWidth] = useState(0);
 
   useEffect(() => {
     if (isActive) player.play();
     else player.pause();
-    setControlsVisible(true);
   }, [isActive, player]);
 
-  // Out of the way once it's playing; they stay while paused.
+  // Our own controls rather than the system's: inside a swipeable list the
+  // native ones hid themselves and at times never came back on a tap. They
+  // get out of the way once the video plays, and stay while it's paused.
+  const [lastTouch, setLastTouch] = useState(0);
   useEffect(() => {
-    if (!controlsVisible || !isPlaying) return;
-    const timer = setTimeout(() => setControlsVisible(false), 3000);
+    if (!chromeVisible || !isPlaying) return;
+    const timer = setTimeout(onHideChrome, 3000);
     return () => clearTimeout(timer);
-  }, [controlsVisible, isPlaying, currentTime > 0]);
+  }, [chromeVisible, isPlaying, lastTouch]);
+  const touched = () => setLastTouch(Date.now());
 
   const seekBy = (seconds: number) => {
     player.currentTime = Math.min(Math.max(player.currentTime + seconds, 0), Math.max(duration - 0.1, 0));
-    setControlsVisible(true);
+    touched();
   };
   const progress = duration > 0 ? Math.min(currentTime / duration, 1) : 0;
 
@@ -245,54 +275,60 @@ function VideoPage({
     <View style={[styles.page, { width, height }]}>
       <VideoView player={player} style={StyleSheet.absoluteFill} contentFit="contain" nativeControls={false} />
 
-      {/* A tap anywhere shows or hides the controls; swipes still page. */}
-      <Pressable style={StyleSheet.absoluteFill} onPress={() => setControlsVisible((shown) => !shown)}>
-        {controlsVisible ? (
-          <View style={styles.controlsLayer}>
-            {/* Media buttons keep their usual left-to-right order in every language. */}
-            <View style={styles.centerRow}>
-              <Touchable style={styles.skipBtn} onPress={() => seekBy(-10)} accessibilityLabel="-10s">
-                <Ionicons name="play-back" size={24} color={Colors.white} />
-                <Text style={styles.skipText}>10</Text>
-              </Touchable>
-              <Touchable
-                style={styles.playBtn}
-                onPress={() => {
-                  if (isPlaying) player.pause();
-                  else player.play();
-                  setControlsVisible(true);
-                }}
-                accessibilityLabel={isPlaying ? "pause" : "play"}
-              >
-                <Ionicons name={isPlaying ? "pause" : "play"} size={34} color={Colors.white} style={!isPlaying && styles.playNudge} />
-              </Touchable>
-              <Touchable style={styles.skipBtn} onPress={() => seekBy(10)} accessibilityLabel="+10s">
-                <Ionicons name="play-forward" size={24} color={Colors.white} />
-                <Text style={styles.skipText}>10</Text>
-              </Touchable>
-            </View>
-
-            <View style={[styles.bottomBar, { bottom: barBottom }]}>
-              {/* Tap the bar to jump to that point. */}
-              <Pressable
-                style={styles.trackHit}
-                onLayout={(e) => setTrackWidth(e.nativeEvent.layout.width)}
-                onPress={(e) => {
-                  if (!trackWidth || !duration) return;
-                  player.currentTime = (e.nativeEvent.locationX / trackWidth) * duration;
-                  setControlsVisible(true);
-                }}
-              >
-                <View style={styles.track}>
-                  <View style={[styles.trackFill, { width: `${progress * 100}%` }]} />
-                </View>
-              </Pressable>
-              <Text style={styles.timeText}>
-                {formatDuration(currentTime)} / {formatDuration(duration)}
-              </Text>
-            </View>
+      {/* A tap anywhere shows or hides everything; swipes still page. */}
+      <Pressable style={StyleSheet.absoluteFill} onPress={onToggleChrome}>
+        <Animated.View
+          pointerEvents={chromeVisible ? "box-none" : "none"}
+          style={[StyleSheet.absoluteFill, { opacity: chromeOpacity }]}
+        >
+          {/* Media buttons keep their usual left-to-right order in every language. */}
+          <View style={styles.centerRow} pointerEvents="box-none">
+            <Touchable style={styles.skipBtn} onPress={() => seekBy(-10)} accessibilityLabel="-10s">
+              <Ionicons name="play-back" size={24} color={Colors.white} />
+              <Text style={styles.skipText}>10</Text>
+            </Touchable>
+            <Touchable
+              style={styles.playBtn}
+              onPress={() => {
+                if (isPlaying) player.pause();
+                else player.play();
+                touched();
+              }}
+              accessibilityLabel={isPlaying ? "pause" : "play"}
+            >
+              <Ionicons
+                name={isPlaying ? "pause" : "play"}
+                size={34}
+                color={Colors.white}
+                style={!isPlaying && styles.playNudge}
+              />
+            </Touchable>
+            <Touchable style={styles.skipBtn} onPress={() => seekBy(10)} accessibilityLabel="+10s">
+              <Ionicons name="play-forward" size={24} color={Colors.white} />
+              <Text style={styles.skipText}>10</Text>
+            </Touchable>
           </View>
-        ) : null}
+
+          <View style={[styles.progressBar, { bottom: barBottom }]}>
+            {/* Tap the bar to jump to that point. */}
+            <Pressable
+              style={styles.trackHit}
+              onLayout={(e) => setTrackWidth(e.nativeEvent.layout.width)}
+              onPress={(e) => {
+                if (!trackWidth || !duration) return;
+                player.currentTime = (e.nativeEvent.locationX / trackWidth) * duration;
+                touched();
+              }}
+            >
+              <View style={styles.track}>
+                <View style={[styles.trackFill, { width: `${progress * 100}%` }]} />
+              </View>
+            </Pressable>
+            <Text style={styles.timeText}>
+              {formatDuration(currentTime)} / {formatDuration(duration)}
+            </Text>
+          </View>
+        </Animated.View>
       </Pressable>
     </View>
   );
@@ -309,47 +345,46 @@ const styles = StyleSheet.create({
     textAlign: "center",
     paddingHorizontal: 32,
   },
-  closeBtn: {
-    position: "absolute",
-    right: 12,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "rgba(0,0,0,0.45)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  closeText: { color: Colors.white, fontSize: 18 },
-
-  // Save and Share — the photo viewer's buttons, same look.
   rowReverse: { flexDirection: "row-reverse" },
-  actions: { position: "absolute", left: 16, right: 16, flexDirection: "row", gap: 12 },
-  actionButton: {
-    flex: 1,
-    height: ACTION_HEIGHT,
-    borderRadius: 14,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  saveButton: {
-    backgroundColor: Colors.sage,
-    shadowColor: Colors.sageDeep,
-    shadowOpacity: 0.4,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 4,
-  },
-  shareButton: {
-    backgroundColor: "rgba(44,36,22,0.55)",
-    borderWidth: 1.5,
-    borderColor: Colors.sage,
-  },
-  actionInner: { flexDirection: "row", alignItems: "center", gap: 8 },
-  actionText: { fontFamily: Fonts.semiBold, fontSize: 15 },
-  saveText: { color: Colors.cream },
-  shareText: { color: Colors.sageLight },
 
-  controlsLayer: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.28)" },
+  // Same bars as the photo viewer.
+  topBar: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 12,
+  },
+  iconBtn: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
+  counter: {
+    fontFamily: Fonts.semiBold,
+    fontSize: 14,
+    color: Colors.white,
+    writingDirection: "ltr",
+  },
+  actionsBar: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 56,
+    paddingTop: 12,
+  },
+  action: { minWidth: 56, minHeight: 44, alignItems: "center", justifyContent: "center" },
+  actionLabel: {
+    fontFamily: Fonts.regular,
+    fontSize: 11,
+    color: Colors.white,
+    opacity: 0.75,
+    marginTop: 4,
+  },
+
+  // Playback controls.
   centerRow: {
     ...StyleSheet.absoluteFillObject,
     flexDirection: "row",
@@ -368,7 +403,7 @@ const styles = StyleSheet.create({
   playNudge: { marginLeft: 4 },
   skipBtn: { width: 56, height: 56, alignItems: "center", justifyContent: "center" },
   skipText: { color: Colors.white, fontFamily: Fonts.semiBold, fontSize: 11, marginTop: 1 },
-  bottomBar: { position: "absolute", left: 20, right: 20 },
+  progressBar: { position: "absolute", left: 20, right: 20 },
   trackHit: { height: 28, justifyContent: "center" },
   track: { height: 4, borderRadius: 2, backgroundColor: "rgba(255,255,255,0.35)", overflow: "hidden" },
   trackFill: { height: "100%", backgroundColor: Colors.white },
@@ -379,13 +414,5 @@ const styles = StyleSheet.create({
     marginTop: 2,
     writingDirection: "ltr",
     textAlign: "left",
-  },
-  counter: {
-    position: "absolute",
-    left: 16,
-    color: Colors.white,
-    fontFamily: Fonts.semiBold,
-    fontSize: 13,
-    writingDirection: "ltr",
   },
 });

@@ -1,4 +1,4 @@
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import {
   Animated,
   GestureResponderEvent,
@@ -47,12 +47,23 @@ export function ZoomableImage({
   uri,
   width,
   onZoomChange,
+  onSingleTap,
 }: {
   uri: string;
   width: number;
   /** Lets the viewer lock its pager while a photo is zoomed in. */
   onZoomChange: (zoomed: boolean) => void;
+  /**
+   * A tap that turned out not to be the first half of a double tap. Fires
+   * DOUBLE_TAP_MS late on purpose — that wait is what keeps a double tap
+   * (zoom) from also toggling the viewer's bars.
+   */
+  onSingleTap?: () => void;
 }) {
+  const singleTapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => {
+    if (singleTapTimer.current) clearTimeout(singleTapTimer.current);
+  }, []);
   const scale = useRef(new Animated.Value(1)).current;
   const translateX = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(0)).current;
@@ -267,9 +278,17 @@ export function ZoomableImage({
     const now = Date.now();
     if (now - lastTapAt.current < DOUBLE_TAP_MS) {
       lastTapAt.current = 0;
+      if (singleTapTimer.current) clearTimeout(singleTapTimer.current);
+      singleTapTimer.current = null;
       zoomToPoint({ x: event.nativeEvent.pageX, y: event.nativeEvent.pageY });
     } else {
       lastTapAt.current = now;
+      if (onSingleTap) {
+        singleTapTimer.current = setTimeout(() => {
+          singleTapTimer.current = null;
+          onSingleTap();
+        }, DOUBLE_TAP_MS);
+      }
     }
   };
 

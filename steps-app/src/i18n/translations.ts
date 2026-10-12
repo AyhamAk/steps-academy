@@ -852,7 +852,6 @@ Open the app and sign in with this phone number. You'll be connected to ${child}
     noChildPhotosYet: (name: string) => `No photos of ${name} yet 🌱`,
     noKidsPhotosYet: "No photos of your kids yet 🌱",
     photoTaggedBanner: (name: string) => `🐘 ${name} is in this photo! ⭐`,
-    inThisPhoto: "In this photo:",
 
     pleaseTryAgain: "Please try again.",
     noPhotosInEvent: "No photos in this event yet",
@@ -864,8 +863,8 @@ Open the app and sign in with this phone number. You'll be connected to ${child}
     sharingUnavailable: "Sharing unavailable",
     sharingNotSupported: "Sharing isn't supported on this device.",
     couldntSharePhoto: "Couldn't share photo",
-    save: "⬇️ Save",
-    share: "↗️ Share",
+    save: "Save",
+    share: "Share",
   },
 };
 
@@ -1715,7 +1714,6 @@ export const ar: Translations = {
     noChildPhotosYet: (name: string) => `لا توجد صور لـ ${name} بعد 🌱`,
     noKidsPhotosYet: "لا توجد صور لأطفالك بعد 🌱",
     photoTaggedBanner: (name: string) => `🐘 ${name} في هذه الصورة! ⭐`,
-    inThisPhoto: "في هذه الصورة:",
 
     pleaseTryAgain: "يرجى المحاولة مرة أخرى.",
     noPhotosInEvent: "لا توجد صور في هذه الفعالية بعد",
@@ -1727,8 +1725,8 @@ export const ar: Translations = {
     sharingUnavailable: "المشاركة غير متاحة",
     sharingNotSupported: "المشاركة غير مدعومة على هذا الجهاز.",
     couldntSharePhoto: "تعذّر مشاركة الصورة",
-    save: "⬇️ حفظ",
-    share: "↗️ مشاركة",
+    save: "حفظ",
+    share: "مشاركة",
   },
 };
 
@@ -2564,7 +2562,6 @@ export const he: Translations = {
     noChildPhotosYet: (name: string) => `אין עדיין תמונות של ${name} 🌱`,
     noKidsPhotosYet: "אין עדיין תמונות של הילדים שלך 🌱",
     photoTaggedBanner: (name: string) => `🐘 ${name} נמצא בתמונה הזו! ⭐`,
-    inThisPhoto: "בתמונה הזו:",
 
     pleaseTryAgain: "אנא נסה שוב.",
     noPhotosInEvent: "אין עדיין תמונות באירוע זה",
@@ -2576,7 +2573,7 @@ export const he: Translations = {
     sharingUnavailable: "שיתוף אינו זמין",
     sharingNotSupported: "שיתוף אינו נתמך במכשיר זה.",
     couldntSharePhoto: "לא ניתן לשתף את התמונה",
-    save: "⬇️ שמור",
-    share: "↗️ שתף",
+    save: "שמירה",
+    share: "שיתוף",
   },
 };

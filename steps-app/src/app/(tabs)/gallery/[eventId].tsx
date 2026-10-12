@@ -289,7 +289,6 @@ export default function EventGalleryScreen() {
           albumId={eventId as string}
           photos={photos}
           initialIndex={activeIndex}
-          childIds={childIds}
           onClose={() => setActiveIndex(null)}
         />
       ) : null}

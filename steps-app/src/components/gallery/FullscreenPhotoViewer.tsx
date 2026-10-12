@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Animated,
   Modal,
   NativeScrollEvent,
   NativeSyntheticEvent,
@@ -22,14 +23,13 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { track } from "../../services/analytics";
 import { useTranslation } from "../../i18n/useTranslation";
-import { matchedTagNames, Photo, resolvePhotoUrl } from "../../services/galleryApi";
+import { Photo, resolvePhotoUrl } from "../../services/galleryApi";
 import { Touchable } from "../ui/Touchable";
 import { ZoomableImage } from "./ZoomableImage";
 
 type FullscreenPhotoViewerProps = {
   photos: Photo[] | null;
   initialIndex?: number;
-  childIds?: string[];
   /** Album only. Deliberately no photo id and no child id: usage data must
    *  never become a record of who looked at which picture of which child. */
   albumId?: string;
@@ -39,7 +39,6 @@ type FullscreenPhotoViewerProps = {
 export function FullscreenPhotoViewer({
   photos,
   initialIndex = 0,
-  childIds = [],
   albumId,
   onClose,
 }: FullscreenPhotoViewerProps) {
@@ -54,6 +53,16 @@ export function FullscreenPhotoViewer({
   const didInitialScroll = useRef(false);
   const openedAt = useRef(0);
   const swipes = useRef(0);
+
+  // A single tap on the photo hides or shows the bars, like the phone's own
+  // photos app. (A double tap still zooms — ZoomableImage tells them apart.)
+  const chromeOpacity = useRef(new Animated.Value(1)).current;
+  const [chromeVisible, setChromeVisible] = useState(true);
+  const toggleChrome = () => {
+    const next = !chromeVisible;
+    setChromeVisible(next);
+    Animated.timing(chromeOpacity, { toValue: next ? 1 : 0, duration: 150, useNativeDriver: true }).start();
+  };
 
   const isOpen = !!photos && photos.length > 0;
   useEffect(() => {
@@ -74,14 +83,6 @@ export function FullscreenPhotoViewer({
 
   const safeIndex = Math.min(Math.max(index, 0), photos.length - 1);
   const current = photos[safeIndex];
-  const matched = matchedTagNames(current, childIds);
-
-  const goTo = (next: number) => {
-    const clamped = Math.min(Math.max(next, 0), photos.length - 1);
-    scrollRef.current?.scrollTo({ x: clamped * width, animated: true });
-    setIndex(clamped);
-  };
-
   const handleMomentumEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     swipes.current += 1;
     setIndex(Math.round(e.nativeEvent.contentOffset.x / width));
@@ -160,105 +161,54 @@ export function FullscreenPhotoViewer({
               uri={resolvePhotoUrl(photo.url)}
               width={width}
               onZoomChange={setIsZoomed}
+              onSingleTap={toggleChrome}
             />
           ))}
         </ScrollView>
 
-        <View
-          style={[styles.topBar, { top: insets.top + 8 }, isRTL && styles.rowReverse]}
-          pointerEvents="box-none"
+        {/* ✕ on the same physical side in every language, as system photo apps do. */}
+        <Animated.View
+          pointerEvents={chromeVisible ? "box-none" : "none"}
+          style={[styles.topBar, { paddingTop: insets.top + 6, opacity: chromeOpacity }]}
         >
-          <Touchable style={styles.closeButton} onPress={onClose} hitSlop={8}>
-            <Ionicons name="close" size={22} color={Colors.cream} />
+          <Touchable style={styles.iconBtn} onPress={onClose} hitSlop={10} accessibilityLabel={t.gallery.closeVideo}>
+            <Ionicons name="close" size={26} color={Colors.white} />
           </Touchable>
           {photos.length > 1 ? (
-            <View style={styles.counterPill}>
-              <Text style={styles.counter}>
-                {safeIndex + 1} / {photos.length}
-              </Text>
-            </View>
+            <Text style={styles.counter}>
+              {safeIndex + 1} / {photos.length}
+            </Text>
           ) : null}
-        </View>
+          {/* Balances the ✕ so the counter sits in the middle. */}
+          <View style={styles.iconBtn} />
+        </Animated.View>
 
-        {photos.length > 1 ? (
-          <>
-            {safeIndex > 0 ? (
-              <Touchable
-                style={[styles.arrow, styles.arrowStart]}
-                onPress={() => goTo(safeIndex - 1)}
-                hitSlop={8}
-              >
-                <Ionicons
-                  name={isRTL ? "chevron-forward" : "chevron-back"}
-                  size={24}
-                  color={Colors.cream}
-                />
-              </Touchable>
-            ) : null}
-            {safeIndex < photos.length - 1 ? (
-              <Touchable
-                style={[styles.arrow, styles.arrowEnd]}
-                onPress={() => goTo(safeIndex + 1)}
-                hitSlop={8}
-              >
-                <Ionicons
-                  name={isRTL ? "chevron-back" : "chevron-forward"}
-                  size={24}
-                  color={Colors.cream}
-                />
-              </Touchable>
-            ) : null}
-          </>
-        ) : null}
-
-        <View style={[styles.bottom, { paddingBottom: insets.bottom + 16 }]}>
-          {matched.length > 0 ? (
-            <View style={[styles.captionPill, isRTL && styles.rowReverse]}>
-              <Text style={styles.captionAvatar}>🐘</Text>
-              {/* Two nodes, never one concatenated string: an Arabic sentence
-                  with a Latin name puts its punctuation at the wrong end when
-                  the bidi algorithm resolves the line as a whole. */}
-              <Text style={styles.captionText}>{t.gallery.inThisPhoto}</Text>
-              <Text style={styles.captionName}>{matched[0]}</Text>
-            </View>
-          ) : null}
-
-          {/* Saving is the reason most parents open a photo at all, so it gets
-              the terracotta the rest of the app uses for its primary action.
-              Sharing sits beside it as the outline variant rather than a second
-              filled button — two equally loud buttons make neither one read as
-              the obvious thing to press. */}
-          <View style={[styles.actions, isRTL && styles.rowReverse]}>
-            <Touchable
-              style={[styles.actionButton, styles.saveButton]}
-              onPress={handleDownload}
-              disabled={!!busy}
-            >
-              {busy === "download" ? (
-                <ActivityIndicator color={Colors.cream} />
-              ) : (
-                <View style={[styles.actionInner, isRTL && styles.rowReverse]}>
-                  <Ionicons name="download-outline" size={18} color={Colors.cream} />
-                  <Text style={[styles.actionText, styles.saveText]}>{t.gallery.save}</Text>
-                </View>
-              )}
-            </Touchable>
-            <Touchable
-              style={[styles.actionButton, styles.shareButton]}
-              onPress={handleShare}
-              disabled={!!busy}
-            >
-              {busy === "share" ? (
-                <ActivityIndicator color={Colors.sageLight} />
-              ) : (
-                <View style={[styles.actionInner, isRTL && styles.rowReverse]}>
-                  <Ionicons name="share-outline" size={18} color={Colors.sageLight} />
-                  <Text style={[styles.actionText, styles.shareText]}>{t.gallery.share}</Text>
-                </View>
-              )}
-            </Touchable>
-          </View>
-        </View>
+        {/* Save then Share in reading order: Save on the right in Arabic and Hebrew. */}
+        <Animated.View
+          pointerEvents={chromeVisible ? "box-none" : "none"}
+          style={[
+            styles.bottomBar,
+            isRTL && styles.rowReverse,
+            { paddingBottom: insets.bottom + 14, opacity: chromeOpacity },
+          ]}
+        >
+          <Touchable style={styles.action} onPress={handleDownload} disabled={!!busy} accessibilityLabel={t.gallery.save}>
+            {busy === "download" ? (
+              <ActivityIndicator color={Colors.white} />
+            ) : (
+              <Ionicons name="download-outline" size={26} color={Colors.white} />
+            )}
+            <Text style={styles.actionLabel}>{t.gallery.save}</Text>
+          </Touchable>
+          <Touchable style={styles.action} onPress={handleShare} disabled={!!busy} accessibilityLabel={t.gallery.share}>
+            {busy === "share" ? (
+              <ActivityIndicator color={Colors.white} />
+            ) : (
+              <Ionicons name="share-outline" size={26} color={Colors.white} />
+            )}
+            <Text style={styles.actionLabel}>{t.gallery.share}</Text>
+          </Touchable>
+        </Animated.View>
       </View>
     </Modal>
   );
@@ -272,110 +222,37 @@ const styles = StyleSheet.create({
   rowReverse: { flexDirection: "row-reverse" },
   topBar: {
     position: "absolute",
-    start: 0,
-    end: 0,
+    top: 0,
+    left: 0,
+    right: 0,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
   },
-  // Scrimmed, so both survive a bright photo behind them.
-  closeButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "rgba(44,36,22,0.55)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  counterPill: {
-    minHeight: 32,
-    paddingHorizontal: 14,
-    borderRadius: 999,
-    backgroundColor: "rgba(44,36,22,0.55)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
+  iconBtn: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
   counter: {
-    color: Colors.cream,
     fontFamily: Fonts.semiBold,
     fontSize: 14,
+    color: Colors.white,
+    writingDirection: "ltr",
   },
-  arrow: {
-    position: "absolute",
-    top: "50%",
-    marginTop: -22,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(44,36,22,0.55)",
-  },
-  arrowStart: { start: 12 },
-  arrowEnd: { end: 12 },
-  bottom: {
+  bottomBar: {
     position: "absolute",
     bottom: 0,
-    start: 0,
-    end: 0,
-    paddingHorizontal: 16,
-  },
-  captionPill: {
+    left: 0,
+    right: 0,
     flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    alignSelf: "center",
-    backgroundColor: "rgba(44,36,22,0.65)",
-    borderRadius: 999,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    marginBottom: 12,
-  },
-  captionAvatar: { fontSize: 16 },
-  captionText: {
-    color: Colors.cream,
-    fontFamily: Fonts.semiBold,
-    fontSize: 14,
-    writingDirection: "auto",
-  },
-  captionName: {
-    color: Colors.gold,
-    fontFamily: Fonts.semiBold,
-    fontSize: 14,
-    writingDirection: "auto",
-  },
-  actions: {
-    flexDirection: "row",
-    gap: 12,
-  },
-  actionButton: {
-    flex: 1,
-    height: 48,
-    borderRadius: 14,
-    alignItems: "center",
     justifyContent: "center",
+    gap: 56,
+    paddingTop: 12,
   },
-  saveButton: {
-    backgroundColor: Colors.sage,
-    shadowColor: Colors.sageDeep,
-    shadowOpacity: 0.4,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 4,
+  action: { minWidth: 56, minHeight: 44, alignItems: "center", justifyContent: "center" },
+  actionLabel: {
+    fontFamily: Fonts.regular,
+    fontSize: 11,
+    color: Colors.white,
+    opacity: 0.75,
+    marginTop: 4,
   },
-  // Scrimmed rather than transparent: an outline button over a bright photo
-  // has nothing to hold its label legible.
-  shareButton: {
-    backgroundColor: "rgba(44,36,22,0.55)",
-    borderWidth: 1.5,
-    borderColor: Colors.sage,
-  },
-  actionInner: { flexDirection: "row", alignItems: "center", gap: 8 },
-  actionText: {
-    fontFamily: Fonts.semiBold,
-    fontSize: 15,
-  },
-  saveText: { color: Colors.cream },
-  shareText: { color: Colors.sageLight },
 });
