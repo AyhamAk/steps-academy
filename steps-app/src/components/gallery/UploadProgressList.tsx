@@ -8,6 +8,9 @@ export type UploadItem = {
   uri: string;
   progress: number;
   status: "pending" | "uploading" | "done" | "error";
+  isVideo?: boolean;
+  /** A video file can't be drawn as an image; its poster can, once made. */
+  previewUri?: string;
 };
 
 export function UploadProgressList({ uploads }: { uploads: UploadItem[] }) {
@@ -15,11 +18,19 @@ export function UploadProgressList({ uploads }: { uploads: UploadItem[] }) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>{t.gallery.uploading(uploads.length)}</Text>
+      <Text style={styles.title}>
+        {uploads.some((item) => item.isVideo) ? t.gallery.uploadingVideo : t.gallery.uploading(uploads.length)}
+      </Text>
       <View style={styles.row}>
         {uploads.map((item, index) => (
           <View key={`${item.uri}-${index}`} style={styles.tile}>
-            <Image source={{ uri: item.uri }} style={styles.image} />
+            {item.isVideo && !item.previewUri ? (
+              <View style={[styles.image, styles.videoPlaceholder]}>
+                <Text style={styles.videoIcon}>🎬</Text>
+              </View>
+            ) : (
+              <Image source={{ uri: item.previewUri ?? item.uri }} style={styles.image} />
+            )}
             <View style={[styles.progressTrack, { alignItems: isRTL ? "flex-end" : "flex-start" }]}>
               <View
                 style={[
@@ -46,6 +57,8 @@ export function UploadProgressList({ uploads }: { uploads: UploadItem[] }) {
 }
 
 const styles = StyleSheet.create({
+  videoPlaceholder: { alignItems: "center", justifyContent: "center", backgroundColor: Colors.card },
+  videoIcon: { fontSize: 22 },
   container: {
     marginTop: 16,
     backgroundColor: Colors.card,

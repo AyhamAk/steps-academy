@@ -6,7 +6,7 @@ import { Fonts } from "../../constants/Fonts";
 import { useKeyboardInset, useKeyboardReveal } from "../../hooks/useKeyboardInset";
 import { useLayout } from "../../hooks/useLayout";
 import { useTranslation } from "../../i18n/useTranslation";
-import { GalleryEvent, Photo, resolvePhotoUrl } from "../../services/galleryApi";
+import { GalleryEvent, isVideo, Photo, resolvePhotoUrl } from "../../services/galleryApi";
 import { EmptyState } from "./EmptyState";
 import { EventCaptionEditor } from "./EventCaptionEditor";
 import { UploadItem, UploadProgressList } from "./UploadProgressList";
@@ -126,7 +126,16 @@ export function ReviewGridModal({
                   ])
                 }
               >
-                <Image source={{ uri: resolvePhotoUrl(item.url) }} style={styles.image} />
+                {/* A video shows its poster; the file itself isn't an image. */}
+                <Image
+                  source={{ uri: resolvePhotoUrl(isVideo(item) ? item.thumbnailUrl ?? item.url : item.url) }}
+                  style={styles.image}
+                />
+                {isVideo(item) ? (
+                  <View style={styles.playBadge}>
+                    <Text style={styles.playBadgeText}>▶</Text>
+                  </View>
+                ) : null}
                 <View style={styles.badge}>
                   <Text style={styles.badgeText}>{item.tags.length}</Text>
                 </View>
@@ -215,4 +224,16 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.bold,
     fontSize: 11,
   },
+  playBadge: {
+    position: "absolute",
+    bottom: 6,
+    start: 6,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: "rgba(44, 36, 22, 0.75)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  playBadgeText: { color: Colors.white, fontSize: 10, marginStart: 2 },
 });

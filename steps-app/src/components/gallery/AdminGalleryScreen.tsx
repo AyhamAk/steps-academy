@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as ImagePicker from "expo-image-picker";
+import * as VideoThumbnails from "expo-video-thumbnails";
 import { useState } from "react";
 import {
   ActivityIndicator,
@@ -25,7 +26,11 @@ import {
   Photo,
   publishEvent,
   setGalleryQuote,
+  MAX_VIDEO_MB,
+  MAX_VIDEO_SECONDS,
   uploadEventPhoto,
+  uploadEventVideo,
+  VideoUploadError,
 } from "../../services/galleryApi";
 import { listStudents } from "../../services/studentsApi";
 import { formatIsoDate } from "../../utils/date";
@@ -188,30 +193,61 @@ export function AdminGalleryScreen() {
     // chosen files and needs no media-read permission. Asking would force us to declare
     // READ_MEDIA_IMAGES, which Google Play rejects for apps that a picker can serve.
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"],
+      mediaTypes: ["images", "videos"],
       allowsMultipleSelection: true,
       quality: 0.8,
+      videoMaxDuration: MAX_VIDEO_SECONDS,
+      // iOS re-encodes picked videos to this size: much smaller uploads.
+      videoQuality: ImagePicker.UIImagePickerControllerQualityType.Medium,
+      videoExportPreset: ImagePicker.VideoExportPreset.H264_1280x720,
     });
     if (result.canceled || result.assets.length === 0) return;
 
     const assets = result.assets;
-    setUploads(assets.map((asset) => ({ uri: asset.uri, progress: 0, status: "pending" })));
+    const isVideoAsset = (asset: ImagePicker.ImagePickerAsset) => asset.type === "video";
+    setUploads(
+      assets.map((asset) => ({ uri: asset.uri, progress: 0, status: "pending", isVideo: isVideoAsset(asset) }))
+    );
 
     let uploadedCount = 0;
+    const refused = new Set<VideoUploadError["code"]>();
     for (let i = 0; i < assets.length; i++) {
       setUploads((prev) => prev.map((u, idx) => (idx === i ? { ...u, status: "uploading" } : u)));
+      const onProgress = (percent: number) =>
+        setUploads((prev) => prev.map((u, idx) => (idx === i ? { ...u, progress: percent } : u)));
       try {
-        const photo = await uploadEventPhoto(reviewEvent.id, assets[i], (percent) => {
-          setUploads((prev) => prev.map((u, idx) => (idx === i ? { ...u, progress: percent } : u)));
-        });
+        let photo: Photo;
+        if (isVideoAsset(assets[i])) {
+          // The poster doubles as the upload tile, so the admin sees which video is going.
+          const poster = await VideoThumbnails.getThumbnailAsync(assets[i].uri, { time: 1000, quality: 0.7 });
+          setUploads((prev) => prev.map((u, idx) => (idx === i ? { ...u, previewUri: poster.uri } : u)));
+          photo = await uploadEventVideo(reviewEvent.id, assets[i], onProgress, poster.uri);
+        } else {
+          photo = await uploadEventPhoto(reviewEvent.id, assets[i], onProgress);
+        }
         uploadedCount += 1;
         setReviewPhotos((prev) => [photo, ...prev]);
         setUploads((prev) =>
           prev.map((u, idx) => (idx === i ? { ...u, status: "done", progress: 100 } : u))
         );
-      } catch {
+      } catch (error) {
+        if (error instanceof VideoUploadError && error.code !== "upload_failed") refused.add(error.code);
         setUploads((prev) => prev.map((u, idx) => (idx === i ? { ...u, status: "error" } : u)));
       }
+    }
+
+    if (refused.size > 0) {
+      Alert.alert(
+        [...refused]
+          .map((code) =>
+            code === "video_too_big"
+              ? t.gallery.videoTooBig(MAX_VIDEO_MB)
+              : code === "video_too_long"
+                ? t.gallery.videoTooLong(MAX_VIDEO_SECONDS)
+                : t.gallery.videoType
+          )
+          .join("\n")
+      );
     }
 
     setUploads([]);

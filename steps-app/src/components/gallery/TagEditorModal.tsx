@@ -14,7 +14,7 @@ import { Colors } from "../../constants/Colors";
 import { Fonts } from "../../constants/Fonts";
 import { useSheetPadding } from "../../hooks/useLayout";
 import { useTranslation } from "../../i18n/useTranslation";
-import { addPhotoTag, Photo, removePhotoTag, resolvePhotoUrl } from "../../services/galleryApi";
+import { addPhotoTag, isVideo, Photo, removePhotoTag, resolvePhotoUrl } from "../../services/galleryApi";
 import { Student } from "../../services/studentsApi";
 import { Touchable } from "../ui/Touchable";
 
@@ -75,7 +75,11 @@ export function TagEditorModal({ photo, suggestions, onClose, onTagsChanged }: T
             </Touchable>
           </View>
 
-          <Image source={{ uri: resolvePhotoUrl(photo.url) }} style={styles.preview} />
+          {/* Tagging a video: its poster stands in for it. */}
+          <Image
+            source={{ uri: resolvePhotoUrl(isVideo(photo) ? photo.thumbnailUrl ?? photo.url : photo.url) }}
+            style={styles.preview}
+          />
 
           <View style={styles.chipRow}>
             {photo.tags.map((tag) => (
