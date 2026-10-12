@@ -23,16 +23,15 @@ import { Photo, resolvePhotoUrl } from "../services/galleryApi";
 import { getPlayerVideos } from "../store/videoPlayerStore";
 
 /**
- * An album's videos, full screen, one per page: swipe up or down for the
- * next. Only the page on screen plays; everything pauses when the screen
- * loses focus or the app goes to the background. Closing is the ✕ only —
- * the vertical swipe already means next/previous.
+ * An album's videos, full screen, one per page: swipe sideways for the next,
+ * like the photo viewer. Only the page on screen plays; everything pauses when
+ * the screen loses focus or the app goes to the background.
  */
 export default function VideoPlayerScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { height } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
   const { start } = useLocalSearchParams<{ start?: string }>();
   const [{ videos, albumId }] = useState(getPlayerVideos);
   const startIndex = Math.min(Math.max(Number(start) || 0, 0), Math.max(videos.length - 1, 0));
@@ -62,10 +61,11 @@ export default function VideoPlayerScreen() {
       <FlatList<Photo>
         data={videos}
         keyExtractor={(item) => item.id}
+        horizontal
         pagingEnabled
-        showsVerticalScrollIndicator={false}
+        showsHorizontalScrollIndicator={false}
         initialScrollIndex={startIndex}
-        getItemLayout={(_, index) => ({ length: height, offset: height * index, index })}
+        getItemLayout={(_, index) => ({ length: width, offset: width * index, index })}
         onViewableItemsChanged={onViewable}
         viewabilityConfig={{ itemVisiblePercentThreshold: 80 }}
         // Only the neighbours stay mounted, so only a few players exist at once.
@@ -73,7 +73,7 @@ export default function VideoPlayerScreen() {
         initialNumToRender={1}
         maxToRenderPerBatch={2}
         renderItem={({ item, index }) => (
-          <VideoPage item={item} isActive={index === activeIndex && canPlay} height={height} />
+          <VideoPage item={item} isActive={index === activeIndex && canPlay} width={width} height={height} />
         )}
       />
 
@@ -94,7 +94,17 @@ export default function VideoPlayerScreen() {
   );
 }
 
-function VideoPage({ item, isActive, height }: { item: Photo; isActive: boolean; height: number }) {
+function VideoPage({
+  item,
+  isActive,
+  width,
+  height,
+}: {
+  item: Photo;
+  isActive: boolean;
+  width: number;
+  height: number;
+}) {
   const { t } = useTranslation();
   const player = useVideoPlayer(resolvePhotoUrl(item.url), (p) => {
     p.loop = true;
@@ -107,7 +117,7 @@ function VideoPage({ item, isActive, height }: { item: Photo; isActive: boolean;
   }, [isActive, player]);
 
   return (
-    <View style={[styles.page, { height }]}>
+    <View style={[styles.page, { width, height }]}>
       {status === "error" ? (
         <Text style={styles.errorText}>{t.gallery.videoError}</Text>
       ) : (
