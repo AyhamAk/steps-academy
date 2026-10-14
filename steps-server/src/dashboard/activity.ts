@@ -438,3 +438,96 @@ export async function notificationSends(limit = 15) {
     return { ...send, about };
   });
 }
+
+/** What Apple/Google said, in words the academy can act on. */
+const PUSH_ERRORS: Record<string, string> = {
+  no_token: "notifications off on this phone",
+  DeviceNotRegistered: "app deleted or notifications turned off",
+  MessageTooBig: "message too long",
+  MessageRateExceeded: "sent too fast to this phone",
+  MismatchSenderId: "app set-up problem (Android)",
+  InvalidCredentials: "app set-up problem",
+  send_failed: "could not reach Expo",
+};
+
+export function pushErrorText(error: string | null): string {
+  if (!error) return "";
+  if (error.startsWith("send_failed")) return PUSH_ERRORS.send_failed;
+  return PUSH_ERRORS[error] ?? error;
+}
+
+export type PushSend = {
+  kind: string;
+  sent: Date;
+  title: string;
+  total: number;
+  delivered: number;
+  failed: number;
+  noToken: number;
+  waiting: number;
+  tapped: number;
+  notReached: { id: string; name: string; reason: string }[];
+};
+
+/**
+ * Every push, grouped the way it was sent: one album, course or announcement
+ * within the same hour is one send.
+ */
+export async function pushSends(limit = 15): Promise<PushSend[]> {
+  const sends = await q<Omit<PushSend, "notReached"> & { ids: string[] }>(
+    `select d.kind, min(d."createdAt") sent, max(d.title) title,
+            count(*)::int total,
+            count(*) filter (where d.status = 'delivered')::int delivered,
+            count(*) filter (where d.status = 'failed')::int failed,
+            count(*) filter (where d.status = 'no_token')::int "noToken",
+            count(*) filter (where d.status = 'sent')::int waiting,
+            count(distinct t.props->>'push_id')::int tapped,
+            array_agg(d.id) ids
+     from "PushDelivery" d
+     left join "AnalyticsEvent" t on t.name = 'notification_opened' and t.props->>'push_id' = d.id
+     group by d.kind, coalesce(d."refId", ''), date_trunc('hour', d."createdAt")
+     order by sent desc limit $1`,
+    limit,
+  );
+  const failedRows = await q<{ id: string; userId: string; name: string; status: string; error: string | null }>(
+    `select d.id, d."userId", u.name, d.status, d.error
+     from "PushDelivery" d join "User" u on u.id = d."userId"
+     where d.status in ('failed', 'no_token') and d.id = any($1::text[])`,
+    sends.flatMap((send) => send.ids),
+  );
+  return sends.map(({ ids, ...send }) => {
+    const mine = new Set(ids);
+    return {
+      ...send,
+      notReached: failedRows
+        .filter((row) => mine.has(row.id))
+        .map((row) => ({
+          id: row.userId,
+          name: row.name,
+          reason: pushErrorText(row.status === "no_token" ? "no_token" : row.error),
+        })),
+    };
+  });
+}
+
+export type UserPush = {
+  sent: Date;
+  kind: string;
+  title: string;
+  body: string;
+  status: string;
+  error: string | null;
+  tapped: boolean;
+};
+
+export async function userPushes(userId: string, limit = 12): Promise<UserPush[]> {
+  return q<UserPush>(
+    `select d."createdAt" sent, d.kind, d.title, d.body, d.status, d.error,
+            exists (select 1 from "AnalyticsEvent" t
+                    where t.name = 'notification_opened' and t.props->>'push_id' = d.id) tapped
+     from "PushDelivery" d where d."userId" = $1
+     order by d."createdAt" desc limit $2`,
+    userId,
+    limit,
+  );
+}

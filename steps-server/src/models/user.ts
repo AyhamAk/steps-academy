@@ -246,6 +246,7 @@ export const UserModel = {
         createdAt: user.createdAt,
         claimedChildName: user.claimedChildName,
         hasPassword: Boolean(user.passwordHash),
+        hasPushToken: Boolean(user.pushToken),
         children: user.children.map((link) => link.student),
       })),
     };

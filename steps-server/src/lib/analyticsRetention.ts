@@ -16,6 +16,8 @@ export async function purgeOldAnalytics(): Promise<void> {
     const { count } = await prisma.analyticsEvent.deleteMany({
       where: { createdAt: { lt: cutoff } },
     });
+    // Push logs follow the same twelve months.
+    await prisma.pushDelivery.deleteMany({ where: { createdAt: { lt: cutoff } } });
     if (count > 0) {
       console.log(`[analytics] purged ${count} events older than ${RETENTION_DAYS} days`);
     }

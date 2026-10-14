@@ -25,7 +25,7 @@ import {
   tableCard,
   whatsappLink,
 } from "../utils/html";
-import { duration, israelTime, lastSeenByUser, SeenSummary, userActivity } from "./activity";
+import { duration, israelTime, lastSeenByUser, pushErrorText, SeenSummary, userActivity, userPushes } from "./activity";
 
 const DAY_MS = 86400000;
 
@@ -47,6 +47,20 @@ function seenDot(last: Date | null | undefined): string {
   const tone = age < DAY_MS ? "live" : age < 14 * DAY_MS ? "warm" : "cold";
   return `<span class="dot dot-${tone}"></span>${escapeHtml(ago(last))}`;
 }
+
+/** No push token means the phone never allowed notifications (or never signed in on one). */
+function pushPill(on: boolean): string {
+  return on
+    ? `<span class="pill pill-approved">on</span>`
+    : `<span class="pill pill-pending">off</span>`;
+}
+
+const PUSH_STATUS: Record<string, string> = {
+  delivered: `<span class="pill pill-approved">reached the phone</span>`,
+  sent: `<span class="pill">checking</span>`,
+  failed: `<span class="pill pill-pending">didn't reach</span>`,
+  no_token: `<span class="pill pill-pending">not sent</span>`,
+};
 
 const PLATFORM: Record<string, string> = { ios: "iPhone", android: "Android", web: "Web" };
 const LANGUAGE: Record<string, string> = { ar: "Arabic", he: "Hebrew", en: "English" };
@@ -91,6 +105,7 @@ export async function usersPage(req: Request, res: Response) {
           : `<span class="muted">none</span>`,
       seenDot(activity?.last),
       versionPill(activity),
+      pushPill(user.hasPushToken),
       activity?.days30 ? `${activity.days30} <span class="muted">/ 30</span>` : `<span class="muted">0</span>`,
       escapeHtml(shortDate(user.createdAt)),
     ];
@@ -113,6 +128,8 @@ export async function usersPage(req: Request, res: Response) {
     return last && Date.now() - new Date(last).getTime() < 7 * DAY_MS;
   }).length;
 
+  const pushOn = parents.filter((u) => u.hasPushToken).length;
+
   const body = `
   <div class="stats">
     ${statCard({ label: "Accounts", value: String(total) })}
@@ -130,6 +147,12 @@ export async function usersPage(req: Request, res: Response) {
       tone: "var(--sky)",
     })}
     ${statCard({
+      label: "Families with notifications on",
+      value: `${pushOn}/${parents.length}`,
+      sub: pushOn < parents.length ? `${parents.length - pushOn} can only see them inside the app` : "everyone can get them",
+      tone: pushOn < parents.length ? "var(--honey)" : "var(--forest)",
+    })}
+    ${statCard({
       label: "Awaiting a child link",
       value: String(awaiting.length),
       sub: awaiting.length ? "signed up but can see nothing" : "nobody waiting",
@@ -145,8 +168,8 @@ export async function usersPage(req: Request, res: Response) {
 
   ${section(
     "All accounts",
-    tableCard(["Account", "Role", "Children", "Last seen", "App version", "Active days", "Joined"], rows, {
-      hideOnPhone: [1, 5, 6],
+    tableCard(["Account", "Role", "Children", "Last seen", "App version", "Notifications", "Active days", "Joined"], rows, {
+      hideOnPhone: [1, 6, 7],
     }),
     search ? `matching “${search}”` : undefined,
   )}`;
@@ -171,12 +194,13 @@ export async function userDetailPage(req: Request, res: Response) {
   const csrf = csrfToken(req.userId!);
   const base = `${LIST}/${user.id}`;
 
-  const [children, allStudents, owned, admins, activity] = await Promise.all([
+  const [children, allStudents, owned, admins, activity, pushes] = await Promise.all([
     StudentModel.listByParent(user.id),
     StudentModel.listAll(),
     UserModel.ownedContentCounts(user.id),
     UserModel.listAdmins(),
     userActivity(user.id),
+    userPushes(user.id),
   ]);
 
   const linkedIds = new Set(children.map((child) => child.id));
@@ -261,6 +285,7 @@ export async function userDetailPage(req: Request, res: Response) {
                   )
                 : `<span class="muted">—</span>`,
             ],
+            ["Notifications", pushPill(Boolean(user.pushToken))],
             ["Language", escapeHtml(device?.locale ? LANGUAGE[device.locale] ?? device.locale : "—")],
             ["Sign-in", escapeHtml(user.passwordHash ? "Password" : "Phone or Google")],
           ])}
@@ -268,6 +293,28 @@ export async function userDetailPage(req: Request, res: Response) {
       )}
     </div>
   </div>
+
+  ${section(
+    "Notifications sent",
+    pushes.length
+      ? tableCard(
+          ["Sent", "Message", "Result", "Tapped"],
+          pushes.map((push) => [
+            escapeHtml(israelTime(push.sent, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })),
+            `<strong>${escapeHtml(push.title)}</strong><br><span class="muted">${escapeHtml(
+              push.body.length > 90 ? `${push.body.slice(0, 90)}…` : push.body,
+            )}</span>`,
+            (PUSH_STATUS[push.status] ?? escapeHtml(push.status)) +
+              (push.status === "failed" || push.status === "no_token"
+                ? `<br><span class="muted">${escapeHtml(pushErrorText(push.status === "no_token" ? "no_token" : push.error))}</span>`
+                : ""),
+            push.tapped ? "Yes" : `<span class="muted">—</span>`,
+          ]),
+          { hideOnPhone: [3] },
+        )
+      : `<div class="card"><p class="empty">No notifications sent since delivery tracking started.</p></div>`,
+    "newest first · reached = Apple/Google confirmed it arrived",
+  )}
 
   ${section(
     "Recent visits",

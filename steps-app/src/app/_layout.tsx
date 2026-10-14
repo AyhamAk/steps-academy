@@ -201,6 +201,12 @@ function useNotificationTapNavigation() {
   useEffect(() => {
     const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
       const data = response.notification.request.content.data ?? {};
+      // pushId lets the dashboard show which push was tapped from the banner.
+      track("notification_opened", {
+        notification_type: typeof data.type === "string" ? data.type : undefined,
+        source: "push",
+        push_id: typeof data.pushId === "string" ? data.pushId : undefined,
+      });
       // Same destinations as tapping the notification inside the app.
       if (data.type === "course") {
         router.push("/profile");

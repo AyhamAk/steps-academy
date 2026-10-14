@@ -11,6 +11,7 @@ import { runDevSeed } from "./devSeed";
 import { scheduleAnalyticsPurge } from "./lib/analyticsRetention";
 import { scheduleCourseCleanup } from "./lib/courseCleanup";
 import { scheduleCourseReminders } from "./lib/courseReminders";
+import { schedulePushReceipts } from "./lib/pushReceipts";
 import { errorHandler, notFound } from "./middleware/errorHandler";
 import { requestTelemetry } from "./middleware/requestTelemetry";
 import announcementRoutes from "./routes/announcementRoutes";
@@ -81,5 +82,6 @@ app.listen(env.port, () => {
   void runDevSeed();
   scheduleCourseCleanup();
   scheduleCourseReminders();
+  schedulePushReceipts();
   scheduleAnalyticsPurge();
 });

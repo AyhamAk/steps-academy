@@ -24,6 +24,7 @@ import {
   commonMoves,
   israelTime,
   notificationSends,
+  pushSends,
   quietFamilies,
   screenName,
   screenReach,
@@ -77,6 +78,7 @@ export async function usagePage(req: Request, res: Response) {
       albumsReach,
       sends,
       albumMap,
+      pushes,
     ] = await Promise.all([
       q<{ n: number }>(
         `select count(distinct coalesce("userId", "anonId"))::int n from "AnalyticsEvent"
@@ -205,6 +207,7 @@ export async function usagePage(req: Request, res: Response) {
       albumReach(12),
       notificationSends(15),
       albumNames(),
+      pushSends(15),
     ]);
 
     const weekNow = activeWeek[0]?.n ?? 0;
@@ -339,6 +342,31 @@ export async function usagePage(req: Request, res: Response) {
       { hideOnPhone: [2] },
     ),
     "seen = opened the notifications list after it arrived",
+  )}
+
+  ${section(
+    "Did it reach the phone?",
+    pushes.length
+      ? tableCard(
+          ["Sent", "Kind", "Message", "Reached the phone", "Tapped", "Didn't reach"],
+          pushes.map((push) => [
+            escapeHtml(israelTime(push.sent, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })),
+            `<span class="pill">${escapeHtml(NOTIFICATION_KIND[push.kind] ?? push.kind)}</span>`,
+            escapeHtml(push.title.length > 60 ? `${push.title.slice(0, 60)}…` : push.title),
+            meter(push.delivered, push.total) +
+              (push.waiting ? ` <span class="muted">${push.waiting} still checking</span>` : ""),
+            push.delivered ? meter(push.tapped, push.delivered) : `<span class="muted">—</span>`,
+            push.notReached.length
+              ? drawer(
+                  `${push.notReached.length} ${push.notReached.length === 1 ? "person" : "people"}`,
+                  push.notReached.map((who) => `<div>${person(who.id, who.name, who.reason)}</div>`).join(""),
+                )
+              : `<span class="muted">everyone</span>`,
+          ]),
+          { hideOnPhone: [1, 2] },
+        )
+      : `<div class="card"><p class="empty">No pushes sent since delivery tracking started.</p></div>`,
+    "reached = Apple/Google confirmed it arrived · tapped = opened from the banner",
   )}
 
   <div class="cols">

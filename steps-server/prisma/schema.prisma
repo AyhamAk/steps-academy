@@ -179,6 +179,7 @@ model User {
 
   feedback            Feedback[]
   analyticsEvents     AnalyticsEvent[]
+  pushDeliveries      PushDelivery[]
   enrollmentRequests  CourseEnrollment[] @relation("EnrollmentRequester")
   enrollmentDecisions CourseEnrollment[] @relation("EnrollmentDecider")
   invitesCreated      InviteCode[]       @relation("InvitesCreated")
@@ -456,6 +457,31 @@ model InviteRedemption {
   /// One account can never consume the same code twice.
   @@unique([codeId, userId])
   @@index([userId])
+}
+
+/// One push sent to one phone, and what Apple/Google said about it. A row with
+/// status no_token was never sent: that phone has notifications off.
+model PushDelivery {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// data.type of the push: event, course, announcement, tip, ...
+  kind      String
+  /// The album or course it was about, when there is one.
+  refId     String?
+  title     String
+  body      String
+  /// Expo's ticket, used to ask later whether it reached the phone.
+  ticketId  String?
+  /// sent (waiting for Apple/Google) | delivered | failed | no_token
+  status    String    @default("sent")
+  error     String?
+  checkedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([createdAt])
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
 }
 
 /// First-party usage events. Deliberately one flat table: at one academy's
